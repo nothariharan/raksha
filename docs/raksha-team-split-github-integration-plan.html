@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raksha — Team Split & GitHub Collaboration Plan</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1150px;margin:auto;padding:42px 28px;line-height:1.65;background:#fafafa;color:#171717}
+h1{font-size:42px}h2{font-size:28px;margin-top:48px;border-bottom:1px solid #ddd;padding-bottom:8px}h3{font-size:21px}
+.box{background:white;border:1px solid #ddd;border-radius:8px;padding:18px;margin:16px 0}.callout{background:#eef5ff;border-left:5px solid #2563eb;padding:16px;margin:16px 0}.warn{background:#fff7e8;border-left:5px solid #b77900;padding:16px;margin:16px 0}
+pre{background:#171717;color:#f5f5f5;padding:16px;border-radius:8px;overflow:auto;font-size:13px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd}th,td{padding:10px;text-align:left;vertical-align:top;border-bottom:1px solid #ddd}th{background:#eee}
+</style>
+</head>
+<body>
+<h1>Raksha — Team Split, Branching & Integration Plan</h1>
+<p><strong>Goal:</strong> two people work in parallel without overwriting each other, while agreeing on contracts early enough that final integration becomes mechanical rather than chaotic.</p>
+
+<h2>1. Team Ownership</h2>
+<table>
+<tr><th>Owner</th><th>Primary work</th><th>Must not change casually</th></tr>
+<tr><td>You</td><td>Raksha Web UI, Core backend, Incident engine, Validation, Evidence, CAP, WhatsApp, Phone, MCP integration.</td><td>Shared schemas after freeze; portal contracts after integration freeze.</td></tr>
+<tr><td>Teammate</td><td>Portal A + Portal B UIs and backend behavior; CAP client integration; portal-specific states.</td><td>Core API/schema contracts after freeze.</td></tr>
+</table>
+
+<h2>2. Branch Model</h2>
+<pre>
+main
+ ├── develop (optional integration branch)
+ │
+ ├── feature/raksha-core
+ ├── feature/raksha-web
+ ├── feature/raksha-whatsapp
+ ├── feature/raksha-phone
+ ├── feature/raksha-mcp
+ │
+ ├── feature/portal-a
+ └── feature/portal-b
+</pre>
+<p>If two people are the only developers, you can simplify to <code>main</code> + short-lived feature branches. The important rule is that nobody develops directly on main.</p>
+
+<h2>3. Freeze the Contract First</h2>
+<p>Before UI polish or portal polish, commit:</p>
+<pre>
+packages/schemas/incident.ts
+packages/schemas/cap.ts
+packages/schemas/events.ts
+packages/cap-sdk/index.ts
+docs/cap-contract.md
+</pre>
+<div class="callout"><strong>After this freeze, changes require an explicit team discussion and a version bump.</strong></div>
+
+<h2>4. Your Branches</h2>
+<h3>feature/raksha-core</h3>
+<ul><li>Incident CRUD.</li><li>Validation engine.</li><li>Evidence service.</li><li>State machine.</li><li>Case/event persistence.</li></ul>
+
+<h3>feature/raksha-cap</h3>
+<ul><li>CAP endpoints.</li><li>Capability registry.</li><li>Action execution.</li><li>Event dispatch.</li><li>Portal integration SDK.</li></ul>
+
+<h3>feature/raksha-web</h3>
+<ul><li>Citizen experience.</li><li>Incident review.</li><li>Validation states.</li><li>Evidence capsule view.</li><li>Developer CAP view.</li></ul>
+
+<h3>feature/raksha-whatsapp</h3>
+<ul><li>Webhook.</li><li>Message normalization.</li><li>Image/audio download pipeline.</li><li>Conversation state mapping to incident ID.</li></ul>
+
+<h3>feature/raksha-phone</h3>
+<ul><li>Telephony webhook.</li><li>Speech/voice provider connection.</li><li>Call session mapping.</li><li>Language selection.</li></ul>
+
+<h3>feature/raksha-mcp</h3>
+<ul><li>MCP server.</li><li>Tool definitions.</li><li>Tool-to-CAP mapping.</li><li>Read-only demo agent first, action tools second.</li></ul>
+
+<h2>5. Teammate Branches</h2>
+<h3>feature/portal-a</h3>
+<p>Cyber Fraud Intake Portal. Build against CAP, not against internal Raksha APIs.</p>
+<h3>feature/portal-b</h3>
+<p>Financial Institution Response Console. Consume CAP events and call CAP verification/query methods.</p>
+
+<h2>6. Shared Contract Rules</h2>
+<ul>
+<li>Never hardcode endpoint responses in portal code after integration begins.</li>
+<li>Never change field names locally without updating the shared schema.</li>
+<li>Use shared TypeScript types or generated types.</li>
+<li>Use synthetic IDs and data.</li>
+<li>Every cross-service call requires a correlation/case ID.</li>
+</ul>
+
+<h2>7. Local API Contract</h2>
+<pre>
+Core:
+POST /v1/incidents
+POST /v1/incidents/:id/evidence
+POST /v1/incidents/:id/validate
+GET  /v1/incidents/:id
+
+CAP:
+GET  /cap/capabilities
+POST /cap/cases
+POST /cap/actions/validate
+POST /cap/actions/execute
+GET  /cap/cases/:id
+GET  /cap/cases/:id/events
+POST /cap/events
+</pre>
+
+<h2>8. Portal Integration Contract</h2>
+<p>Portal A should depend only on CAP:</p>
+<pre>
+CAP.execute(
+  "report_financial_fraud",
+  incident
+)
+</pre>
+<p>Portal B should depend only on CAP:</p>
+<pre>
+CAP.getCase(incidentId)
+CAP.execute("acknowledge_response", payload)
+</pre>
+
+<h2>9. Git Workflow</h2>
+<pre>
+# start from updated main
+git checkout main
+git pull origin main
+
+# create branch
+git checkout -b feature/portal-a
+
+# work
+git add .
+git commit -m "feat(portal-a): add fraud intake"
+
+# push
+git push -u origin feature/portal-a
+
+# open PR into main/develop
+</pre>
+
+<p>Use small commits. Avoid “final final latest” commits.</p>
+
+<h2>10. Commit Naming</h2>
+<pre>
+feat(core): add incident state machine
+feat(cap): add execute action endpoint
+feat(portal-a): add fraud intake flow
+feat(portal-b): add response console
+feat(web): add evidence review
+fix(core): reject conflicting transaction amount
+chore(repo): update shared schemas
+</pre>
+
+<h2>11. Pull Request Rules</h2>
+<ul>
+<li>One logical feature per PR.</li>
+<li>Describe API changes explicitly.</li>
+<li>Include a local test command.</li>
+<li>Never merge if the shared contract is knowingly broken.</li>
+<li>At least one teammate reviews cross-cutting changes.</li>
+</ul>
+
+<h2>12. Mock Contract Strategy</h2>
+<p>Before the real backend is complete, publish mock CAP handlers so the teammate can build independently.</p>
+<pre>
+portal-a
+  ↓
+mock CAP client
+  ↓
+fixture response
+
+Later:
+portal-a
+  ↓
+real CAP client
+  ↓
+real backend
+</pre>
+<p>This allows parallel work without waiting for the backend.</p>
+
+<h2>13. Daily Integration Rhythm</h2>
+<table>
+<tr><th>Moment</th><th>Action</th></tr>
+<tr><td>Start of day</td><td>Pull main; rebase/merge if needed.</td></tr>
+<tr><td>During work</td><td>Stay on own feature branch.</td></tr>
+<tr><td>Contract change</td><td>Discuss before coding against a new structure.</td></tr>
+<tr><td>End of feature</td><td>Open PR and run local integration test.</td></tr>
+<tr><td>End of day</td><td>Update a simple shared checklist of what works.</td></tr>
+</table>
+
+<h2>14. Integration Order</h2>
+<ol>
+<li>Merge schemas/CAP types.</li>
+<li>Merge Core API.</li>
+<li>Merge Portal A against real CAP.</li>
+<li>Merge Portal B against real CAP.</li>
+<li>Integrate Web.</li>
+<li>Integrate WhatsApp.</li>
+<li>Integrate Phone.</li>
+<li>Integrate MCP.</li>
+<li>Run full end-to-end test.</li>
+</ol>
+
+<h2>15. Never Merge Everything At Once</h2>
+<p>Do not wait until the final day and merge five large branches simultaneously.</p>
+<p>Instead:</p>
+<pre>
+Day 1:
+schemas + CAP skeleton
+
+Day 2:
+Portal A works with CAP
+
+Day 2:
+Portal B works with CAP
+
+Day 3:
+Web → Core
+
+Day 3:
+Core → CAP
+
+Day 4:
+Portal A/B end-to-end
+
+Day 4:
+WhatsApp
+
+Day 5:
+Phone
+
+Day 5:
+MCP
+
+Final:
+polish + demo
+</pre>
+
+<h2>16. Integration Test</h2>
+<p>Create one script that exercises the entire system without the UI:</p>
+<pre>
+npm run test:e2e:cap
+</pre>
+
+<p>Expected:</p>
+<pre>
+1. Create incident
+2. Add synthetic evidence
+3. Validate
+4. Execute report_financial_fraud
+5. Portal A creates case
+6. incident.accepted event emitted
+7. Portal B receives case
+8. Portal B acknowledges
+9. response.acknowledged emitted
+10. Raksha case becomes ACKNOWLEDGED
+</pre>
+
+<h2>17. Channel Contract Test</h2>
+<p>All three user-facing channels must create equivalent canonical incidents for the same synthetic scenario.</p>
+<pre>
+WEB INPUT
+   └── incident A
+
+WHATSAPP INPUT
+   └── incident B
+
+PHONE INPUT
+   └── incident C
+
+Normalize:
+A == B == C
+for equivalent inputs
+</pre>
+
+<h2>18. Final Merge Procedure</h2>
+<pre>
+1. Stop feature work.
+2. Pull main.
+3. Merge/rebase each branch one at a time.
+4. Run typecheck.
+5. Run unit tests.
+6. Run CAP integration test.
+7. Run end-to-end demo.
+8. Verify environment variables.
+9. Deploy staging.
+10. Run end-to-end on staging.
+11. Tag the demo release.
+</pre>
+
+<h2>19. Staging</h2>
+<p>Deploy one known-good environment before the final demo. Point all adapters to the staging database and mock portals. Do not have one person's laptop acting as a hidden production dependency.</p>
+
+<h2>20. Environment Separation</h2>
+<pre>
+.env.local        local development
+.env.staging      demo environment
+production        only if explicitly needed
+</pre>
+<p>For the hackathon, staging can effectively be your “production demo.”</p>
+
+<h2>21. Ownership of Shared Files</h2>
+<table>
+<tr><th>File area</th><th>Owner</th><th>Rule</th></tr>
+<tr><td>packages/schemas</td><td>Joint</td><td>Freeze early; review changes.</td></tr>
+<tr><td>services/core</td><td>You</td><td>Teammate consumes through API.</td></tr>
+<tr><td>services/cap</td><td>You</td><td>Portal team should not modify directly.</td></tr>
+<tr><td>apps/portal-a</td><td>Teammate</td><td>You integrate through CAP.</td></tr>
+<tr><td>apps/portal-b</td><td>Teammate</td><td>You integrate through CAP.</td></tr>
+<tr><td>apps/web</td><td>You</td><td>Uses Core/CAP.</td></tr>
+<tr><td>WhatsApp/Phone</td><td>You</td><td>Channel adapters only.</td></tr>
+</table>
+
+<h2>22. What To Do If Contracts Need To Change</h2>
+<p>Do not silently modify them in one branch. Add a versioned schema:</p>
+<pre>
+raksha/0.1
+raksha/0.2
+</pre>
+<p>Update consumer + producer together in one integration PR.</p>
+
+<h2>23. Merge Checklist</h2>
+<ul>
+<li>Does the build pass?</li>
+<li>Does TypeScript typecheck?</li>
+<li>Do unit tests pass?</li>
+<li>Does CAP return the documented schema?</li>
+<li>Can Portal A create a case?</li>
+<li>Can Portal B consume it?</li>
+<li>Does the event path work?</li>
+<li>Does Web create the same incident?</li>
+<li>Does WhatsApp create the same incident?</li>
+<li>Does Phone create the same incident?</li>
+<li>Does MCP invoke the same CAP actions?</li>
+</ul>
+
+<h2>24. Communication Rule</h2>
+<div class="callout"><strong>Never coordinate by “just changing the backend and telling me later.”</strong> All shared contract changes go into the repository and are documented in the PR.</div>
+
+<h2>25. Final Team Milestone</h2>
+<p>The project is integrated only when one synthetic incident can travel:</p>
+<pre>
+Phone / WhatsApp / Web
+        ↓
+Raksha Core
+        ↓
+CAP
+        ↓
+Portal A
+        ↓
+CAP Event
+        ↓
+Portal B
+        ↓
+CAP Event
+        ↓
+Raksha Tracker
+</pre>
+<p>and the same CAP action can also be invoked by the MCP test agent.</p>
+
+<footer class="small">This collaboration plan intentionally favors simple Git workflows and a small number of shared contracts over complex release engineering.</footer>
+</body>
+</html>

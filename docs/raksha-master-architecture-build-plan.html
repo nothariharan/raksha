@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raksha — Complete System Architecture & Build Specification</title>
+<style>
+body{font-family:Inter,Arial,sans-serif;max-width:1200px;margin:auto;padding:42px 28px;line-height:1.65;color:#171717;background:#fafafa}
+h1{font-size:42px;margin:0 0 8px}h2{font-size:28px;margin-top:52px;border-bottom:1px solid #ddd;padding-bottom:8px}h3{font-size:21px;margin-top:30px}h4{font-size:17px}
+.lead{font-size:19px;color:#444}.box{background:#fff;border:1px solid #ddd;border-radius:9px;padding:18px;margin:16px 0}.callout{background:#eef5ff;border-left:5px solid #2563eb;padding:16px;margin:18px 0}.warn{background:#fff7e8;border-left:5px solid #b77900;padding:16px;margin:18px 0}.danger{background:#fff0f0;border-left:5px solid #b91c1c;padding:16px;margin:18px 0}
+pre{background:#151515;color:#f4f4f4;padding:17px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.5}
+code{font-family:monospace}table{width:100%;border-collapse:collapse;background:white;border:1px solid #ddd}th,td{padding:10px;text-align:left;vertical-align:top;border-bottom:1px solid #ddd}th{background:#eee}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.tag{display:inline-block;background:#eee;padding:4px 8px;border-radius:999px;font-size:12px;margin:3px}
+.small{font-size:13px;color:#666}.mono{font-family:monospace}@media(max-width:800px){.grid,.grid3{grid-template-columns:1fr}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="box">
+<div class="small">RAKSHA — BUILD WHAT MOVES INDIA — MASTER TECHNICAL ARCHITECTURE</div>
+<h1>Raksha: End-to-End System Architecture & Build Plan</h1>
+<p class="lead"><strong>Raksha</strong> is a multimodal emergency public-service interface for financial cyber-fraud reporting, backed by a deterministic incident engine and a proposed Civic Action Protocol (CAP). Humans can access the same incident workflow through Web, WhatsApp and Phone; future software/AI agents can access it through REST/MCP; two synthetic service portals consume CAP to demonstrate service-layer interoperability.</p>
+<span class="tag">Next.js</span><span class="tag">TypeScript</span><span class="tag">PostgreSQL/Supabase</span><span class="tag">CAP</span><span class="tag">REST</span><span class="tag">MCP</span><span class="tag">Playwright</span><span class="tag">Voice</span><span class="tag">WhatsApp</span><span class="tag">LLM/Vision</span>
+</div>
+
+<h2>1. System Goals</h2>
+<ul>
+<li>Convert messy emergency input into one canonical Financial Cyber Fraud Incident.</li>
+<li>Validate the incident deterministically against the required reporting schema.</li>
+<li>Preserve evidence references and integrity metadata.</li>
+<li>Route the validated incident through CAP to two independent synthetic service portals.</li>
+<li>Expose the same actions to future AI agents through MCP.</li>
+<li>Keep all channels on one backend and one case state machine.</li>
+<li>Produce a convincing, deterministic end-to-end demo without using real citizen credentials or unapproved live government systems.</li>
+</ul>
+
+<h2>2. Product Boundary</h2>
+<div class="callout"><strong>The product has two layers:</strong> Raksha is the human emergency experience; CAP is the machine-action and service interoperability layer beneath it.</div>
+<pre>
+Human:
+Phone / WhatsApp / Web
+        ↓
+Raksha Core
+        ↓
+CAP
+   ┌────┴─────┐
+   ↓          ↓
+Portal A    Portal B
+</pre>
+<p>Portal A should represent a cyber-fraud intake service. Portal B should represent a financial-institution response console. The two portals should be deliberately different so the demo proves CAP connects independent service actors rather than cloning two copies of the same site.</p>
+
+<h2>3. Global Architecture</h2>
+<pre>
+                         ┌───────────────────────────┐
+                         │         USERS             │
+                         │ Citizen / Relative / Agent│
+                         └─────────────┬─────────────┘
+                                       │
+             ┌─────────────────────────┼────────────────────────┐
+             ↓                         ↓                        ↓
+        WEB APP                    WHATSAPP                  PHONE
+      Next.js UI                  Adapter                  Telephony
+             │                         │                        │
+             └─────────────────────────┼────────────────────────┘
+                                       ↓
+                           ┌───────────────────────┐
+                           │     RAKSHA CORE       │
+                           │ Session + Incident    │
+                           │ LLM/Vision + Evidence│
+                           │ Validation + State    │
+                           └───────────┬───────────┘
+                                       ↓
+                           ┌───────────────────────┐
+                           │         CAP           │
+                           │ Service registry      │
+                           │ Actions + Events      │
+                           │ Verification          │
+                           └───────┬────────┬──────┘
+                                   │        │
+                                   ↓        ↓
+                         ┌────────────┐  ┌────────────┐
+                         │ PORTAL A   │  │ PORTAL B   │
+                         │ Cyber      │  │ Financial  │
+                         │ intake     │  │ response   │
+                         └────────────┘  └────────────┘
+</pre>
+
+<h2>4. Deployment Topology</h2>
+<p>For the hackathon, keep the deployment simple and reliable rather than creating unnecessary microservices.</p>
+<pre>
+Vercel
+└── Next.js Web App
+    ├── Citizen UI
+    ├── Developer/CAP visualization
+    └── API route proxies where appropriate
+
+Render
+└── Raksha Backend
+    ├── REST API
+    ├── CAP service
+    ├── Incident engine
+    ├── Validation engine
+    ├── State machine
+    ├── MCP server
+    ├── Webhook receivers
+    └── Adapter layer
+
+Supabase
+├── PostgreSQL
+├── Object Storage (synthetic evidence)
+└── Optional auth for demo identities
+
+External services
+├── WhatsApp provider/webhook
+├── Telephony/voice provider
+├── LLM/Vision API
+└── TTS/STT
+
+Teammate deployments
+├── Portal A
+└── Portal B
+</pre>
+<p>If you already have an existing Render backend or deployment convention, keep it. Do not introduce a second backend platform merely for this project.</p>
+
+<h2>5. Core Modules</h2>
+<table>
+<tr><th>Module</th><th>Responsibility</th></tr>
+<tr><td>Channel adapters</td><td>Normalize Web, WhatsApp and Phone input into a common InputEvent.</td></tr>
+<tr><td>LLM/Vision</td><td>Extract candidate incident facts and generate one-question clarifications.</td></tr>
+<tr><td>Incident service</td><td>Create/update canonical incident records.</td></tr>
+<tr><td>Validation engine</td><td>Deterministic completeness, contradiction and schema checks.</td></tr>
+<tr><td>Evidence service</td><td>Store synthetic evidence, hashes and metadata.</td></tr>
+<tr><td>Case state machine</td><td>Controls lifecycle from intake through handoff and tracking.</td></tr>
+<tr><td>CAP</td><td>Common action interface for portals and future agents.</td></tr>
+<tr><td>Event layer</td><td>Moves typed case events between services.</td></tr>
+<tr><td>MCP server</td><td>Exposes safe CAP operations to an AI agent.</td></tr>
+<tr><td>Adapter registry</td><td>Maps CAP actions to mock API / Playwright / future approved APIs.</td></tr>
+</table>
+
+<h2>6. Canonical Incident Schema</h2>
+<pre>{
+  "protocol_version": "raksha/0.1",
+  "incident_id": "RKS-000001",
+  "type": "FINANCIAL_CYBER_FRAUD",
+  "reporter": {
+    "mobile": "+91XXXXXXXXXX",
+    "language": "hi"
+  },
+  "narrative": {
+    "text": "...",
+    "source": "voice"
+  },
+  "transaction": {
+    "amount": 5000,
+    "currency": "INR",
+    "channel": "UPI",
+    "transaction_id": "DEMO-UTR-1234",
+    "transaction_datetime": "2026-08-24T18:42:00+05:30",
+    "debit_institution": "DEMO-SBI",
+    "beneficiary_identifier": "fraudster@example"
+  },
+  "evidence": ["EV-001", "EV-002"],
+  "validation_status": "READY",
+  "case_state": "PACKET_READY",
+  "external_references": []
+}</pre>
+
+<h2>7. Input Abstraction</h2>
+<p>Every channel must produce one of the following normalized events.</p>
+<pre>
+InputEvent =
+  TEXT
+  VOICE
+  IMAGE
+  DOCUMENT
+  USER_CONFIRMATION
+  USER_CORRECTION
+</pre>
+<p>This prevents channel-specific business logic.</p>
+
+<h2>8. AI Layer</h2>
+<p>The LLM/Vision layer does only semantic work:</p>
+<ul>
+<li>Speech-to-text / text understanding.</li>
+<li>Entity extraction from narrative.</li>
+<li>Visual extraction from transaction screenshots.</li>
+<li>Cross-source reconciliation.</li>
+<li>Generation of a single clarification question.</li>
+<li>Plain-language explanation.</li>
+</ul>
+<div class="danger"><strong>LLM cannot directly mark an incident as officially submitted, cannot invent an acknowledgement number, and cannot directly execute arbitrary CAP actions.</strong></div>
+
+<h2>9. Deterministic Validation</h2>
+<pre>
+Candidate incident
+      ↓
+JSON Schema validation
+      ↓
+Required-field validator
+      ↓
+Cross-field consistency
+      ↓
+Policy checks
+      ↓
+READY / INCOMPLETE / CONFLICT
+</pre>
+<p>Example contradiction: screenshot says ₹5,000 while voice says ₹50,000. Result must be CONFLICT and ask the user to resolve it.</p>
+
+<h2>10. Case State Machine</h2>
+<pre>
+INTAKE
+  ↓
+EXTRACTING
+  ↓
+VALIDATING
+  ├── INCOMPLETE → QUESTION_PENDING → VALIDATING
+  └── CONFLICT   → USER_CONFIRMATION → VALIDATING
+  ↓
+READY
+  ↓
+EVIDENCE_SEALED
+  ↓
+HANDOFF_PENDING
+  ↓
+SUBMITTED
+  ↓
+ACKNOWLEDGED
+  ↓
+FOLLOW_UP_REQUIRED
+  ↓
+TRACKING
+</pre>
+
+<h2>11. Evidence Capsule</h2>
+<p>Store original synthetic evidence references, SHA-256 hashes, timestamps, source channel, extraction version and processing events. Hashes provide integrity verification; they should not be presented as a guarantee of legal admissibility.</p>
+
+<h2>12. CAP Architecture</h2>
+<p>CAP is the stable service boundary. Portals should not know about Raksha's internal LLM implementation.</p>
+<pre>
+CAP
+├── Capability Registry
+├── Action Router
+├── Schema Registry
+├── Policy / Authorization
+├── Event Publisher
+├── Event Subscriber
+└── Case Reference Mapping
+</pre>
+
+<h3>Minimum CAP operations</h3>
+<pre>
+GET  /cap/capabilities
+POST /cap/cases
+POST /cap/actions/validate
+POST /cap/actions/execute
+GET  /cap/cases/:id
+GET  /cap/cases/:id/events
+POST /cap/events
+</pre>
+
+<h2>13. Portal A — Cyber Fraud Intake</h2>
+<p>Portal A should expose a realistic but deliberately narrow set of capabilities.</p>
+<pre>
+report_financial_fraud
+attach_evidence
+get_case
+get_case_status
+</pre>
+<p>It receives the CAP incident, validates required values again at the service boundary, creates its local case, then emits:</p>
+<pre>incident.accepted</pre>
+
+<h2>14. Portal B — Financial Institution Response</h2>
+<p>Portal B should look like an operations console rather than another citizen portal.</p>
+<pre>
+get_incident
+verify_transaction
+acknowledge_response
+update_response
+get_response_status
+</pre>
+<p>Portal B subscribes to <code>incident.accepted</code>. It then gets the incident using CAP, displays it to an operator and emits a response event.</p>
+
+<h2>15. Cross-Portal Flow</h2>
+<pre>
+Citizen
+ ↓
+Raksha
+ ↓
+CAP: create/execute(report_financial_fraud)
+ ↓
+Portal A
+ ↓
+incident.accepted
+ ↓
+CAP event
+ ↓
+Portal B
+ ↓
+CAP: get_incident()
+ ↓
+CAP: acknowledge_response()
+ ↓
+response.acknowledged
+ ↓
+Raksha case tracker updates
+</pre>
+
+<h2>16. REST API and MCP</h2>
+<p>REST is the system integration contract. MCP is the AI-agent exposure layer above REST/CAP.</p>
+<pre>
+AI Agent
+   ↓ MCP
+Raksha MCP Server
+   ↓
+CAP API
+   ↓
+Policy + State
+   ↓
+Service Adapter
+</pre>
+<p>Suggested MCP tools:</p>
+<pre>
+report_financial_fraud
+add_evidence
+validate_incident
+request_missing_field
+submit_incident
+get_incident_status
+</pre>
+
+<h2>17. Voice/Phone Agent</h2>
+<p>Use a telephony provider + realtime voice stack. The phone layer is a thin adapter; it should not own incident state.</p>
+<pre>
+Phone number
+  ↓
+Telephony provider
+  ↓
+Voice agent / STT-TTS
+  ↓
+Raksha webhook
+  ↓
+Core Incident Service
+</pre>
+<p>For the demo, a browser-based phone simulator is acceptable if a real Indian number is not stable enough for judges. If using a production-style provider, confirm the exact product and account availability before tying the build to it.</p>
+
+<h2>18. WhatsApp Agent</h2>
+<pre>
+WhatsApp
+  ↓
+Webhook
+  ↓
+Message normalizer
+  ↓
+Raksha Core
+</pre>
+<p>Text, audio and images are all normalized into the same InputEvent schema.</p>
+
+<h2>19. Web UI</h2>
+<p>The Web UI should have two modes:</p>
+<ul>
+<li><strong>Citizen mode:</strong> voice/screenshot/one-question flow.</li>
+<li><strong>Developer mode:</strong> CAP calls, event stream, service registry and case graph for the demo.</li>
+</ul>
+
+<h2>20. UI States</h2>
+<pre>
+HOME
+ ↓
+CAPTURE
+ ↓
+UNDERSTANDING
+ ↓
+REVIEW
+ ↓
+ONE_MISSING_QUESTION (if needed)
+ ↓
+READY_TO_REPORT
+ ↓
+SUBMITTED
+ ↓
+TRACKING
+</pre>
+
+<h2>21. Mock Portal UX</h2>
+<p>Portal A and Portal B should look visually independent from Raksha. The point is to prove that CAP connects systems even when their frontends are different.</p>
+
+<h2>22. Playwright Harness</h2>
+<p>Use Playwright only for the synthetic portal or an organizer-approved sandbox.</p>
+<pre>
+CAP action
+  ↓
+adapter
+  ↓
+Playwright
+  ↓
+mock portal
+  ↓
+confirmation
+  ↓
+structured CAP response
+</pre>
+<p>Never use browser automation to circumvent production authentication, CAPTCHA, MFA or access control.</p>
+
+<h2>23. Data/Database Model</h2>
+<pre>
+incidents
+evidence
+case_events
+cap_cases
+cap_actions
+cap_capabilities
+handoffs
+notifications
+</pre>
+
+<p>Keep the schema minimal. Supabase/Postgres is enough for the entire demo.</p>
+
+<h2>24. Eventing</h2>
+<p>For a hackathon, use a database-backed event table plus server-side dispatch rather than Kafka or a complex broker.</p>
+<pre>
+event inserted
+ ↓
+CAP dispatcher
+ ↓
+subscriber registered?
+ ↓
+handler
+ ↓
+new event
+</pre>
+
+<h2>25. Security</h2>
+<ul>
+<li>Synthetic identities only.</li>
+<li>No real banking credentials.</li>
+<li>No real OTP/PIN/password storage.</li>
+<li>CAP actions are allowlisted.</li>
+<li>High-impact actions require explicit confirmation.</li>
+<li>Adapters fail closed.</li>
+<li>Every action has a case/correlation ID.</li>
+<li>Webhooks are authenticated where practical.</li>
+</ul>
+
+<h2>26. Recommended Environment Variables</h2>
+<pre>
+DATABASE_URL=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
+OPENAI_API_KEY=
+
+WHATSAPP_WEBHOOK_SECRET=
+WHATSAPP_ACCESS_TOKEN=
+
+VOICE_PROVIDER_API_KEY=
+VOICE_PROVIDER_PHONE_NUMBER=
+
+CAP_INTERNAL_SECRET=
+CAP_PUBLIC_BASE_URL=
+
+PORTAL_A_BASE_URL=
+PORTAL_B_BASE_URL=
+</pre>
+
+<p>Keep secrets in deployment environment configuration; never commit them.</p>
+
+<h2>27. Local Development</h2>
+<pre>
+Terminal 1:
+npm run dev:web
+
+Terminal 2:
+npm run dev:api
+
+Terminal 3:
+npm run dev:portal-a
+
+Terminal 4:
+npm run dev:portal-b
+
+Optional:
+npm run dev:voice
+npm run dev:whatsapp
+</pre>
+
+<p>Use one root command with concurrently/Turborepo if convenient, but don't let orchestration tooling become the project.</p>
+
+<h2>28. Integration Contract Between You and Teammate</h2>
+<p>Before parallel development, freeze these files:</p>
+<pre>
+packages/schemas/incident.ts
+packages/schemas/cap.ts
+packages/schemas/events.ts
+packages/cap-sdk/index.ts
+</pre>
+<p>Those are the contracts both sides program against.</p>
+
+<h2>29. Demo Sequence</h2>
+<ol>
+<li>Citizen uses voice and screenshot in Raksha.</li>
+<li>Raksha extracts incident details.</li>
+<li>Validator catches or confirms completeness.</li>
+<li>Evidence capsule is created.</li>
+<li>CAP submits to Portal A.</li>
+<li>Portal A emits <code>incident.accepted</code>.</li>
+<li>Portal B receives the event and loads the incident via CAP.</li>
+<li>Portal B acknowledges/updates it.</li>
+<li>Raksha receives the response event.</li>
+<li>Switch to developer view: show the same CAP calls invoked by an MCP agent.</li>
+</ol>
+
+<h2>30. Definition of Done</h2>
+<table>
+<tr><th>Area</th><th>Done when...</th></tr>
+<tr><td>Web</td><td>Can create complete incident from voice + screenshot.</td></tr>
+<tr><td>WhatsApp</td><td>Can create/update same incident object from text/audio/image.</td></tr>
+<tr><td>Phone</td><td>Can capture the same minimum fields using voice.</td></tr>
+<tr><td>Core</td><td>One state machine drives all channels.</td></tr>
+<tr><td>CAP</td><td>Both portals call the same CAP contract.</td></tr>
+<tr><td>Portal A</td><td>Can create and acknowledge an incident.</td></tr>
+<tr><td>Portal B</td><td>Can consume accepted incident and emit response event.</td></tr>
+<tr><td>MCP</td><td>AI agent can invoke at least report/validate/status tools.</td></tr>
+<tr><td>Demo</td><td>One incident travels end-to-end through every layer without manual database edits.</td></tr>
+</table>
+
+<h2>31. Build Order</h2>
+<ol>
+<li>Freeze schemas and CAP contracts.</li>
+<li>Build core incident service + DB.</li>
+<li>Build Portal A/B against CAP mocks.</li>
+<li>Implement CAP event path.</li>
+<li>Build Web UI.</li>
+<li>Connect LLM/Vision extraction.</li>
+<li>Add evidence capsule.</li>
+<li>Add WhatsApp adapter.</li>
+<li>Add phone adapter.</li>
+<li>Add MCP adapter.</li>
+<li>Run full integration demo.</li>
+<li>Polish only after the full happy path works.</li>
+</ol>
+
+<h2>32. The Architectural Principle</h2>
+<div class="callout"><strong>Channels change. Government services change. AI models change. The canonical incident, CAP contract, policy engine and case state machine should not.</strong></div>
+
+<footer class="small">This is a hackathon architecture. CAP endpoints and protocol schemas are proposed interfaces, not claims about existing government APIs. Live government integration should only be used where an approved sandbox/official API is available.</footer>
+</body>
+</html>

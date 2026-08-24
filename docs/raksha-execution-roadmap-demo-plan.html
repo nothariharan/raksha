@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raksha — Execution Roadmap & Daily Build Checklist</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1150px;margin:auto;padding:42px 28px;line-height:1.65;background:#fafafa;color:#171717}
+h1{font-size:42px}h2{font-size:28px;margin-top:48px;border-bottom:1px solid #ddd;padding-bottom:8px}h3{font-size:21px}
+.box{background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;margin:15px 0}.callout{background:#eef5ff;border-left:5px solid #2563eb;padding:16px;margin:16px 0}.warn{background:#fff7e8;border-left:5px solid #b77900;padding:16px;margin:16px 0}
+pre{background:#171717;color:#f5f5f5;padding:16px;border-radius:8px;overflow:auto;font-size:13px}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd}th,td{padding:10px;vertical-align:top;border-bottom:1px solid #ddd;text-align:left}th{background:#eee}
+</style>
+</head>
+<body>
+<h1>Raksha — Execution Roadmap, Milestones & Demo Checklist</h1>
+<p>This document is the practical execution plan for taking the Raksha architecture from empty repository to a reliable hackathon demo. The priority is integration risk, not feature count.</p>
+
+<h2>1. The Only Critical Path</h2>
+<pre>
+Shared Schemas
+    ↓
+Core Incident Engine
+    ↓
+CAP
+    ↓
+Portal A
+    ↓
+Portal B + Events
+    ↓
+Web
+    ↓
+WhatsApp
+    ↓
+Phone
+    ↓
+MCP
+    ↓
+Full Demo
+</pre>
+<p>If any layer below CAP is unstable, do not spend time polishing the layer above it.</p>
+
+<h2>2. Milestone 0 — Contract Freeze</h2>
+<div class="box">
+<h3>Deliverables</h3>
+<ul>
+<li>Incident schema.</li><li>CAP action schema.</li><li>Event schema.</li><li>Capability manifest.</li><li>Portal A actions.</li><li>Portal B actions.</li>
+</ul>
+<h3>Exit condition</h3>
+<p>You and teammate can independently write code against the same interfaces without asking what a field means.</p>
+</div>
+
+<h2>3. Milestone 1 — Core Backend</h2>
+<ul>
+<li>Create Postgres/Supabase tables.</li>
+<li>Implement incident creation.</li>
+<li>Implement evidence records.</li>
+<li>Implement validation.</li>
+<li>Implement case state machine.</li>
+<li>Implement event persistence.</li>
+</ul>
+<h3>Test</h3>
+<pre>
+POST incident
+→ validate
+→ state = READY
+→ event = incident.ready
+</pre>
+
+<h2>4. Milestone 2 — CAP Skeleton</h2>
+<ul>
+<li>Capability registry.</li>
+<li>Action router.</li>
+<li>Action validation.</li>
+<li>Action execution.</li>
+<li>Case lookup.</li>
+<li>Event publication.</li>
+</ul>
+
+<h2>5. Milestone 3 — Portal A</h2>
+<p>Teammate builds the cybercrime intake portal against CAP.</p>
+<pre>
+CAP.execute("report_financial_fraud", incident)
+       ↓
+Portal A
+       ↓
+local portal case
+       ↓
+incident.accepted
+</pre>
+
+<h2>6. Milestone 4 — Portal B</h2>
+<p>Portal B listens for <code>incident.accepted</code>, retrieves the case through CAP, and lets an operator acknowledge/update the response.</p>
+
+<h2>7. Milestone 5 — Web UI</h2>
+<ul>
+<li>Emergency landing screen.</li>
+<li>Voice input.</li>
+<li>Screenshot input.</li>
+<li>Extraction review.</li>
+<li>One-question missing-field flow.</li>
+<li>Evidence capsule.</li>
+<li>Submit.</li>
+<li>Case tracker.</li>
+<li>Developer CAP visualization.</li>
+</ul>
+
+<h2>8. Milestone 6 — WhatsApp</h2>
+<p>Support the minimum viable conversation:</p>
+<pre>
+START
+→ voice note / text
+→ ask for screenshot
+→ extract
+→ confirm transaction
+→ validate
+→ submit
+→ send reference
+</pre>
+<p>Do not build a full conversational assistant.</p>
+
+<h2>9. Milestone 7 — Phone</h2>
+<p>Support:</p>
+<pre>
+greeting
+→ language selection / detection
+→ incident description
+→ amount
+→ request screenshot/SMS if necessary
+→ confirmation
+→ handoff
+→ reference
+</pre>
+<p>For the demo, keep the voice vocabulary narrow and make the fallback path robust.</p>
+
+<h2>10. Language Architecture</h2>
+<pre>
+User language
+   ↓
+STT / text
+   ↓
+canonical structured incident
+   ↓
+English/internal schema
+   ↓
+result
+   ↓
+TTS / translated response
+   ↓
+user language
+</pre>
+<p>Do not translate every backend field into multiple languages. Only the conversational boundary needs localization.</p>
+
+<h2>11. Milestone 8 — MCP</h2>
+<p>Implement an AI-agent test client that can:</p>
+<ul>
+<li>create a financial-fraud incident;</li>
+<li>add evidence;</li>
+<li>validate;</li>
+<li>submit;</li>
+<li>retrieve status.</li>
+</ul>
+<p>It should generate exactly the same backend case as the Web/WhatsApp/Phone routes.</p>
+
+<h2>12. Milestone 9 — Full Integration</h2>
+<pre>
+Scenario:
+₹5,000 UPI fraud
+
+Web:
+works
+
+WhatsApp:
+works
+
+Phone:
+works
+
+Portal A:
+case created
+
+Portal B:
+case received
+
+CAP:
+events emitted
+
+MCP:
+same action works
+
+Final:
+Raksha tracker reflects current state
+</pre>
+
+<h2>13. Daily Priority Rule</h2>
+<div class="callout"><strong>Every day, fix the deepest broken layer before building new surface features.</strong></div>
+<pre>
+Bad:
+Add animation to web while CAP is broken.
+
+Good:
+Fix CAP → verify Portal A → verify Portal B → then polish web.
+</pre>
+
+<h2>14. Definition of “Demo Ready”</h2>
+<table>
+<tr><th>Requirement</th><th>Pass condition</th></tr>
+<tr><td>Web</td><td>One incident submitted without manual backend edits.</td></tr>
+<tr><td>WhatsApp</td><td>One incident submitted through chat channel.</td></tr>
+<tr><td>Phone</td><td>One incident reaches READY and can be submitted.</td></tr>
+<tr><td>Portal A</td><td>CAP creates case.</td></tr>
+<tr><td>Portal B</td><td>CAP event triggers receipt + operator view.</td></tr>
+<tr><td>Evidence</td><td>Hash and metadata visible.</td></tr>
+<tr><td>Validation</td><td>One missing field can be recovered conversationally.</td></tr>
+<tr><td>MCP</td><td>Agent invokes same CAP action successfully.</td></tr>
+<tr><td>Recovery</td><td>Handoff failure does not create a false success.</td></tr>
+</table>
+
+<h2>15. Demo Data Pack</h2>
+<p>Create one synthetic persona and three evidence variants.</p>
+<ul>
+<li><strong>Persona:</strong> Ramesh Kumar.</li>
+<li><strong>Fraud:</strong> electricity-bill impersonation.</li>
+<li><strong>Amount:</strong> ₹5,000.</li>
+<li><strong>Channel:</strong> UPI.</li>
+<li><strong>Evidence:</strong> bank SMS screenshot, payment screenshot, voice note.</li>
+<li><strong>Missing-field variant:</strong> screenshot with unreadable UTR.</li>
+<li><strong>Conflict variant:</strong> voice says ₹50,000, screenshot says ₹5,000.</li>
+</ul>
+
+<h2>16. Demo Script</h2>
+<pre>
+0:00
+User speaks in Hindi.
+
+0:08
+Raksha identifies the incident.
+
+0:15
+User adds screenshot.
+
+0:22
+Fields extracted.
+
+0:30
+Validator says complete.
+
+0:35
+Evidence capsule sealed.
+
+0:42
+CAP execute(report_financial_fraud).
+
+0:50
+Portal A creates case.
+
+1:00
+incident.accepted event.
+
+1:08
+Portal B receives case.
+
+1:15
+Portal B acknowledges.
+
+1:22
+Raksha case updates.
+
+1:30
+Show missing-field recovery.
+
+1:40
+Show MCP agent making the same CAP call.
+
+1:52
+Show architecture.
+
+2:00
+End.
+</pre>
+
+<h2>17. What to Record for the Video</h2>
+<ul>
+<li>One complete happy-path recording.</li>
+<li>One short missing-field capture.</li>
+<li>One short MCP developer recording.</li>
+<li>One clean architecture screen capture.</li>
+</ul>
+<p>Do not rely on a live external telephony network for the only recording. Have a deterministic local/simulated fallback video path.</p>
+
+<h2>18. Failure Drills Before Submission</h2>
+<table>
+<tr><th>Failure</th><th>Expected behavior</th></tr>
+<tr><td>LLM timeout</td><td>Show retry; do not corrupt incident.</td></tr>
+<tr><td>Vision extraction wrong</td><td>User review prevents automatic submission.</td></tr>
+<tr><td>CAP unavailable</td><td>Case remains HANDOFF_PENDING.</td></tr>
+<tr><td>Portal A unavailable</td><td>No false acknowledgement.</td></tr>
+<tr><td>Portal B unavailable</td><td>case remains accepted; response pending.</td></tr>
+<tr><td>WhatsApp webhook duplicates</td><td>Idempotency key prevents duplicate incidents.</td></tr>
+<tr><td>Phone drops</td><td>Resume by incident ID / callback.</td></tr>
+</table>
+
+<h2>19. Idempotency</h2>
+<p>Every action should include an idempotency key so retries do not create duplicate reports.</p>
+<pre>
+Idempotency-Key:
+RKS-000821-report-01
+</pre>
+
+<h2>20. Logging</h2>
+<p>Log only what is needed for debugging the synthetic demo.</p>
+<pre>
+correlation_id
+incident_id
+channel
+action
+status
+latency
+error_code
+</pre>
+
+<h2>21. Observability Screen</h2>
+<p>Add a simple internal developer view:</p>
+<pre>
+CAP TRACE
+
+18:42:01 incident.created
+18:42:03 evidence.added
+18:42:05 validation.ready
+18:42:06 cap.execute(report_financial_fraud)
+18:42:07 portal-a.case.created
+18:42:08 incident.accepted
+18:42:10 portal-b.case.loaded
+18:42:12 response.acknowledged
+</pre>
+
+<h2>22. Final Day Strategy</h2>
+<ul>
+<li>Freeze features.</li>
+<li>Freeze schemas.</li>
+<li>Freeze UI components.</li>
+<li>Use only synthetic data.</li>
+<li>Run the complete demo from a clean environment.</li>
+<li>Record a backup screen-only version.</li>
+<li>Have a local fallback if phone/WhatsApp integration fails.</li>
+</ul>
+
+<h2>23. Cut List If Time Gets Tight</h2>
+<table>
+<tr><th>Keep</th><th>Cut first</th></tr>
+<tr><td>Core incident engine</td><td>Fancy analytics</td></tr>
+<tr><td>CAP</td><td>Complex service discovery UI</td></tr>
+<tr><td>Portal A</td><td>Extra portal screens</td></tr>
+<tr><td>Portal B</td><td>Extra operator metrics</td></tr>
+<tr><td>Web</td><td>Animation</td></tr>
+<tr><td>One working WhatsApp flow</td><td>Rich conversational branching</td></tr>
+<tr><td>Phone happy path</td><td>Multiple voice personalities</td></tr>
+<tr><td>MCP demo</td><td>Full production auth</td></tr>
+</table>
+
+<h2>24. Final Success Criterion</h2>
+<div class="callout"><strong>If a judge can watch one incident enter through voice, move through Raksha, cross CAP into Portal A, trigger Portal B through an event, return to Raksha, and then see an AI agent invoke the same CAP action — the project is successful.</strong></div>
+
+<footer style="margin-top:60px;border-top:1px solid #ddd;padding-top:20px;color:#666;font-size:13px">
+<p>This roadmap is intentionally optimized for a hackathon demonstration rather than production scale.</p>
+</footer>
+</body>
+</html>

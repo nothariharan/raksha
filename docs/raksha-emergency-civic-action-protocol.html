@@ -1,0 +1,276 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Raksha — Emergency Civic Action Protocol</title><style>body{font-family:Arial,Helvetica,sans-serif;max-width:1150px;margin:0 auto;padding:40px 28px;line-height:1.65;color:#171717;background:#fafafa}h1{font-size:42px;margin:0 0 10px}h2{font-size:28px;margin-top:52px;border-bottom:1px solid #ddd;padding-bottom:8px}h3{font-size:21px;margin-top:30px}.lead{font-size:19px;color:#444}.small{font-size:13px;color:#666}.box{background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;margin:16px 0}.callout{background:#eef5ff;border-left:5px solid #2563eb;padding:16px;margin:18px 0}.warn{background:#fff7e7;border-left:5px solid #b77900;padding:16px;margin:18px 0}.danger{background:#fff0f0;border-left:5px solid #b91c1c;padding:16px;margin:18px 0}pre{background:#151515;color:#f5f5f5;padding:16px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.5}code{font-family:monospace}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ddd}th,td{padding:10px;text-align:left;vertical-align:top;border-bottom:1px solid #ddd}th{background:#eee}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.tag{display:inline-block;background:#eee;padding:4px 8px;border-radius:999px;font-size:12px;margin:3px}@media(max-width:800px){.grid,.grid3{grid-template-columns:1fr}h1{font-size:34px}}</style></head><body>
+<div class="box"><div class="small">BUILD WHAT MOVES INDIA — RAKSHA ARCHITECTURE / PRODUCT / PROTOCOL SPECIFICATION</div><h1>Raksha</h1><p class="lead"><strong>An Autonomous Emergency Incident Protocol for public services.</strong> The first implementation is financial cyber-fraud reporting through India's 1930 / NCRP / CFCFRMS ecosystem. Raksha gives humans an emergency interface built for panic, while defining a machine-readable API/MCP interface that future AI agents can use to perform the same structured public-service action.</p><span class="tag">Voice</span><span class="tag">WhatsApp</span><span class="tag">Web</span><span class="tag">Multimodal AI</span><span class="tag">Deterministic Validation</span><span class="tag">Evidence Capsule</span><span class="tag">1930 Handoff</span><span class="tag">REST API</span><span class="tag">MCP</span><span class="tag">Agent-Ready Government</span></div>
+<h2>1. Core Thesis</h2><p>Emergency public services are badly matched to human behavior during emergencies. A person who has just lost money is operating under fear, time pressure, incomplete information, poor memory and often low digital literacy.</p><div class="callout"><strong>Raksha changes the interaction model from form completion to incident capture → validation → official handoff → tracking.</strong></div><p>The first use case is financial cyber fraud. The citizen speaks naturally and attaches a transaction screenshot or bank SMS. Raksha constructs the structured incident information needed for the official reporting process. AI handles messy input; deterministic infrastructure decides whether the packet is complete and what must happen next.</p>
+<h2>2. Why Raksha Is Not a GPT Wrapper</h2><div class="grid3"><div class="box"><h3>Persistent incident</h3><p>There is a case, schema, evidence, validation state and handoff state.</p></div><div class="box"><h3>Deterministic execution</h3><p>The LLM cannot invent an acknowledgement, official status or bank action.</p></div><div class="box"><h3>Multiple interfaces</h3><p>Phone, WhatsApp, web and AI agents all create the same Incident Packet.</p></div><div class="box"><h3>Evidence integrity</h3><p>Original evidence is preserved with hashes and timestamps.</p></div><div class="box"><h3>Government handoff</h3><p>The product is designed around an official emergency rail rather than replacing it.</p></div><div class="box"><h3>Agent interface</h3><p>The future-facing API/MCP layer exposes a typed public-service action rather than a page to click.</p></div></div>
+<h2>3. Existing Official Rail</h2><p>The official NCRP/1930 ecosystem already provides the emergency reporting mechanism for financial cyber fraud, and official instructions require transaction and supporting information. MHA has also described API integration between banks and the CFCFRMS module for real-time information exchange and consequent financial actions such as lien marking.</p><div class="warn"><strong>Do not claim a public complaint API exists unless an approved interface is provided.</strong> The hackathon prototype should use a synthetic 1930/CFCFRMS gateway. The production architecture should replace that adapter with an officially approved API if one becomes available.</div>
+<h2>4. Two Products, One Protocol</h2><pre>                         RAKSHA PROTOCOL
+                               |
+              +----------------+----------------+
+              |                                 |
+        HUMAN INTERFACES                    MACHINE INTERFACE
+              |                                 |
+    +---------+---------+                 REST API / MCP
+    |         |         |                      |
+  PHONE    WHATSAPP     WEB             AI agents / apps
+    |         |         |                      |
+    +---------+---------+----------------------+
+                              |
+                              v
+                  RAKSHA INCIDENT CORE
+                              |
+                   validated incident
+                              |
+                              v
+                 official handoff adapter
+                              |
+                     1930 / NCRP / CFCFRMS</pre><h3>Human product</h3><p>A panic-first interface that accepts voice, screenshot, SMS, or text and asks only the minimum missing question.</p><h3>Machine product</h3><p>A REST/MCP interface where an AI agent or authorized application can invoke <code>report_financial_fraud</code>, add evidence, receive validation errors, submit, and track.</p>
+<h2>5. Revolutionary Thesis</h2><p>The long-term argument is not “government needs another API.” India already has APIs. The claim is:</p><div class="callout"><strong>Public services should expose typed, safe actions for both humans and software agents, with the same schema, validation, state and audit semantics.</strong></div><p>Today an AI agent that needs to report cyber fraud would be pushed toward browser automation. Raksha demonstrates a better model: the agent invokes a machine-readable civic action while the government-facing adapter handles the execution.</p><pre>Human → Voice/Web/WhatsApp → Raksha Action Protocol → Government
+AI Agent → MCP/REST → Raksha Action Protocol → Government</pre>
+<h2>6. Emergency Incident Packet</h2><pre>{
+  "protocol_version":"raksha/0.1",
+  "incident_id":"RKS-2026-000821",
+  "action":"REPORT_FINANCIAL_CYBER_FRAUD",
+  "jurisdiction":"IN",
+  "reporter":{"mobile":"+91-XXXXXXXXXX","preferred_language":"hi"},
+  "narrative":{"text":"Electricity scam call; ₹5,000 sent","source":"voice"},
+  "transaction":{
+    "amount":5000,"currency":"INR","channel":"UPI",
+    "transaction_id":"DEMO-UTR-98213",
+    "transaction_datetime":"2026-08-24T18:42:17+05:30",
+    "debit_institution":"SYNTHETIC-SBI",
+    "beneficiary_identifier":"fraudster@example"
+  },
+  "evidence":[
+    {"type":"TRANSACTION_SCREENSHOT","uri":"synthetic://evidence/EV-001","sha256":"..."},
+    {"type":"VOICE_STATEMENT","uri":"synthetic://evidence/EV-002","sha256":"..."}
+  ],
+  "validation":{"status":"READY","missing_fields":[],"warnings":[]},
+  "handoff":{"target":"mock-1930","status":"READY"}
+}</pre>
+<h2>7. State Machine</h2><pre>INTAKE
+  ↓
+EXTRACTION
+  ↓
+VALIDATION
+  ├── INCOMPLETE → ASK_ONE_QUESTION → VALIDATION
+  ├── CONTRADICTION → ASK_CONFIRMATION → VALIDATION
+  └── COMPLETE
+          ↓
+EVIDENCE_SEALED
+          ↓
+PACKET_READY
+          ↓
+HANDOFF_PENDING
+          ↓
+SUBMITTED
+          ↓
+ACKNOWLEDGED
+          ↓
+FOLLOW_UP_REQUIRED
+          ↓
+TRACKING</pre>
+<p>The LLM can propose extracted values and questions. It cannot bypass validation or change the incident into an official “submitted” state without an acknowledged handoff.</p>
+<h2>8. Multimodal Intake</h2><table><tr><th>Input</th><th>AI processing</th><th>Structured output</th></tr><tr><td>Voice note</td><td>Speech recognition + entity extraction</td><td>fraud type, amount, app/channel, narrative, possible bank</td></tr><tr><td>Bank SMS screenshot</td><td>Vision/OCR + field extraction</td><td>amount, UTR/RRN, timestamp, bank</td></tr><tr><td>UPI screenshot</td><td>Vision parsing</td><td>transaction identity, beneficiary, amount</td></tr><tr><td>Mixed evidence</td><td>Cross-source reconciliation</td><td>merged incident + conflicts</td></tr></table>
+<h2>9. Deterministic Validation</h2><pre>LLM / Vision extraction
+        ↓
+JSON schema validation
+        ↓
+1930 reporting requirements
+        ↓
++ missing field → one-question prompt
++ contradiction → user confirmation
++ complete → packet READY</pre><p>Example: voice says ₹50,000 while the bank screenshot says ₹5,000. Raksha must stop and ask which is correct. If the UTR is unreadable, it asks only for the transaction number. It never silently guesses.</p>
+<h2>10. Evidence Capsule</h2><p>The Evidence Capsule preserves references to raw evidence and records integrity fingerprints from the moment of capture.</p><pre>EVIDENCE CAPSULE
+Incident: RKS-2026-000821
+
+Original voice      SHA-256: abc...
+Screenshot #1       SHA-256: def...
+Transcript          SHA-256: ghi...
+Captured at         2026-08-24T18:43:02+05:30
+Protocol version    raksha/0.1
+Events              captured → parsed → validated → submitted</pre><div class="warn">SHA-256 proves integrity against the corresponding hash; do not describe hashing alone as a guarantee of legal admissibility.</div>
+<h2>11. Privacy and Redaction</h2><p>Raksha should minimize outgoing evidence. The user may send a screenshot containing unrelated account balances, phone numbers or other personal information. The extraction layer identifies what is actually required, while the handoff layer sends only the minimum necessary structured content and evidence references.</p><pre>RAW SCREENSHOT
+  ├─ transaction details ✓
+  ├─ required bank detail ✓
+  ├─ unrelated balance ✗
+  ├─ unrelated messages ✗
+  └─ saved credentials ✗
+          ↓
+MINIMIZED INCIDENT PACKET</pre>
+<h2>12. One-Question UX</h2><pre>Raksha:
+“I found the amount, bank and transaction number.
+I only need one thing: when did the payment happen?”
+
+User:
+“Today at 6:42.”
+
+Raksha:
+“Thank you. Your emergency report is ready.”</pre><p>This is a core product principle: <strong>never make a panicked user operate the backend form.</strong></p>
+<h2>13. REST API</h2><pre>POST /v1/incidents
+POST /v1/incidents/{id}/evidence
+POST /v1/incidents/{id}/validate
+POST /v1/incidents/{id}/submit
+GET  /v1/incidents/{id}
+GET  /v1/incidents/{id}/events</pre><p>These are proposed Raksha protocol endpoints, not claims that the government currently exposes these exact endpoints.</p>
+<h2>14. MCP Interface</h2><pre>AI AGENT
+   |
+   | MCP
+   v
+RAKSHA MCP SERVER
+   ├── report_financial_fraud
+   ├── add_evidence
+   ├── validate_incident
+   ├── request_missing_field
+   ├── submit_incident
+   └── get_incident_status
+   |
+   v
+RAKSHA CORE API
+   |
+   v
+STATE MACHINE + POLICY</pre><p>MCP is only the AI-agent transport/tool interface. Raksha's actual innovation is the typed civic action, validation model, evidence model, state machine and handoff semantics underneath it.</p>
+<h2>15. Example MCP Call</h2><pre>report_financial_fraud({
+  "amount":5000,
+  "currency":"INR",
+  "channel":"UPI",
+  "transaction_id":"DEMO-UTR-98213",
+  "transaction_datetime":"2026-08-24T18:42:17+05:30",
+  "debit_institution":"SYNTHETIC-SBI",
+  "beneficiary_identifier":"fraudster@example",
+  "evidence_refs":["EV-001","EV-002"]
+})</pre><p>Possible response:</p><pre>{
+  "status":"INCOMPLETE",
+  "incident_id":"RKS-2026-000821",
+  "missing_fields":["reporter.mobile"],
+  "next_question":"Please provide the mobile number used for the report."
+}</pre>
+<h2>16. Government Handoff Adapter</h2><pre>Incident Packet
+      ↓
+HANDOFF ADAPTER
+      ├─ Official approved API
+      ├─ Government sandbox
+      ├─ Approved partner integration
+      └─ Playwright against synthetic portal
+</pre><p>The core does not care how the downstream system is implemented. This is the migration boundary.</p>
+<h2>17. Playwright Harness</h2><p>For the hackathon, build a synthetic 1930/NCRP-like portal and automate only that environment. The visible browser action demonstrates that the packet can become a real executable workflow without connecting to production government infrastructure.</p><pre>Raksha
+  ↓
+submit incident
+  ↓
+Mock Government Adapter
+  ↓
+Playwright
+  ↓
+Mock 1930 Portal
+  ↓
+ACK-1930-RK-8821</pre><div class="danger"><strong>Do not use Playwright to log into or manipulate a real government account during the hackathon.</strong> Use synthetic identities/evidence or an organizer-approved public sandbox.</div>
+<h2>18. Production Path</h2><table><tr><th>Stage</th><th>Adapter</th></tr><tr><td>Hackathon</td><td>Mock API + mock portal</td></tr><tr><td>Approved pilot</td><td>Organizer/government sandbox</td></tr><tr><td>Production</td><td>Officially documented government API or approved integration</td></tr><tr><td>Legacy environment</td><td>Certified/approved browser adapter where permitted</td></tr></table>
+<h2>19. Handoff Output</h2><pre>{
+  "handoff_status":"ACCEPTED",
+  "external_reference":"1930-XXXX",
+  "received_at":"...",
+  "next_required_action":"COMPLETE_PORTAL_FOLLOWUP"
+}</pre><p>If handoff fails, Raksha remains in <code>HANDOFF_PENDING</code> or <code>REJECTED</code>. It never claims submission without a downstream acknowledgement.</p>
+<h2>20. Case Tracking</h2><pre>CASE #RKS-2026-000821
+
+18:42  Incident captured
+18:43  Evidence sealed
+18:43  Packet validated
+18:44  Handoff submitted
+18:44  Official reference received
+18:44  Portal follow-up required
+--:--  Awaiting official update</pre>
+<h2>21. The Agent-Native Government Thesis</h2><p>The second half of Raksha matters because future personal AI agents will need to do more than answer questions. They will need to execute authorized actions in public systems. A human-facing webpage is a poor machine interface. A typed action contract is safer and easier to validate.</p><pre>Old model:
+AI → browser → click page → read error → retry
+
+Raksha model:
+AI → MCP/API → typed civic action → deterministic validation → official handoff</pre><div class="callout"><strong>Raksha is therefore both an emergency UX and a reference design for agent-native public services.</strong></div>
+<h2>22. Security Boundaries</h2><ul><li>Never store real bank passwords, UPI PINs, OTPs or government credentials.</li><li>Never allow the LLM to call arbitrary endpoints.</li><li>Every action passes schema and policy validation.</li><li>Never invent official references or recovery outcomes.</li><li>High-impact actions require stronger authorization.</li><li>Evidence is minimized and access-controlled.</li><li>Browser adapters fail closed when page structure changes.</li></ul>
+<h2>23. Suggested Backend Architecture</h2><pre>Next.js / Node API
+       |
+       +-------------------+
+       |                   |
+ Incident Service      MCP Server
+       |                   |
+       +---------+---------+
+                 |
+          Policy / Schema
+              Engine
+                 |
+            State Machine
+                 |
+      +----------+----------+
+      |                     |
+Evidence Service       Handoff Service
+      |                     |
+Hashes / metadata      Adapter Registry
+                              |
+                    +---------+---------+
+                    |         |         |
+                  Mock API  Playwright Official API</pre>
+<h2>24. Database Model</h2><pre>incidents
+  id
+  protocol_version
+  action_type
+  jurisdiction
+  status
+  created_at
+  updated_at
+
+incident_fields
+  incident_id
+  field_name
+  value
+  source
+  confidence
+  verified
+
+evidence
+  id
+  incident_id
+  type
+  uri
+  sha256
+  captured_at
+
+handoffs
+  id
+  incident_id
+  adapter
+  status
+  external_reference
+  submitted_at
+
+events
+  id
+  incident_id
+  type
+  occurred_at
+  payload_hash</pre>
+<h2>25. UI Flow</h2><h3>Emergency Home</h3><pre>WHAT HAPPENED?
+
+[ Speak ]
+[ Show payment ]
+[ Type ]</pre><h3>Review</h3><pre>I found:
+₹5,000
+UPI
+18:42
+SBI
+UTR: 98213...
+
+[ YES, THIS IS THE TRANSACTION ]</pre><h3>One Missing Field</h3><pre>Everything is ready except:
+Transaction date
+
+[ Tell me ]</pre><h3>Ready</h3><pre>✓ Report complete
+✓ Evidence secured
+
+[ REPORT NOW ]</pre><h3>After Handoff</h3><pre>REPORT ACCEPTED
+Reference: RK-8821
+NEXT: Complete the required portal step.</pre>
+<h2>26. Testing Plan</h2><table><tr><th>Case</th><th>Expected behavior</th></tr><tr><td>Complete screenshot</td><td>Instant READY state.</td></tr><tr><td>Missing UTR</td><td>One-question clarification.</td></tr><tr><td>Contradictory amount</td><td>Stop and request confirmation.</td></tr><tr><td>Multiple transactions</td><td>Ask user to select the correct transaction.</td></tr><tr><td>Unreadable evidence</td><td>Request clearer evidence; no fabrication.</td></tr><tr><td>Handoff failure</td><td>Remain pending/rejected; do not fake success.</td></tr><tr><td>Duplicate incident</td><td>Detect matching incident and warn user.</td></tr></table>
+<h2>27. The 2-Minute Demo</h2><table><tr><th>Time</th><th>Demo</th><th>Point</th></tr><tr><td>0:00–0:10</td><td>Victim speaks + sends screenshot</td><td>Emergency UX</td></tr><tr><td>0:10–0:30</td><td>Extraction appears</td><td>Multimodal AI</td></tr><tr><td>0:30–0:45</td><td>One missing field</td><td>Deterministic trust boundary</td></tr><tr><td>0:45–1:00</td><td>Evidence capsule</td><td>Integrity + audit</td></tr><tr><td>1:00–1:15</td><td>Mock 1930 submission</td><td>Real executable workflow</td></tr><tr><td>1:15–1:30</td><td>Reference + next step</td><td>Official handoff semantics</td></tr><tr><td>1:30–1:45</td><td>MCP call</td><td>Agent-native interface</td></tr><tr><td>1:45–2:00</td><td>Architecture</td><td>Same protocol, many interfaces</td></tr></table>
+<h2>28. What We Are Actually Claiming</h2><p>Do not claim that Raksha invented cyber-fraud response, 1930, CFCFRMS, bank integration, APIs or MCP. Those pieces already exist in different forms.</p><div class="callout"><strong>The claim is narrower and stronger:</strong> Raksha demonstrates a reusable emergency public-service action protocol where the same structured action can be initiated by a human through voice/web/WhatsApp or by an AI agent through API/MCP, while the same deterministic validation, evidence, state and handoff layer protects both paths.</div>
+<h2>29. Why This Could Be Bigger Than Raksha</h2><p>After cyber fraud, the protocol could support other emergency or high-friction public-service actions if approved service contracts become available. Examples include identity theft reporting, unauthorized account activity, emergency document loss, or other public-service incidents.</p><p>Those are future extensions, not hackathon scope.</p>
+<h2>30. Final Product Narrative</h2><div class="callout"><strong>When someone loses money, the first thing they should lose is not another hour figuring out a government form.</strong></div><p>Raksha turns panic into a structured incident, evidence into an auditable packet, and a human emergency workflow into a machine-readable action. The citizen-facing product solves today's problem. The API/MCP layer points toward a future where AI agents can safely interact with public services through typed actions instead of screen scraping.</p>
+<h2>31. Final MVP Checklist</h2><ol><li>Web emergency intake.</li><li>Voice note ingestion.</li><li>Screenshot extraction.</li><li>Financial-fraud incident schema.</li><li>Deterministic validation.</li><li>One-question clarification.</li><li>Evidence capsule + hashes.</li><li>Mock 1930 gateway.</li><li>Mock 1930 portal with Playwright.</li><li>REST action endpoint.</li><li>MCP server exposing the same actions.</li><li>Case tracking and event log.</li><li>2-minute polished demo.</li></ol>
+<footer style="margin-top:60px;border-top:1px solid #ddd;padding-top:20px;color:#666;font-size:13px"><p><strong>Note:</strong> Proposed Raksha protocol endpoints, MCP tools and data structures are original design proposals, not claims about current government APIs. Use synthetic data and mock services unless an organizer-approved government sandbox or official integration is provided.</p></footer>
+</body></html>

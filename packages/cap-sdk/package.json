@@ -1,0 +1,26 @@
+{
+  "name": "@raksha/cap-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Civic Action Protocol (CAP) client SDK for Portals, Services, and Agents",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@raksha/schemas": "workspace:*",
+    "@raksha/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

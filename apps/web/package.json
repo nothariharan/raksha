@@ -1,0 +1,31 @@
+{
+  "name": "@raksha/web",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Raksha Citizen Web App & Developer Action Console",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@raksha/cap-sdk": "workspace:*",
+    "@raksha/i18n": "workspace:*",
+    "@raksha/schemas": "workspace:*",
+    "@raksha/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
