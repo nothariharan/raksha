@@ -23,6 +23,43 @@ export interface NextAction {
   options?: Array<{ label: string; value: unknown }>;
 }
 
+export type NormalizedInputEvent =
+  | {
+      type: "TEXT";
+      source: InputSource;
+      text: string;
+      language?: string;
+      messageId?: string;
+      senderPhone?: string;
+    }
+  | {
+      type: "IMAGE";
+      source: InputSource;
+      mediaUrl: string;
+      ocrText?: string;
+      language?: string;
+      messageId?: string;
+      senderPhone?: string;
+    }
+  | {
+      type: "VOICE";
+      source: InputSource;
+      mediaUrl: string;
+      audioTranscript?: string;
+      language?: string;
+      messageId?: string;
+      senderPhone?: string;
+    }
+  | {
+      type: "CONFIRMATION";
+      source: InputSource;
+      field?: string;
+      value: string | number | boolean;
+      language?: string;
+      messageId?: string;
+      senderPhone?: string;
+    };
+
 export interface ProcessRequest {
   incidentId?: string;
   source: InputSource;
@@ -37,6 +74,7 @@ export interface ProcessRequest {
     field: string;
     answerValue: unknown;
   };
+  inputEvent?: NormalizedInputEvent;
 }
 
 export interface ProcessResponse {

@@ -14,9 +14,11 @@
     "dev:cap": "pnpm --filter @raksha/cap dev",
     "dev:portal-a": "pnpm --filter @raksha/portal-a dev",
     "dev:portal-b": "pnpm --filter @raksha/portal-b dev",
-    "dev:web": "pnpm --filter @raksha/web dev"
+    "dev:web": "pnpm --filter @raksha/web dev",
+    "dev:whatsapp": "pnpm --filter @raksha/agent-whatsapp dev"
   },
   "devDependencies": {
+    "@raksha/agent-whatsapp": "workspace:*",
     "@raksha/cap": "workspace:*",
     "@raksha/cap-sdk": "workspace:*",
     "@raksha/core": "workspace:*",

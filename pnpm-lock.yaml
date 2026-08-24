@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@raksha/agent-whatsapp':
+        specifier: workspace:*
+        version: link:agents/whatsapp
       '@raksha/cap':
         specifier: workspace:*
         version: link:services/cap
@@ -91,6 +94,9 @@ importers:
       '@raksha/cap-sdk':
         specifier: workspace:*
         version: link:../../packages/cap-sdk
+      '@raksha/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@raksha/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@raksha/cap-sdk": "workspace:*",
+    "@raksha/i18n": "workspace:*",
     "@raksha/schemas": "workspace:*",
     "@raksha/shared": "workspace:*"
   },

@@ -1,8 +1,15 @@
-/**
- * Raksha WhatsApp Agent Adapter (Phase 0 Skeleton)
- */
+import { createWhatsAppWebhookServer } from "./webhook.js";
 
-export const AGENT_NAME = "raksha-agent-whatsapp";
-export const AGENT_VERSION = "0.1.0";
+export * from "./conversation-store.js";
+export * from "./message-normalizer.js";
+export * from "./whatsapp-service.js";
+export * from "./webhook.js";
 
-console.log(`[WhatsApp Agent] Adapter initialized.`);
+const PORT = Number(process.env.PORT_WHATSAPP) || 3005;
+
+if (process.env.NODE_ENV !== "test") {
+  const server = createWhatsAppWebhookServer();
+  server.listen(PORT, () => {
+    console.log(`[Raksha WhatsApp Agent] Listening on http://localhost:${PORT}`);
+  });
+}
