@@ -32,6 +32,9 @@ importers:
       '@raksha/shared':
         specifier: workspace:*
         version: link:packages/shared
+      '@raksha/web':
+        specifier: workspace:*
+        version: link:apps/web
       '@types/node':
         specifier: ^22.13.0
         version: 22.20.1

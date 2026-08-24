@@ -9,7 +9,9 @@ import { ReconciliationResult } from "../reconciliation/reconciler.js";
 export type NextActionType = "NONE" | "ASK_USER" | "CONFIRM_CONFLICT" | "READY_FOR_HANDOFF";
 
 export interface ClarificationDecision {
+  type: NextActionType;
   nextActionType: NextActionType;
+  field?: string;
   missingField?: string;
   conflictField?: string;
   prompt: string;
@@ -32,7 +34,9 @@ export class ClarificationEngine {
       const promptHi = `लेन-देन विवरण में अंतर पाया गया: ${conflict.sources.join(" बनाम ")}। कृपया सही विवरण की पुष्टि करें।`;
 
       return {
+        type: "CONFIRM_CONFLICT",
         nextActionType: "CONFIRM_CONFLICT",
+        field: conflict.field,
         conflictField: conflict.field,
         prompt: lang === "hi" ? promptHi : promptEn,
         localizedPrompts: {
@@ -51,7 +55,9 @@ export class ClarificationEngine {
     // 2. Missing UTR (Critical for Golden Hour 1930 / Bank Lien)
     if (result.missingCrucialFields.includes("transaction.transactionId")) {
       return {
+        type: "ASK_USER",
         nextActionType: "ASK_USER",
+        field: "transaction.transactionId",
         missingField: "transaction.transactionId",
         prompt: i18n.askMissingUTR,
         localizedPrompts: {
@@ -70,7 +76,9 @@ export class ClarificationEngine {
     // 3. Missing Amount
     if (result.missingCrucialFields.includes("transaction.amount")) {
       return {
+        type: "ASK_USER",
         nextActionType: "ASK_USER",
+        field: "transaction.amount",
         missingField: "transaction.amount",
         prompt: i18n.askMissingAmount,
         localizedPrompts: {
@@ -89,7 +97,9 @@ export class ClarificationEngine {
     // 4. Missing Timestamp
     if (result.missingCrucialFields.includes("transaction.timestamp")) {
       return {
+        type: "ASK_USER",
         nextActionType: "ASK_USER",
+        field: "transaction.timestamp",
         missingField: "transaction.timestamp",
         prompt: i18n.askMissingDate,
         localizedPrompts: {
@@ -107,6 +117,7 @@ export class ClarificationEngine {
 
     // 5. Complete & Ready for Official Submission
     return {
+      type: "READY_FOR_HANDOFF",
       nextActionType: "READY_FOR_HANDOFF",
       prompt: i18n.reportReady,
       localizedPrompts: {

@@ -89,20 +89,30 @@ export class ProcessService {
       sourceId: `${input.modality}#${Date.now()}`,
     });
 
-    // 4. Handle direct user clarification answer if provided
+    const existingCandidates = this.incidentCandidatesMap.get(incident.id) || [];
+
+    // 4. Handle direct user clarification / conflict resolution answer
     if (input.userClarificationAnswer) {
       const { field, answerValue } = input.userClarificationAnswer;
-      if (field === "transaction.transactionId" || field === "transactionId") {
-        candidate.transactionId = String(answerValue);
-      } else if (field === "transaction.amount" || field === "amount") {
+      if (field === "transaction.amount" || field === "amount") {
         candidate.amount = Number(answerValue);
+        for (const ec of existingCandidates) {
+          ec.amount = Number(answerValue);
+        }
+      } else if (field === "transaction.transactionId" || field === "transactionId") {
+        candidate.transactionId = String(answerValue);
+        for (const ec of existingCandidates) {
+          ec.transactionId = String(answerValue);
+        }
       } else if (field === "transaction.timestamp" || field === "timestamp") {
         candidate.transactionDatetime = String(answerValue);
+        for (const ec of existingCandidates) {
+          ec.transactionDatetime = String(answerValue);
+        }
       }
     }
 
     // Append to incident candidate history
-    const existingCandidates = this.incidentCandidatesMap.get(incident.id) || [];
     existingCandidates.push(candidate);
     this.incidentCandidatesMap.set(incident.id, existingCandidates);
 

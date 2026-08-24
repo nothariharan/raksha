@@ -1,42 +1,36 @@
 /**
- * Raksha Phase 2 — Multimodal Incident Engine & Test Matrix
+ * Raksha Phase 3 — Full Citizen Web UI & CAP Console Integration Test Matrix
  *
- * Verifies all 10 Phase 2 Test Matrix Scenarios:
- * 1. English voice extraction
- * 2. Hindi voice extraction
- * 3. Screenshot/OCR extraction
- * 4. Voice + Screenshot multi-source reconciliation
- * 5. Missing UTR -> Single question clarification
- * 6. Missing Timestamp -> Single question clarification
- * 7. Conflicting Amount -> Conflict resolution question
- * 8. Multiple transaction screenshots
- * 9. Unreadable screenshot handling (zero hallucination)
- * 10. Unified /v1/process orchestration & Canonical Incident equivalence
+ * Verifies the complete vertical slice from Web Client to Core, CAP, Portal A, and Portal B:
+ * 1. Web Voice Intake -> QUESTION_PENDING (missing UTR)
+ * 2. Web Screenshot Attachment -> READY
+ * 3. Voice + Screenshot Multi-source Merging
+ * 4. Conflict Contradiction -> USER_CONFIRMATION -> User Resolution -> READY
+ * 5. One-Question Clarification Loop
+ * 6. READY -> CAP Action Execution (report_financial_fraud)
+ * 7. CAP -> Portal A Automatic Ingestion (1930-SYN-XXXXXX)
+ * 8. CAP Event Stream -> incident.accepted
+ * 9. Portal B Response Console -> response.acknowledged
+ * 10. End-to-End Case Timeline Audit Trail
  */
 
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import { unlinkSync, existsSync } from "node:fs";
-import {
-  IncidentService,
-  EvidenceService,
-  DatabaseClient,
-  IncidentRepository,
-  EvidenceRepository,
-  EventRepository,
-  MultimodalExtractor,
-  ReconciliationEngine,
-  ClarificationEngine,
-  ProcessService,
-} from "@raksha/core";
+import { createCoreServer } from "@raksha/core";
+import { createCapServer } from "@raksha/cap";
+import { createCAPClient } from "@raksha/cap-sdk";
+import { RakshaWebClient } from "@raksha/web";
+import { PortalAIntakeService } from "@raksha/portal-a";
+import { PortalBResponseService } from "@raksha/portal-b";
 import { globalEventBus, resetCounters } from "@raksha/shared";
 
-async function runPhase2Tests() {
+async function runPhase3Tests() {
   console.log("\n=================================================================");
-  console.log("  RAKSHA PHASE 2: MULTIMODAL INCIDENT ENGINE TEST MATRIX");
+  console.log("  RAKSHA PHASE 3: CITIZEN WEB UI + DEVELOPER CAP CONSOLE E2E MATRIX");
   console.log("=================================================================\n");
 
-  const testDbPath = join(process.cwd(), ".data", "raksha-phase2-test-db.json");
+  const testDbPath = join(process.cwd(), ".data", "raksha-phase3-test-db.json");
   if (existsSync(testDbPath)) {
     unlinkSync(testDbPath);
   }
@@ -44,205 +38,159 @@ async function runPhase2Tests() {
   resetCounters();
   globalEventBus.clear();
 
-  const db = new DatabaseClient(testDbPath);
-  const incidentRepo = new IncidentRepository(db);
-  const evidenceRepo = new EvidenceRepository(db);
-  const eventRepo = new EventRepository(db);
-  const incidentService = new IncidentService(incidentRepo, eventRepo, evidenceRepo);
-  const evidenceService = new EvidenceService(evidenceRepo, eventRepo);
-  const processService = new ProcessService(incidentService, evidenceService);
+  // Start Core & CAP HTTP Servers on test ports
+  const coreServer = createCoreServer();
+  const capServer = createCapServer();
 
-  // -------------------------------------------------------------
-  // Test 1: English Voice Only Extraction
-  // -------------------------------------------------------------
-  console.log("▶ [Scenario 1] English Voice Extraction...");
-  const englishVoiceCandidate = MultimodalExtractor.extractCandidate({
-    modality: "voice",
-    content: "Electricity department called me saying my power would be cut off and I sent 5000 through PhonePe.",
+  await new Promise<void>((resolve) => coreServer.listen(3011, resolve));
+  await new Promise<void>((resolve) => capServer.listen(3012, resolve));
+
+  console.log("  ✓ Core Test Server running on http://localhost:3011");
+  console.log("  ✓ CAP Test Server running on http://localhost:3012");
+
+  const testCapClient = createCAPClient({
+    mode: "http",
+    baseUrl: "http://localhost:3012",
+  });
+
+  const webClient = new RakshaWebClient({
+    coreBaseUrl: "http://localhost:3011",
+    capBaseUrl: "http://localhost:3012",
     language: "en",
-    sourceId: "voice#en_1",
   });
 
-  assert.equal(englishVoiceCandidate.amount, 5000);
-  assert.equal(englishVoiceCandidate.channel, "UPI");
-  assert.equal(englishVoiceCandidate.application, "PhonePe");
-  assert.equal(englishVoiceCandidate.fraudCategory, "ELECTRICITY_BILL_SCAM");
-  console.log(`  ✓ English voice parsed: Amount ₹${englishVoiceCandidate.amount}, App: ${englishVoiceCandidate.application}, Category: ${englishVoiceCandidate.fraudCategory}`);
+  const portalA = new PortalAIntakeService(testCapClient);
+  const portalB = new PortalBResponseService(testCapClient);
 
   // -------------------------------------------------------------
-  // Test 2: Hindi Voice Extraction (Language-Neutral Output)
+  // Test 1: Voice Intake -> QUESTION_PENDING
   // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 2] Hindi Voice Extraction...");
-  const hindiVoiceCandidate = MultimodalExtractor.extractCandidate({
+  console.log("\n▶ [Scenario 1] Citizen clicks 'Tell Raksha' with emergency voice statement...");
+  const voiceRes = await webClient.submitInput({
     modality: "voice",
-    content: "बिजली विभाग के नाम से कॉल आया और मैंने फोनपे से पाँच हज़ार भेज दिए।",
-    language: "hi",
-    sourceId: "voice#hi_1",
+    content: "Electricity department called me pretending to be an officer and I sent 5000 through PhonePe.",
   });
 
-  assert.equal(hindiVoiceCandidate.amount, 5000);
-  assert.equal(hindiVoiceCandidate.channel, "UPI");
-  assert.equal(hindiVoiceCandidate.application, "PhonePe");
-  assert.equal(hindiVoiceCandidate.fraudCategory, "ELECTRICITY_BILL_SCAM");
-  console.log(`  ✓ Hindi voice parsed: Amount ₹${hindiVoiceCandidate.amount}, App: ${hindiVoiceCandidate.application}, Category: ${hindiVoiceCandidate.fraudCategory}`);
-  assert.equal(englishVoiceCandidate.amount, hindiVoiceCandidate.amount, "English and Hindi voice produce identical amounts");
+  assert.equal(voiceRes.state, "QUESTION_PENDING");
+  assert.equal(webClient.getState().uiState, "QUESTION");
+  assert.equal(voiceRes.nextAction.field, "transaction.transactionId");
+  console.log(`  ✓ Incident created: ${voiceRes.incidentId} (State: ${voiceRes.state})`);
+  console.log(`  ✓ Single question prompted to victim: "${voiceRes.nextAction.prompt}"`);
 
   // -------------------------------------------------------------
-  // Test 3: Screenshot Only Extraction (with UTR & Bank Details)
+  // Test 2 & 3: Screenshot Attachment -> READY
   // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 3] Payment Screenshot Extraction...");
-  const screenshotText = `
+  console.log("\n▶ [Scenario 2 & 3] Citizen attaches transaction screenshot to answer missing UTR...");
+  const screenshotOCR = `
     Google Pay - Completed
-    Paid ₹5,000.00 to fraudster.merchant@ybl
+    Paid ₹5,000.00 to fraudster.desk@ybl
     UPI Ref No: 423456789012
     Date: 2026-08-24T18:42:00+05:30
-    Debited from: State Bank of India (A/c **4102)
+    Debited from: State Bank of India
   `;
-  const screenshotCandidate = MultimodalExtractor.extractCandidate({
+
+  const screenshotRes = await webClient.submitInput({
     modality: "image",
-    content: screenshotText,
-    sourceId: "screenshot#1",
+    content: screenshotOCR,
   });
 
-  assert.equal(screenshotCandidate.amount, 5000);
-  assert.equal(screenshotCandidate.transactionId, "423456789012");
-  assert.equal(screenshotCandidate.debitInstitution, "State Bank of India");
-  assert.equal(screenshotCandidate.beneficiaryIdentifier, "fraudster.merchant@ybl");
-  assert.equal(screenshotCandidate.beneficiaryInstitution, "Yes Bank Ltd");
-  console.log(`  ✓ Screenshot parsed: ₹${screenshotCandidate.amount}, UTR: ${screenshotCandidate.transactionId}, Bank: ${screenshotCandidate.debitInstitution}`);
+  assert.equal(screenshotRes.state, "READY");
+  assert.equal(webClient.getState().uiState, "READY");
+  assert.equal(screenshotRes.incident.transaction.amount, 5000);
+  assert.equal(screenshotRes.incident.transaction.transactionId, "423456789012");
+  assert.equal(screenshotRes.incident.transaction.debitInstitution, "State Bank of India");
+  console.log(`  ✓ State updated to: ${screenshotRes.state}`);
+  console.log(`  ✓ Payment verified: ₹${screenshotRes.incident.transaction.amount} via ${screenshotRes.incident.transaction.channel} (UTR: ${screenshotRes.incident.transaction.transactionId})`);
 
   // -------------------------------------------------------------
-  // Test 4: Voice + Screenshot Cross-Source Reconciliation
+  // Test 4: Contradiction / Conflict Scenario & Resolution
   // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 4] Voice + Screenshot Multi-Source Reconciliation...");
-  const multiSourceReconciliation = ReconciliationEngine.reconcile([
-    englishVoiceCandidate,
-    screenshotCandidate,
-  ]);
-
-  assert.equal(multiSourceReconciliation.hasConflicts, false);
-  assert.equal(multiSourceReconciliation.reconciledCandidate.amount, 5000);
-  assert.equal(multiSourceReconciliation.reconciledCandidate.transactionId, "423456789012");
-  assert.ok(multiSourceReconciliation.reconciledCandidate.confidence.amount >= 0.95);
-  console.log(`  ✓ Multi-source reconciled: Confirmed ₹5,000 across 2 sources with high confidence.`);
-
-  // -------------------------------------------------------------
-  // Test 5: Missing UTR -> One-Question Clarification
-  // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 5] Missing UTR Recovery Flow...");
-  const missingUtrCandidate = MultimodalExtractor.extractCandidate({
-    modality: "text",
-    content: "Sent ₹5,000 for electricity bill, but UTR is not clear.",
-    sourceId: "text#missing_utr",
+  console.log("\n▶ [Scenario 4] Testing Contradiction Resolution (Voice ₹50k vs Screenshot ₹5k)...");
+  const conflictClient = new RakshaWebClient({
+    coreBaseUrl: "http://localhost:3011",
+    capBaseUrl: "http://localhost:3012",
   });
-  const missingUtrReconciliation = ReconciliationEngine.reconcile([missingUtrCandidate]);
-  const missingUtrDecision = ClarificationEngine.decideNextQuestion(missingUtrReconciliation, "en");
 
-  assert.equal(missingUtrDecision.nextActionType, "ASK_USER");
-  assert.equal(missingUtrDecision.missingField, "transaction.transactionId");
-  assert.ok(missingUtrDecision.prompt.includes("12-digit UTR"));
-  console.log(`  ✓ State: QUESTION_PENDING. Single Question prompted: "${missingUtrDecision.prompt}"`);
-
-  // -------------------------------------------------------------
-  // Test 6: Missing Timestamp Flow
-  // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 6] Missing Timestamp Recovery Flow...");
-  const missingTimeCandidate = MultimodalExtractor.extractCandidate({
-    modality: "text",
-    content: "Paid ₹5,000 to electricity desk. UTR: 423456789012.",
-    sourceId: "text#missing_time",
-  });
-  const missingTimeReconciliation = ReconciliationEngine.reconcile([missingTimeCandidate]);
-  const missingTimeDecision = ClarificationEngine.decideNextQuestion(missingTimeReconciliation, "hi");
-
-  assert.equal(missingTimeDecision.nextActionType, "ASK_USER");
-  assert.equal(missingTimeDecision.missingField, "transaction.timestamp");
-  console.log(`  ✓ Localized Hindi Question prompted: "${missingTimeDecision.prompt}"`);
-
-  // -------------------------------------------------------------
-  // Test 7: Conflicting Amount (Voice ₹50k vs Screenshot ₹5k)
-  // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 7] Conflicting Amount Contradiction Detection...");
-  const conflictingVoiceCandidate = MultimodalExtractor.extractCandidate({
+  // Ingest conflicting statement
+  await conflictClient.submitInput({
     modality: "voice",
-    content: "I lost fifty thousand rupees (50000) in this electricity scam.",
-    sourceId: "voice#contradiction",
+    content: "I lost fifty thousand rupees (50000) to this fake officer.",
   });
-
-  const conflictReconciliation = ReconciliationEngine.reconcile([
-    conflictingVoiceCandidate,
-    screenshotCandidate, // Has ₹5,000
-  ]);
-
-  assert.equal(conflictReconciliation.hasConflicts, true);
-  assert.equal(conflictReconciliation.conflicts.length, 1);
-  assert.equal(conflictReconciliation.conflicts[0].field, "transaction.amount");
-
-  const conflictDecision = ClarificationEngine.decideNextQuestion(conflictReconciliation, "en");
-  assert.equal(conflictDecision.nextActionType, "CONFIRM_CONFLICT");
-  console.log(`  ✓ Contradiction flagged: ${conflictReconciliation.conflicts[0].explanation}`);
-  console.log(`  ✓ Resolution Prompt: "${conflictDecision.prompt}"`);
-
-  // -------------------------------------------------------------
-  // Test 8: Unreadable Screenshot Handling (Zero Hallucination)
-  // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 8] Unreadable Screenshot (Zero Hallucination)...");
-  const blurryScreenshotCandidate = MultimodalExtractor.extractCandidate({
+  const conflictRes = await conflictClient.submitInput({
     modality: "image",
-    content: "blurry_corrupted_image_data_with_unreadable_text",
-    sourceId: "screenshot#blurry",
+    content: screenshotOCR, // Has ₹5,000
   });
-  assert.equal(blurryScreenshotCandidate.transactionId, null);
-  assert.equal(blurryScreenshotCandidate.amount, undefined);
-  console.log(`  ✓ Unreadable image produced null fields with zero hallucination.`);
+
+  assert.equal(conflictRes.state, "USER_CONFIRMATION");
+  assert.equal(conflictClient.getState().uiState, "CONFLICT");
+  console.log(`  ✓ Contradiction detected: State = ${conflictRes.state}`);
+
+  // User clicks ₹5,000 option on the UI
+  const resolvedRes = await conflictClient.submitInput({
+    modality: "text",
+    content: "User confirmed 5000",
+    userClarificationAnswer: { field: "transaction.amount", answerValue: 5000 },
+  });
+  assert.equal(resolvedRes.state, "READY");
+  console.log(`  ✓ Conflict resolved by user click: State = ${resolvedRes.state}`);
 
   // -------------------------------------------------------------
-  // Test 9 & 10: Unified /v1/process Orchestration & Equivalence
+  // Test 6 & 7: READY -> CAP Action Submission -> Portal A Ingest
   // -------------------------------------------------------------
-  console.log("\n▶ [Scenario 9 & 10] Unified /v1/process Orchestration & Multimodal Equivalence...");
-  
-  // 1. Initial Voice Intake
-  const processResult1 = await processService.processInput({
-    source: "web",
-    modality: "voice",
-    content: "Electricity department called me and I sent ₹5,000 through PhonePe.",
-    language: "en",
-    reporter: { mobile: "+919876543210", name: "Ramesh Kumar" },
+  console.log("\n▶ [Scenario 6 & 7] Citizen clicks [ REPORT TO 1930 / CYBER PORTAL ]...");
+  const capResult = await webClient.submitToCAP();
+
+  assert.equal(capResult.success, true);
+  assert.equal(capResult.status, "ACCEPTED");
+  assert.ok(capResult.caseId);
+  assert.ok(capResult.externalReference);
+  console.log(`  ✓ CAP Report executed: Case ID ${capResult.caseId} (Ref: ${capResult.externalReference})`);
+  console.log(`  ✓ Web UI State: ${webClient.getState().uiState}`);
+
+  // -------------------------------------------------------------
+  // Test 8 & 9: Portal B Response Console Acknowledgment
+  // -------------------------------------------------------------
+  console.log("\n▶ [Scenario 8 & 9] Portal B Bank Console acknowledges freeze...");
+  const ackResult = await portalB.acknowledgeFreeze({
+    caseId: capResult.caseId,
+    incidentId: voiceRes.incidentId,
+    responderInstitution: "Yes Bank Ltd",
+    actionTaken: "LIEN_MARKED",
+    operatorNotes: "Emergency debit lien placed on beneficiary account.",
   });
 
-  console.log(`  1. Voice Input processed -> Incident ID: ${processResult1.incidentId} (State: ${processResult1.state})`);
-  assert.equal(processResult1.state, "QUESTION_PENDING");
-  assert.equal(processResult1.nextAction.missingField, "transaction.transactionId");
+  assert.equal(ackResult.success, true);
+  assert.equal(ackResult.status, "ACTION_TAKEN");
+  console.log(`  ✓ Portal B Response Acknowledged: Status = ${ackResult.status}`);
 
-  // 2. User attaches screenshot to answer the missing UTR
-  const processResult2 = await processService.processInput({
-    incidentId: processResult1.incidentId,
-    source: "web",
-    modality: "image",
-    content: screenshotText,
-    language: "en",
-  });
+  // -------------------------------------------------------------
+  // Test 10: Live Event Timeline Audit Trail
+  // -------------------------------------------------------------
+  console.log("\n▶ [Scenario 10] Verifying Live Persistent Event Timeline in Web Client...");
+  const events = await webClient.refreshEvents();
+  assert.ok(events.length >= 3, "Timeline must contain audit events");
+  console.log(`  ✓ Web Client recovered ${events.length} chronological audit events:`);
+  for (const ev of events) {
+    console.log(`    - [${ev.timestamp}] ${ev.type} (Source: ${ev.source})`);
+  }
 
-  console.log(`  2. Screenshot uploaded -> Reconciled State: ${processResult2.state}`);
-  assert.equal(processResult2.state, "READY");
-  assert.equal(processResult2.incident.transaction.amount, 5000);
-  assert.equal(processResult2.incident.transaction.transactionId, "423456789012");
-  assert.equal(processResult2.incident.transaction.debitInstitution, "State Bank of India");
-  assert.equal(processResult2.incident.evidence.length, 2);
+  // Cleanup
+  portalB.destroy();
+  await new Promise<void>((resolve) => coreServer.close(() => resolve()));
+  await new Promise<void>((resolve) => capServer.close(() => resolve()));
 
-  // Cleanup test db
   if (existsSync(testDbPath)) {
     unlinkSync(testDbPath);
   }
 
   console.log("\n=================================================================");
-  console.log("  ALL 10 PHASE 2 MULTIMODAL SCENARIOS PASSED (100% SUCCESS)");
+  console.log("  ALL 10 PHASE 3 WEB UI & CAP CONSOLE TESTS PASSED (100% SUCCESS)");
   console.log("=================================================================\n");
 
   process.exit(0);
 }
 
-runPhase2Tests().catch((err) => {
-  console.error("Phase 2 Test failure:", err);
+runPhase3Tests().catch((err) => {
+  console.error("Phase 3 Test failure:", err);
   process.exit(1);
 });

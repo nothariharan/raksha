@@ -1,8 +1,14 @@
-/**
- * Raksha Web App Skeleton (Phase 0 placeholder, ready for Next.js in Phase 5)
- */
+import { createWebServer } from "./server.js";
 
-export const APP_NAME = "Raksha";
-export const APP_VERSION = "0.1.0";
+export * from "./client-state.js";
+export * from "./html-template.js";
+export * from "./server.js";
 
-console.log(`[Raksha Web] Module initialized.`);
+const PORT = Number(process.env.PORT_WEB) || 3000;
+
+if (process.env.NODE_ENV !== "test") {
+  const server = createWebServer();
+  server.listen(PORT, () => {
+    console.log(`[Raksha Web UI] Listening on http://localhost:${PORT}`);
+  });
+}
