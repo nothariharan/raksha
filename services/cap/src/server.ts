@@ -1,10 +1,10 @@
 /**
- * CAP REST API Server
+ * Persistent CAP REST API Server
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { CAPActionName, FraudIncident } from "@raksha/schemas";
-import { globalEventBus } from "@raksha/shared";
+import { defaultEventRepository } from "@raksha/core";
 import { capabilityRegistry } from "./capability-registry.js";
 import { actionRouter } from "./action-router.js";
 
@@ -44,6 +44,8 @@ export function createCapServer() {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const pathname = url.pathname;
     const method = req.method || "GET";
+    const idempotencyKey =
+      (req.headers["idempotency-key"] as string) || url.searchParams.get("idempotencyKey") || undefined;
 
     if (method === "OPTIONS") {
       res.writeHead(204, {
@@ -76,7 +78,7 @@ export function createCapServer() {
 
       // 3. POST /cap/cases
       if (pathname === "/cap/cases" && method === "POST") {
-        const body = await parseJsonBody<{ incident: FraudIncident }>(req);
+        const body = await parseJsonBody<{ incident: FraudIncident; idempotencyKey?: string }>(req);
         if (!body.incident) {
           sendJson(res, 400, { error: "Missing incident object in request body" });
           return;
@@ -84,7 +86,8 @@ export function createCapServer() {
 
         const response = await actionRouter.executeAction(
           "report_financial_fraud",
-          body.incident
+          body.incident,
+          idempotencyKey || body.idempotencyKey
         );
         sendJson(res, response.success ? 201 : 400, response);
         return;
@@ -108,13 +111,25 @@ export function createCapServer() {
         const response = await actionRouter.executeAction(
           body.action,
           body.payload,
-          body.idempotencyKey
+          idempotencyKey || body.idempotencyKey
         );
         sendJson(res, response.success ? 200 : 400, response);
         return;
       }
 
-      // 6. POST /cap/events
+      // 6. GET /cap/events (supports ?since=...&type=...&caseId=...)
+      if (pathname === "/cap/events" && method === "GET") {
+        const since = url.searchParams.get("since") || undefined;
+        const type = url.searchParams.get("type") || undefined;
+        const caseId = url.searchParams.get("caseId") || undefined;
+        const incidentId = url.searchParams.get("incidentId") || undefined;
+
+        const events = await defaultEventRepository.list({ since, type, caseId, incidentId });
+        sendJson(res, 200, { events });
+        return;
+      }
+
+      // 7. POST /cap/events
       if (pathname === "/cap/events" && method === "POST") {
         const body = await parseJsonBody<{
           type: string;
@@ -123,7 +138,16 @@ export function createCapServer() {
           source: string;
           payload: unknown;
         }>(req);
-        const event = await globalEventBus.emit(body);
+
+        const event = await defaultEventRepository.append({
+          id: `EVT-${Date.now()}`,
+          type: body.type,
+          caseId: body.caseId,
+          incidentId: body.incidentId,
+          source: body.source,
+          payload: body.payload,
+          timestamp: new Date().toISOString(),
+        });
         sendJson(res, 201, event);
         return;
       }
@@ -136,7 +160,7 @@ export function createCapServer() {
 
         // GET /cap/cases/:id
         if (!subRoute && method === "GET") {
-          const capCase = actionRouter.getCase(caseId);
+          const capCase = await actionRouter.getCase(caseId);
           if (!capCase) {
             sendJson(res, 404, { error: `CAP Case not found: ${caseId}` });
             return;
@@ -147,7 +171,7 @@ export function createCapServer() {
 
         // GET /cap/cases/:id/events
         if (subRoute === "events" && method === "GET") {
-          const events = globalEventBus.getEvents({ caseId });
+          const events = await defaultEventRepository.findByCaseId(caseId);
           sendJson(res, 200, { caseId, events });
           return;
         }

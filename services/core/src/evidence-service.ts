@@ -1,24 +1,36 @@
 /**
  * Evidence Service for Raksha Core
- * Manages evidence ingestion, SHA-256 integrity verification, and Evidence Capsule creation.
+ * Manages evidence ingestion, SHA-256 integrity verification, and persistent Evidence Capsule creation.
  */
 
 import {
   CreateEvidenceInput,
   EvidenceCapsule,
   EvidenceReference,
-  PROTOCOL_VERSION,
 } from "@raksha/schemas";
 import {
-  computeEvidenceCapsuleDigest,
   computeSha256,
   generateEvidenceId,
   globalEventBus,
 } from "@raksha/shared";
+import {
+  IEvidenceRepository,
+  defaultEvidenceRepository,
+  IEventRepository,
+  defaultEventRepository,
+} from "./repositories/index.js";
 
 export class EvidenceService {
-  private evidenceStore: Map<string, EvidenceReference> = new Map();
-  private capsules: Map<string, EvidenceCapsule> = new Map();
+  private evidenceRepo: IEvidenceRepository;
+  private eventRepo: IEventRepository;
+
+  constructor(
+    evidenceRepo?: IEvidenceRepository,
+    eventRepo?: IEventRepository
+  ) {
+    this.evidenceRepo = evidenceRepo || defaultEvidenceRepository;
+    this.eventRepo = eventRepo || defaultEventRepository;
+  }
 
   async addEvidence(input: CreateEvidenceInput): Promise<EvidenceReference> {
     const id = generateEvidenceId();
@@ -43,9 +55,9 @@ export class EvidenceService {
       metadata: input.metadata || {},
     };
 
-    this.evidenceStore.set(id, evidence);
+    await this.evidenceRepo.create(evidence);
 
-    await globalEventBus.emit({
+    const event = await globalEventBus.emit({
       type: "evidence.sealed",
       caseId: input.incidentId,
       incidentId: input.incidentId,
@@ -53,41 +65,29 @@ export class EvidenceService {
       payload: { evidenceId: id, sha256, type: input.type },
     });
 
+    await this.eventRepo.append(event);
+
     return evidence;
   }
 
-  getEvidence(id: string): EvidenceReference | null {
-    return this.evidenceStore.get(id) || null;
+  async getEvidence(id: string): Promise<EvidenceReference | null> {
+    return this.evidenceRepo.findById(id);
   }
 
-  getEvidenceByIncident(incidentId: string): EvidenceReference[] {
-    return Array.from(this.evidenceStore.values()).filter((e) => e.incidentId === incidentId);
+  async getEvidenceByIncident(incidentId: string): Promise<EvidenceReference[]> {
+    return this.evidenceRepo.findByIncidentId(incidentId);
   }
 
-  sealEvidenceCapsule(incidentId: string): EvidenceCapsule {
-    const items = this.getEvidenceByIncident(incidentId);
-    const hashes = items.map((i) => i.sha256);
-    const hashDigest = computeEvidenceCapsuleDigest(hashes);
-
-    const capsule: EvidenceCapsule = {
-      incidentId,
-      protocolVersion: PROTOCOL_VERSION,
-      sealedAt: new Date().toISOString(),
-      items,
-      hashDigest,
-    };
-
-    this.capsules.set(incidentId, capsule);
-    return capsule;
+  async sealEvidenceCapsule(incidentId: string): Promise<EvidenceCapsule> {
+    return this.evidenceRepo.sealCapsule(incidentId);
   }
 
-  getCapsule(incidentId: string): EvidenceCapsule | null {
-    return this.capsules.get(incidentId) || null;
+  async getCapsule(incidentId: string): Promise<EvidenceCapsule | null> {
+    return this.evidenceRepo.getCapsule(incidentId);
   }
 
-  clear(): void {
-    this.evidenceStore.clear();
-    this.capsules.clear();
+  async clear(): Promise<void> {
+    await this.evidenceRepo.clear();
   }
 }
 

@@ -1,6 +1,6 @@
 /**
  * Portal A — Cyber Fraud Intake Service
- * Communicates strictly through CAP (never directly with internal Core DB).
+ * Communicates strictly through CAP (supports HTTP and in-memory CAP clients).
  */
 
 import { FraudIncident, CAPActionResponse } from "@raksha/schemas";
@@ -31,21 +31,37 @@ export class PortalAIntakeService {
       });
   }
 
-  async reportFraudIncident(incident: FraudIncident): Promise<{
+  async reportFraudIncident(
+    incident: FraudIncident,
+    idempotencyKey?: string
+  ): Promise<{
     success: boolean;
     portalCase: PortalACase | null;
     capResponse: CAPActionResponse;
   }> {
-    // 1. Submit through CAP
+    // 1. Submit through CAP with optional Idempotency Key
     const capResponse = await this.capClient.executeAction(
       "report_financial_fraud",
-      { incident }
+      { incident },
+      idempotencyKey
     );
 
     if (!capResponse.success) {
       return {
         success: false,
         portalCase: null,
+        capResponse,
+      };
+    }
+
+    // Check if we already have this case locally
+    const existing = Array.from(this.localCases.values()).find(
+      (c) => c.capCaseId === capResponse.caseId
+    );
+    if (existing) {
+      return {
+        success: true,
+        portalCase: existing,
         capResponse,
       };
     }

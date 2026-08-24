@@ -1,5 +1,5 @@
 /**
- * Incident Service & State Machine for Raksha Core
+ * Persistent Incident Service & State Machine for Raksha Core
  */
 
 import {
@@ -11,10 +11,29 @@ import {
 } from "@raksha/schemas";
 import { generateIncidentId, globalEventBus } from "@raksha/shared";
 import { ValidationEngine } from "./validation-engine.js";
-import { evidenceService } from "./evidence-service.js";
+import {
+  IIncidentRepository,
+  defaultIncidentRepository,
+  IEventRepository,
+  defaultEventRepository,
+  IEvidenceRepository,
+  defaultEvidenceRepository,
+} from "./repositories/index.js";
 
 export class IncidentService {
-  private incidents: Map<string, FraudIncident> = new Map();
+  private incidentRepo: IIncidentRepository;
+  private eventRepo: IEventRepository;
+  private evidenceRepo: IEvidenceRepository;
+
+  constructor(
+    incidentRepo?: IIncidentRepository,
+    eventRepo?: IEventRepository,
+    evidenceRepo?: IEvidenceRepository
+  ) {
+    this.incidentRepo = incidentRepo || defaultIncidentRepository;
+    this.eventRepo = eventRepo || defaultEventRepository;
+    this.evidenceRepo = evidenceRepo || defaultEvidenceRepository;
+  }
 
   async createIncident(input: CreateIncidentInput): Promise<FraudIncident> {
     const id = generateIncidentId("RKS");
@@ -60,15 +79,17 @@ export class IncidentService {
       updatedAt: now,
     };
 
-    // Run initial validation
+    // Run deterministic validation
     incident.validation = ValidationEngine.validate(incident);
     if (incident.validation.status === "READY") {
       incident.state = "READY";
     }
 
-    this.incidents.set(id, incident);
+    // Persist incident
+    await this.incidentRepo.create(incident);
 
-    await globalEventBus.emit({
+    // Emit & persist incident.created event
+    const createdEvent = await globalEventBus.emit({
       type: "incident.created",
       caseId: id,
       incidentId: id,
@@ -79,9 +100,10 @@ export class IncidentService {
         state: incident.state,
       },
     });
+    await this.eventRepo.append(createdEvent);
 
     if (incident.state === "READY") {
-      await globalEventBus.emit({
+      const readyEvent = await globalEventBus.emit({
         type: "incident.ready",
         caseId: id,
         incidentId: id,
@@ -92,45 +114,58 @@ export class IncidentService {
           transactionId: incident.transaction.transactionId,
         },
       });
+      await this.eventRepo.append(readyEvent);
     }
 
     return incident;
   }
 
   async getIncident(id: string): Promise<FraudIncident | null> {
-    return this.incidents.get(id) || null;
+    const incident = await this.incidentRepo.findById(id);
+    if (!incident) return null;
+
+    // Attach current evidence IDs
+    const evidenceItems = await this.evidenceRepo.findByIncidentId(id);
+    incident.evidence = evidenceItems.map((e) => e.id);
+
+    return incident;
   }
 
   async listIncidents(): Promise<FraudIncident[]> {
-    return Array.from(this.incidents.values());
+    const incidents = await this.incidentRepo.list();
+    for (const inc of incidents) {
+      const evidenceItems = await this.evidenceRepo.findByIncidentId(inc.id);
+      inc.evidence = evidenceItems.map((e) => e.id);
+    }
+    return incidents;
   }
 
   async updateIncident(
     id: string,
     updates: Partial<FraudIncident>
   ): Promise<FraudIncident> {
-    const incident = this.incidents.get(id);
-    if (!incident) {
+    const existing = await this.incidentRepo.findById(id);
+    if (!existing) {
       throw new Error(`Incident not found: ${id}`);
     }
 
     const updated: FraudIncident = {
-      ...incident,
+      ...existing,
       ...updates,
       narrative: {
-        ...incident.narrative,
+        ...existing.narrative,
         ...(updates.narrative || {}),
       },
       reporter: {
-        ...incident.reporter,
+        ...existing.reporter,
         ...(updates.reporter || {}),
       },
       transaction: {
-        ...incident.transaction,
+        ...existing.transaction,
         ...(updates.transaction || {}),
       },
       handoff: {
-        ...incident.handoff,
+        ...existing.handoff,
         ...(updates.handoff || {}),
       },
       updatedAt: new Date().toISOString(),
@@ -138,25 +173,30 @@ export class IncidentService {
 
     // Re-validate after update
     updated.validation = ValidationEngine.validate(updated);
-    if (updated.validation.status === "READY" && updated.state !== "ACKNOWLEDGED" && updated.state !== "SUBMITTED") {
+    if (
+      updated.validation.status === "READY" &&
+      updated.state !== "ACKNOWLEDGED" &&
+      updated.state !== "SUBMITTED"
+    ) {
       updated.state = "READY";
     }
 
-    this.incidents.set(id, updated);
+    await this.incidentRepo.update(id, updated);
 
-    await globalEventBus.emit({
+    const event = await globalEventBus.emit({
       type: "case.updated",
       caseId: id,
       incidentId: id,
       source: "core",
       payload: { incidentId: id, state: updated.state },
     });
+    await this.eventRepo.append(event);
 
     return updated;
   }
 
   async validateIncident(id: string): Promise<IncidentValidation> {
-    const incident = this.incidents.get(id);
+    const incident = await this.getIncident(id);
     if (!incident) {
       throw new Error(`Incident not found: ${id}`);
     }
@@ -170,35 +210,53 @@ export class IncidentService {
     } else if (validation.status === "CONFLICT") {
       incident.state = "USER_CONFIRMATION";
     }
-    incident.updatedAt = new Date().toISOString();
-    this.incidents.set(id, incident);
+
+    await this.incidentRepo.update(id, {
+      validation,
+      state: incident.state,
+    });
+
+    const event = await globalEventBus.emit({
+      type: "validation.completed",
+      caseId: id,
+      incidentId: id,
+      source: "core",
+      payload: { incidentId: id, validationStatus: validation.status },
+    });
+    await this.eventRepo.append(event);
 
     return validation;
   }
 
   async transitionState(id: string, newState: IncidentState): Promise<FraudIncident> {
-    const incident = this.incidents.get(id);
+    const incident = await this.getIncident(id);
     if (!incident) {
       throw new Error(`Incident not found: ${id}`);
     }
 
     incident.state = newState;
-    incident.updatedAt = new Date().toISOString();
-    this.incidents.set(id, incident);
+    await this.incidentRepo.update(id, { state: newState });
 
-    await globalEventBus.emit({
+    const event = await globalEventBus.emit({
       type: "case.updated",
       caseId: id,
       incidentId: id,
       source: "core",
       payload: { incidentId: id, state: newState },
     });
+    await this.eventRepo.append(event);
 
     return incident;
   }
 
-  clear(): void {
-    this.incidents.clear();
+  async getIncidentEvents(incidentId: string) {
+    return this.eventRepo.findByIncidentId(incidentId);
+  }
+
+  async clear(): Promise<void> {
+    await this.incidentRepo.clear();
+    await this.eventRepo.clear();
+    await this.evidenceRepo.clear();
   }
 }
 

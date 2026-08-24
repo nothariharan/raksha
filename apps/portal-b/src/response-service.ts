@@ -1,6 +1,7 @@
 /**
  * Portal B — Financial Institution Response Console Service
  * Subscribes to incident.accepted and acknowledges freeze/lien actions via CAP.
+ * Supports both event bus pub/sub and HTTP event polling.
  */
 
 import { CAPActionResponse, CAPEvent, IncidentAcceptedEventPayload } from "@raksha/schemas";
@@ -19,6 +20,7 @@ export class PortalBResponseService {
   private capClient: ICAPClient;
   private alerts: Map<string, ReceivedAlert> = new Map();
   private unsubscribe?: () => void;
+  private lastPolledTimestamp?: string;
 
   constructor(capClient?: ICAPClient) {
     this.capClient =
@@ -47,19 +49,47 @@ export class PortalBResponseService {
     );
   }
 
+  async pollEventsFromHttp(): Promise<ReceivedAlert[]> {
+    const baseUrl = process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002";
+    const sinceParam = this.lastPolledTimestamp ? `&since=${encodeURIComponent(this.lastPolledTimestamp)}` : "";
+    try {
+      const res = await fetch(`${baseUrl}/cap/events?type=incident.accepted${sinceParam}`);
+      if (!res.ok) return this.listAlerts();
+      const data = (await res.json()) as { events: Array<CAPEvent<IncidentAcceptedEventPayload>> };
+      for (const ev of data.events || []) {
+        this.alerts.set(ev.caseId, {
+          caseId: ev.caseId,
+          incidentId: ev.payload.incidentId,
+          externalReference: ev.payload.externalReference,
+          receivedAt: ev.timestamp,
+          status: "PENDING_REVIEW",
+        });
+        this.lastPolledTimestamp = ev.timestamp;
+      }
+    } catch {
+      // Fallback to local store
+    }
+    return this.listAlerts();
+  }
+
   async acknowledgeFreeze(params: {
     caseId: string;
     incidentId: string;
     responderInstitution: string;
     actionTaken: "LIEN_MARKED" | "ACCOUNT_FROZEN" | "TRANSACTION_TRACED" | "FLAGGED_FOR_REVIEW";
     operatorNotes?: string;
+    idempotencyKey?: string;
   }): Promise<CAPActionResponse> {
     const alert = this.alerts.get(params.caseId);
     if (alert) {
       alert.status = params.actionTaken === "ACCOUNT_FROZEN" ? "ACCOUNT_FROZEN" : "LIEN_MARKED";
     }
 
-    return this.capClient.executeAction("acknowledge_response", params);
+    return this.capClient.executeAction(
+      "acknowledge_response",
+      params,
+      params.idempotencyKey || `ack-${params.caseId}-${params.actionTaken}`
+    );
   }
 
   listAlerts(): ReceivedAlert[] {
@@ -78,6 +108,7 @@ export class PortalBResponseService {
 
   clear(): void {
     this.alerts.clear();
+    this.lastPolledTimestamp = undefined;
   }
 }
 

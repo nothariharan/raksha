@@ -2,6 +2,11 @@
 node_modules/
 .pnpm-store/
 
+# Local persistent data storage
+.data/
+*.db
+*.db-journal
+
 # Production builds & outputs
 dist/
 build/

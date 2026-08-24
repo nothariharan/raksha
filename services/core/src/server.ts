@@ -4,9 +4,9 @@
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { CreateIncidentInput, EvidenceType } from "@raksha/schemas";
-import { globalEventBus } from "@raksha/shared";
 import { incidentService } from "./incident-service.js";
 import { evidenceService } from "./evidence-service.js";
+import { defaultEventRepository } from "./repositories/index.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -135,12 +135,6 @@ export function createCoreServer() {
             metadata: body.metadata,
           });
 
-          // Add to incident evidence array
-          incident.evidence.push(evidence.id);
-          await incidentService.updateIncident(incidentId, {
-            evidence: incident.evidence,
-          });
-
           sendJson(res, 201, {
             evidenceId: evidence.id,
             sha256: evidence.sha256,
@@ -161,7 +155,7 @@ export function createCoreServer() {
 
         // GET /v1/incidents/:id/events
         if (subRoute === "events" && method === "GET") {
-          const events = globalEventBus.getEvents({ incidentId });
+          const events = await defaultEventRepository.findByIncidentId(incidentId);
           sendJson(res, 200, { incidentId, events });
           return;
         }

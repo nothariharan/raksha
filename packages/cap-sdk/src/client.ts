@@ -27,7 +27,7 @@ export interface CAPClientConfig {
 
 export interface ICAPClient {
   getCapabilities(): Promise<CAPCapability[]>;
-  createCase(incident: FraudIncident): Promise<CAPActionResponse>;
+  createCase(incident: FraudIncident, idempotencyKey?: string): Promise<CAPActionResponse>;
   validateAction(
     action: CAPActionName,
     payload: unknown
@@ -94,12 +94,17 @@ export const DEFAULT_CAPABILITIES: CAPCapability[] = [
  */
 export class InMemoryCAPClient implements ICAPClient {
   private cases: Map<string, CAPCase> = new Map();
+  private idempotencyStore: Map<string, CAPActionResponse> = new Map();
 
   async getCapabilities(): Promise<CAPCapability[]> {
     return DEFAULT_CAPABILITIES;
   }
 
-  async createCase(incident: FraudIncident): Promise<CAPActionResponse> {
+  async createCase(incident: FraudIncident, idempotencyKey?: string): Promise<CAPActionResponse> {
+    if (idempotencyKey && this.idempotencyStore.has(idempotencyKey)) {
+      return this.idempotencyStore.get(idempotencyKey)!;
+    }
+
     const caseId = generateCaseId();
     const externalRef = generateExternalReference("1930");
 
@@ -131,14 +136,20 @@ export class InMemoryCAPClient implements ICAPClient {
       },
     });
 
-    return {
+    const res: CAPActionResponse = {
       success: true,
       status: "ACCEPTED",
       caseId,
       externalReference: externalRef,
-      data: { caseId, status: "ACCEPTED" },
+      data: { caseId, status: "ACCEPTED", externalReference: externalRef },
       timestamp: new Date().toISOString(),
     };
+
+    if (idempotencyKey) {
+      this.idempotencyStore.set(idempotencyKey, res);
+    }
+
+    return res;
   }
 
   async validateAction(
@@ -174,6 +185,10 @@ export class InMemoryCAPClient implements ICAPClient {
     payload: T,
     idempotencyKey?: string
   ): Promise<CAPActionResponse<R>> {
+    if (idempotencyKey && this.idempotencyStore.has(idempotencyKey)) {
+      return this.idempotencyStore.get(idempotencyKey)! as unknown as CAPActionResponse<R>;
+    }
+
     const validation = await this.validateAction(action, payload);
     if (!validation.valid) {
       return {
@@ -187,7 +202,7 @@ export class InMemoryCAPClient implements ICAPClient {
 
     if (action === "report_financial_fraud") {
       const incident = (payload as { incident: FraudIncident }).incident || (payload as FraudIncident);
-      return this.createCase(incident) as unknown as Promise<CAPActionResponse<R>>;
+      return this.createCase(incident, idempotencyKey) as unknown as Promise<CAPActionResponse<R>>;
     }
 
     if (action === "acknowledge_response") {
@@ -215,7 +230,7 @@ export class InMemoryCAPClient implements ICAPClient {
         payload: ack,
       });
 
-      return {
+      const res: CAPActionResponse<R> = {
         success: true,
         status: "ACTION_TAKEN",
         caseId: ack.caseId,
@@ -223,6 +238,12 @@ export class InMemoryCAPClient implements ICAPClient {
         data: { caseId: ack.caseId, status: "ACTION_TAKEN" } as unknown as R,
         timestamp: new Date().toISOString(),
       };
+
+      if (idempotencyKey) {
+        this.idempotencyStore.set(idempotencyKey, res as unknown as CAPActionResponse);
+      }
+
+      return res;
     }
 
     return {
@@ -291,10 +312,15 @@ export class HttpCAPClient implements ICAPClient {
     return data.capabilities;
   }
 
-  async createCase(incident: FraudIncident): Promise<CAPActionResponse> {
+  async createCase(incident: FraudIncident, idempotencyKey?: string): Promise<CAPActionResponse> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers["Idempotency-Key"] = idempotencyKey;
+    }
     return this.fetchJson<CAPActionResponse>("/cap/cases", {
       method: "POST",
-      body: JSON.stringify({ incident }),
+      headers,
+      body: JSON.stringify({ incident, idempotencyKey }),
     });
   }
 
@@ -313,8 +339,13 @@ export class HttpCAPClient implements ICAPClient {
     payload: T,
     idempotencyKey?: string
   ): Promise<CAPActionResponse<R>> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers["Idempotency-Key"] = idempotencyKey;
+    }
     return this.fetchJson<CAPActionResponse<R>>("/cap/actions/execute", {
       method: "POST",
+      headers,
       body: JSON.stringify({ action, payload, idempotencyKey }),
     });
   }
