@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@raksha/agent-phone':
+        specifier: workspace:*
+        version: link:agents/phone
       '@raksha/agent-whatsapp':
         specifier: workspace:*
         version: link:agents/whatsapp

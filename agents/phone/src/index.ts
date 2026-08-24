@@ -1,8 +1,19 @@
-/**
- * Raksha Phone / Voice Agent Adapter (Phase 0 Skeleton)
- */
+import { createPhoneWebhookServer } from "./webhook.js";
 
-export const AGENT_NAME = "raksha-agent-phone";
-export const AGENT_VERSION = "0.1.0";
+export * from "./providers/interface.js";
+export * from "./providers/elevenlabs-provider.js";
+export * from "./providers/twilio-provider.js";
+export * from "./providers/exotel-provider.js";
+export * from "./session-manager.js";
+export * from "./phone-tools.js";
+export * from "./phone-service.js";
+export * from "./webhook.js";
 
-console.log(`[Phone Agent] Adapter initialized.`);
+const PORT = Number(process.env.PORT_PHONE) || 3006;
+
+if (process.env.NODE_ENV !== "test") {
+  const server = createPhoneWebhookServer();
+  server.listen(PORT, () => {
+    console.log(`[Raksha Phone Telephony Agent] Listening on http://localhost:${PORT}`);
+  });
+}

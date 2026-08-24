@@ -32,7 +32,6 @@ export class ReconciliationEngine {
       const missingCrucialFields: string[] = [];
       if (!single.amount) missingCrucialFields.push("transaction.amount");
       if (!single.transactionId) missingCrucialFields.push("transaction.transactionId");
-      if (!single.transactionDatetime) missingCrucialFields.push("transaction.timestamp");
 
       return {
         reconciledCandidate: single,
@@ -90,7 +89,7 @@ export class ReconciliationEngine {
       }
     }
 
-    // 3. Timestamp
+    // 3. Timestamp (defaults to recent extraction time if not explicitly in OCR)
     let finalTimestamp: string | null = null;
     for (const c of candidates) {
       if (c.transactionDatetime) {
@@ -99,6 +98,9 @@ export class ReconciliationEngine {
         mergedSourceRefs.transactionDatetime = c.sourceRefs.transactionDatetime || [];
         break;
       }
+    }
+    if (!finalTimestamp) {
+      finalTimestamp = new Date().toISOString();
     }
 
     // 4. Debit Bank & Beneficiary
@@ -124,7 +126,6 @@ export class ReconciliationEngine {
     const missingCrucialFields: string[] = [];
     if (!finalAmount) missingCrucialFields.push("transaction.amount");
     if (!finalUtr) missingCrucialFields.push("transaction.transactionId");
-    if (!finalTimestamp) missingCrucialFields.push("transaction.timestamp");
 
     const reconciledCandidate: ExtractedFraudCandidate = {
       incidentType: "FINANCIAL_CYBER_FRAUD",
