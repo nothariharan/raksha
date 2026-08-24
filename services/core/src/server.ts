@@ -7,6 +7,8 @@ import { CreateIncidentInput, EvidenceType } from "@raksha/schemas";
 import { incidentService } from "./incident-service.js";
 import { evidenceService } from "./evidence-service.js";
 import { defaultEventRepository } from "./repositories/index.js";
+import { MultimodalExtractor } from "./extraction/extractor.js";
+import { ProcessInput, processService } from "./orchestration/process-service.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -67,7 +69,65 @@ export function createCoreServer() {
         return;
       }
 
-      // 2. POST /v1/incidents
+      // 2. Multimodal Extraction Endpoints
+      if (pathname === "/v1/extract/text" && method === "POST") {
+        const body = await parseJsonBody<{ text: string; language?: string }>(req);
+        if (!body.text) {
+          sendJson(res, 400, { error: "Missing required field: text" });
+          return;
+        }
+        const candidate = MultimodalExtractor.extractCandidate({
+          modality: "text",
+          content: body.text,
+          language: body.language || "en",
+        });
+        sendJson(res, 200, { candidate });
+        return;
+      }
+
+      if (pathname === "/v1/extract/image" && method === "POST") {
+        const body = await parseJsonBody<{ imageContent: string; language?: string }>(req);
+        if (!body.imageContent) {
+          sendJson(res, 400, { error: "Missing required field: imageContent" });
+          return;
+        }
+        const candidate = MultimodalExtractor.extractCandidate({
+          modality: "image",
+          content: body.imageContent,
+          language: body.language || "en",
+        });
+        sendJson(res, 200, { candidate });
+        return;
+      }
+
+      if (pathname === "/v1/extract/voice" && method === "POST") {
+        const body = await parseJsonBody<{ audioTranscript: string; language?: string }>(req);
+        if (!body.audioTranscript) {
+          sendJson(res, 400, { error: "Missing required field: audioTranscript" });
+          return;
+        }
+        const candidate = MultimodalExtractor.extractCandidate({
+          modality: "voice",
+          content: body.audioTranscript,
+          language: body.language || "en",
+        });
+        sendJson(res, 200, { candidate });
+        return;
+      }
+
+      // 3. Unified Multimodal Process Orchestration Endpoint
+      if (pathname === "/v1/process" && method === "POST") {
+        const body = await parseJsonBody<ProcessInput>(req);
+        if (!body.content && !body.userClarificationAnswer) {
+          sendJson(res, 400, { error: "Missing content or userClarificationAnswer in body" });
+          return;
+        }
+        const result = await processService.processInput(body);
+        sendJson(res, 200, result);
+        return;
+      }
+
+      // 4. POST /v1/incidents
       if (pathname === "/v1/incidents" && method === "POST") {
         const body = await parseJsonBody<CreateIncidentInput>(req);
         if (!body.narrative || !body.narrative.text) {
@@ -86,7 +146,7 @@ export function createCoreServer() {
         return;
       }
 
-      // 3. GET /v1/incidents
+      // 5. GET /v1/incidents
       if (pathname === "/v1/incidents" && method === "GET") {
         const incidents = await incidentService.listIncidents();
         sendJson(res, 200, { incidents });
@@ -161,7 +221,6 @@ export function createCoreServer() {
         }
       }
 
-      // Not found
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
     } catch (err) {
       console.error("[CoreServer Error]:", err);
