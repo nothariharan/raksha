@@ -12,7 +12,7 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Raksha — Multimodal Emergency Cyber-Fraud Reporting Protocol</title>
+  <title>Raksha — Multimodal Emergency Public-Service Protocol</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -106,147 +106,154 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       transition: all 0.2s;
     }
     .btn-dev:hover, .btn-dev.active {
-      color: var(--text);
+      color: var(--primary);
       border-color: var(--primary);
       background: rgba(59, 130, 246, 0.1);
     }
 
+    /* Simulation Notice Banner */
+    .sim-banner {
+      background: rgba(245, 158, 11, 0.1);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fcd34d;
+      font-size: 0.8rem;
+      padding: 0.4rem 1rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-weight: 500;
+    }
+
+    /* Main Container (Wispr Flow / Notion minimal aesthetic) */
     main {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      max-width: 800px;
+      padding: 2rem 1rem;
+      max-width: 680px;
       margin: 0 auto;
       width: 100%;
+    }
+
+    .hero-box {
+      width: 100%;
       text-align: center;
+      margin-bottom: 2rem;
     }
-
-    .sim-banner {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      color: var(--accent-amber);
-      font-size: 0.75rem;
-      font-family: var(--mono);
-      padding: 0.35rem 0.75rem;
-      border-radius: 6px;
-      margin-bottom: 1.5rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
     .hero-title {
-      font-size: 2.25rem;
-      font-weight: 700;
+      font-size: 2.5rem;
+      font-weight: 800;
       letter-spacing: -0.03em;
       margin-bottom: 0.5rem;
     }
-    .hero-subtitle {
+    .hero-sub {
       color: var(--text-muted);
-      font-size: 1.05rem;
-      margin-bottom: 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 400;
     }
 
-    .input-methods {
+    /* Action Cards (Single-purpose) */
+    .action-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 1.25rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
       width: 100%;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
-    .method-card {
+    .btn-action {
       background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: 16px;
-      padding: 2rem 1.5rem;
+      padding: 1.75rem 1.25rem;
+      color: var(--text);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
+      gap: 0.75rem;
       cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
     }
-    .method-card:hover {
+    .btn-action:hover {
       border-color: var(--primary);
       transform: translateY(-2px);
       box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.2);
     }
-    .method-icon {
-      font-size: 2.5rem;
+    .btn-action .icon {
+      font-size: 2rem;
     }
-    .method-label {
+    .btn-action .label {
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 1.05rem;
     }
 
+    .btn-type-toggle {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0.5rem;
+    }
+    .btn-type-toggle:hover { color: var(--text); }
+
+    /* Type Narrative Box */
     .type-box {
       width: 100%;
-      display: none;
+      display: flex;
       flex-direction: column;
       gap: 0.75rem;
       margin-top: 1rem;
     }
-    textarea.text-input {
+    textarea.narrative-input {
       width: 100%;
-      min-height: 100px;
-      background: #0d1017;
+      height: 110px;
+      background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: 12px;
-      color: var(--text);
-      font-family: inherit;
       padding: 1rem;
+      color: var(--text);
+      font-family: var(--font);
       font-size: 0.95rem;
       resize: vertical;
       outline: none;
     }
-    textarea.text-input:focus { border-color: var(--primary); }
+    textarea.narrative-input:focus { border-color: var(--primary); }
 
-    .btn-submit-text {
+    .btn-primary {
       background: var(--primary);
       color: white;
       border: none;
       padding: 0.8rem 1.5rem;
       border-radius: 10px;
       font-weight: 600;
+      font-size: 0.95rem;
       cursor: pointer;
-      align-self: flex-end;
       transition: background 0.2s;
+      align-self: flex-end;
     }
-    .btn-submit-text:hover { background: var(--primary-hover); }
+    .btn-primary:hover { background: var(--primary-hover); }
 
-    /* Pulsating Visualizer */
-    .pulse-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.5rem;
-      padding: 2rem 0;
+    /* Progressive State Cards */
+    .state-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 2rem;
+      width: 100%;
+      text-align: center;
+      animation: fadeIn 0.3s ease-out;
     }
-    .radar {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: rgba(59, 130, 246, 0.2);
-      border: 2px solid var(--primary);
-      animation: pulse 1.5s infinite;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    @keyframes pulse {
-      0% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
-      70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
-      100% { transform: scale(0.9); opacity: 0.8; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Details Confirmation Table */
+    /* Extracted Details Grid */
     .details-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -262,7 +269,7 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
     .detail-item { display: flex; flex-direction: column; gap: 0.25rem; }
     .detail-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
     .detail-value { font-size: 1.05rem; font-weight: 600; color: var(--text); }
-    .highlight-amount { font-size: 1.5rem; color: var(--accent-green); }
+    .highlight-amount { font-size: 1.6rem; color: var(--accent-green); }
 
     /* Contradiction / Conflict Options */
     .conflict-cards {
@@ -349,172 +356,189 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       right: 0;
       top: 65px;
       bottom: 0;
-      width: 420px;
-      background: #090c14;
+      width: 440px;
+      background: #0b0e14;
       border-left: 1px solid var(--card-border);
       padding: 1.5rem;
-      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+      overflow-y: auto;
       transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 90;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      font-family: var(--mono);
       font-size: 0.85rem;
     }
     #dev-panel.open {
       transform: translateX(0);
     }
     .dev-title {
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 1rem;
-      font-size: 0.8rem;
-      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
     }
     .channel-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 0.25rem;
+      display: flex;
+      gap: 0.3rem;
       margin-bottom: 1rem;
+      background: #12151f;
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
     }
     .tab-btn {
-      background: #121622;
-      border: 1px solid var(--card-border);
+      flex: 1;
+      background: transparent;
+      border: none;
       color: var(--text-muted);
-      padding: 0.3rem 0.2rem;
-      font-size: 0.7rem;
+      padding: 0.35rem 0.2rem;
+      font-size: 0.72rem;
       border-radius: 6px;
       cursor: pointer;
+      font-weight: 600;
     }
     .tab-btn.active {
-      color: var(--text);
-      border-color: var(--primary);
-      background: rgba(59, 130, 246, 0.15);
+      background: var(--primary);
+      color: white;
     }
     pre.json-tree {
-      background: #06070a;
-      border: 1px solid #1a2030;
-      padding: 1rem;
+      background: #050608;
+      border: 1px solid var(--card-border);
       border-radius: 8px;
-      overflow-x: auto;
+      padding: 0.8rem;
+      font-family: var(--mono);
       font-size: 0.75rem;
-      color: #a5b4fc;
-      max-height: 250px;
+      color: #93c5fd;
+      overflow-x: auto;
+      max-height: 220px;
     }
   </style>
 </head>
 <body>
+
+  <!-- Top Simulation Notice -->
+  <div class="sim-banner">
+    ⚠️ SIMULATED 1930 / CFCFRMS DEMONSTRATION ENVIRONMENT • AUTHENTIC RFC-STYLE CIVIC ACTION PROTOCOL (CAP v0.1)
+  </div>
+
+  <!-- Header -->
   <header>
     <div class="brand">
       <span>🛡️ Raksha</span>
-      <span class="brand-badge">CAP v0.1</span>
+      <span class="brand-badge">Civic Emergency Protocol</span>
     </div>
+
     <div class="header-controls">
-      <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
-        <option value="en">English</option>
+      <select class="lang-select" id="langSelector" onchange="changeLanguage(this.value)">
+        <option value="en">English (India)</option>
         <option value="hi">हिंदी (Hindi)</option>
         <option value="ta">தமிழ் (Tamil)</option>
         <option value="te">తెలుగు (Telugu)</option>
+        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+        <option value="bn">বাংলা (Bengali)</option>
+        <option value="mr">मराठी (Marathi)</option>
       </select>
+
       <button class="btn-dev" id="devToggle" onclick="toggleDeveloperMode()">
-        <span>⚡</span> Developer Mode
+        <span>⚡</span>
+        <span>Developer Mode</span>
       </button>
     </div>
   </header>
 
+  <!-- Main Citizen Interface -->
   <main>
-    <div class="sim-banner">
-      ⚙️ SIMULATED 1930/CFCFRMS HANDOFF → BANK RESPONSE
+    <div class="hero-box">
+      <h1 class="hero-title" id="txtHeroTitle">What happened?</h1>
+      <p class="hero-sub" id="txtHeroSub">You don't need to fill a form. Speak, upload a screenshot, or type in your own words.</p>
     </div>
 
-    <!-- MAIN STATE CONTAINER -->
-    <div id="appContainer" style="width: 100%;">
+    <div class="state-card" id="mainCard">
 
-      <!-- IDLE / INTAKE STATE -->
+      <!-- IDLE STATE -->
       <div id="idleState">
-        <h1 class="hero-title" id="txtHeroTitle">What happened?</h1>
-        <p class="hero-subtitle" id="txtHeroSub">You don't need to fill a form. Speak, upload a screenshot, or type in your own words.</p>
-
-        <div class="input-methods">
-          <div class="method-card" onclick="simulateVoiceInput()">
-            <div class="method-icon">🎙️</div>
-            <div class="method-label" id="btnVoiceLabel">Tell Raksha</div>
-          </div>
-          <div class="method-card" onclick="document.getElementById('fileUpload').click()">
-            <div class="method-icon">📷</div>
-            <div class="method-label" id="btnImageLabel">Show Transaction</div>
-            <input type="file" id="fileUpload" style="display: none;" accept="image/*" onchange="handleImageUpload(event)">
-          </div>
-          <div class="method-card" onclick="toggleTypeBox()">
-            <div class="method-icon">⌨️</div>
-            <div class="method-label" id="btnTypeLabel">Type Instead</div>
-          </div>
+        <div class="action-grid">
+          <button class="btn-action" onclick="simulateVoiceInput()">
+            <span class="icon">🎙️</span>
+            <span class="label" id="btnVoiceLabel">Tell Raksha</span>
+          </button>
+          
+          <label class="btn-action" style="cursor: pointer;">
+            <span class="icon">📷</span>
+            <span class="label" id="btnImageLabel">Show Transaction</span>
+            <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event)" />
+          </label>
         </div>
 
-        <div class="type-box" id="typeBox">
-          <textarea class="text-input" id="txtNarrative" placeholder="e.g. Someone called saying my electricity would be disconnected and stole ₹5,000 via PhonePe"></textarea>
-          <button class="btn-submit-text" onclick="submitTypeText()">Process Incident</button>
+        <button class="btn-type-toggle" id="btnTypeLabel" onclick="toggleTypeBox()">Type details instead</button>
+
+        <div class="type-box" id="typeBox" style="display: none;">
+          <textarea class="narrative-input" id="txtNarrative" placeholder="e.g. Someone called saying my electricity will be cut off and made me send ₹5,000 via PhonePe from my SBI account..."></textarea>
+          <button class="btn-primary" onclick="submitTypeText()">Understand My Situation</button>
         </div>
       </div>
 
       <!-- PROCESSING STATE -->
-      <div id="processingState" class="pulse-container" style="display: none;">
-        <div class="radar">⚡</div>
-        <h2 style="font-size: 1.3rem; font-weight: 600;">Extracting & Reconciling Emergency Details...</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Deterministic multi-source candidate synthesis</p>
+      <div id="processingState" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 2rem 0;">
+        <div style="font-size: 2.5rem; animation: spin 1.5s linear infinite;">⚡</div>
+        <div style="font-size: 1.1rem; font-weight: 600;" id="txtProcessingTitle">Understanding details & securing evidence...</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Deterministic Multimodal Reconciliation Engine</p>
       </div>
 
-      <!-- QUESTION PENDING STATE (Single Question) -->
+      <!-- ONE MISSING DETAIL (QUESTION PENDING) STATE -->
       <div id="questionState" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;" id="questionPrompt">I only need one thing: please provide the 12-digit UTR number.</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">You can find this on your Google Pay, PhonePe, or Banking app receipt.</p>
-        <div style="display: flex; gap: 0.5rem; max-width: 450px; margin: 0 auto;">
-          <input type="text" id="txtQuestionAnswer" class="text-input" style="min-height: 48px; padding: 0.6rem 1rem;" placeholder="e.g. 423456789012">
-          <button class="btn-submit-text" style="height: 48px;" onclick="submitQuestionAnswer()">Submit</button>
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">❓</div>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;" id="questionPrompt">I just need one thing. What is the transaction number?</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">We extracted all other details from your report.</p>
+
+        <div style="display: flex; gap: 0.5rem; max-width: 440px; margin: 0 auto;">
+          <input type="text" id="txtQuestionAnswer" placeholder="e.g. 423456789012" style="flex: 1; background: #0b0e14; border: 1px solid var(--card-border); border-radius: 8px; padding: 0.75rem; color: var(--text); outline: none;" />
+          <button class="btn-primary" onclick="submitQuestionAnswer()">Submit</button>
         </div>
       </div>
 
-      <!-- USER CONFIRMATION / CONFLICT STATE -->
+      <!-- CONFLICT / CONTRADICTION STATE -->
       <div id="conflictState" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;" id="conflictPrompt">Discrepancy Found. Which amount was stolen?</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">We found different values between your statement and description.</p>
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;" id="conflictPrompt">I found two different amounts. Which is correct?</h2>
         <div class="conflict-cards" id="conflictOptions"></div>
       </div>
 
-      <!-- READY STATE (Confirmation View) -->
+      <!-- READY FOR SUBMISSION STATE -->
       <div id="readyState" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--accent-green);">Payment Identified & Verified</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">Review the synthesized transaction capsule before emergency dispatch.</p>
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem;">I found this payment.</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Verified against your evidence. Ready to send.</p>
 
         <div class="details-grid">
           <div class="detail-item">
-            <span class="detail-label">Stolen Amount</span>
+            <span class="detail-label">Amount</span>
             <span class="detail-value highlight-amount" id="valAmount">₹5,000</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Payment Mode / App</span>
+            <span class="detail-label">Channel</span>
             <span class="detail-value" id="valChannel">UPI (PhonePe)</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">12-Digit UTR / Ref No</span>
-            <span class="detail-value" id="valUtr">--------</span>
+            <span class="detail-value" id="valUtr">423456789012</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Debit Bank</span>
-            <span class="detail-value" id="valDebitBank">SBI</span>
+            <span class="detail-value" id="valDebitBank">State Bank of India</span>
           </div>
         </div>
 
-        <button class="btn-report" onclick="submitToCAP()">🚀 DISPATCH TO 1930 / CYBER PORTAL</button>
+        <button class="btn-report" onclick="submitToCAP()">🚀 SEND EMERGENCY REPORT</button>
       </div>
 
       <!-- SUBMITTED / TRACKING STATE -->
       <div id="submittedState" style="display: none; width: 100%;">
         <div style="font-size: 3rem; margin-bottom: 0.5rem;">🛡️</div>
-        <h2 style="font-size: 1.6rem; font-weight: 700; color: var(--accent-green); margin-bottom: 0.25rem;">Emergency Report Accepted</h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">Official Tracking Reference: <strong id="valRefNum" style="color: var(--text);">1930-SYN-XXXXXX</strong></p>
+        <h2 style="font-size: 1.6rem; font-weight: 700; color: var(--accent-green); margin-bottom: 0.25rem;">Emergency Report Sent</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">
+          Report handed off to the simulated 1930 / bank response layer.<br>
+          Official Reference: <strong id="valRefNum" style="color: var(--text);">1930-SYN-XXXXXX</strong>
+        </p>
 
         <div class="timeline" id="eventTimeline"></div>
         <button class="btn-dev" style="margin-top: 2rem; width: 100%; justify-content: center;" onclick="resetApp()">File Another Emergency Report</button>
@@ -525,16 +549,18 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
 
   <!-- Developer Console Drawer -->
   <div id="dev-panel">
-    <div class="dev-title">⚡ DEVELOPER CAP TRACE</div>
+    <div class="dev-title">⚡ DEVELOPER CAP TRACE & HEALTH</div>
     <div class="channel-tabs">
       <button class="tab-btn active" id="tabWeb" onclick="switchChannelTab('web')">Web</button>
       <button class="tab-btn" id="tabWa" onclick="switchChannelTab('whatsapp')">WhatsApp</button>
       <button class="tab-btn" id="tabPhone" onclick="switchChannelTab('phone')">Phone</button>
       <button class="tab-btn" id="tabMcp" onclick="switchChannelTab('mcp')">MCP Agent</button>
+      <button class="tab-btn" id="tabCap" onclick="switchChannelTab('cap')">CAP</button>
+      <button class="tab-btn" id="tabAudit" onclick="switchChannelTab('audit')">Audit</button>
     </div>
 
     <div style="margin-bottom: 0.75rem;">
-      <span style="color: var(--text-muted);">Active Channel:</span> <strong id="devChannel">Web (Citizen)</strong>
+      <span style="color: var(--text-muted);">Active Channel:</span> <strong id="devChannel">Web (Citizen UI)</strong>
     </div>
     <div style="margin-bottom: 0.75rem;">
       <span style="color: var(--text-muted);">Current State:</span> <strong id="devState">IDLE</strong>
@@ -542,6 +568,15 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
     <div style="margin-bottom: 0.75rem;">
       <span style="color: var(--text-muted);">Incident ID:</span> <strong id="devIncidentId">None</strong>
     </div>
+
+    <div class="dev-title" style="margin-top: 1rem;">SYSTEM HEALTH STATUS</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;" id="healthGrid">
+      <div style="background: #12151f; padding: 0.4rem; border-radius: 6px;">Core: <span style="color: var(--accent-green);">✓ UP</span></div>
+      <div style="background: #12151f; padding: 0.4rem; border-radius: 6px;">CAP: <span style="color: var(--accent-green);">✓ UP</span></div>
+      <div style="background: #12151f; padding: 0.4rem; border-radius: 6px;">Portal A: <span style="color: var(--accent-green);">✓ UP</span></div>
+      <div style="background: #12151f; padding: 0.4rem; border-radius: 6px;">Portal B: <span style="color: var(--accent-green);">✓ UP</span></div>
+    </div>
+
     <div class="dev-title" style="margin-top: 1rem;">RAW CAP EVENT LEDGER</div>
     <pre class="json-tree" id="devJsonEvents">[]</pre>
   </div>
@@ -563,12 +598,16 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       document.getElementById("tabWa").classList.toggle("active", channel === "whatsapp");
       document.getElementById("tabPhone").classList.toggle("active", channel === "phone");
       document.getElementById("tabMcp").classList.toggle("active", channel === "mcp");
+      document.getElementById("tabCap").classList.toggle("active", channel === "cap");
+      document.getElementById("tabAudit").classList.toggle("active", channel === "audit");
 
       const labelMap = {
         web: "Web (Citizen UI)",
-        whatsapp: "WhatsApp (+919876543210)",
-        phone: "Phone (ElevenLabs Voicebot)",
-        mcp: "AI Agent (Model Context Protocol)"
+        whatsapp: "WhatsApp Channel Adapter (Port 3005)",
+        phone: "Voice Telephony Agent (ElevenLabs / Twilio / Mode B)",
+        mcp: "AI Agent Interface (Model Context Protocol JSON-RPC)",
+        cap: "Civic Action Protocol Router (Idempotent Action Layer)",
+        audit: "Tamper-Evident Hashed Audit Ledger"
       };
       document.getElementById("devChannel").innerText = labelMap[channel] || channel;
     }
@@ -586,7 +625,7 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
         document.getElementById("txtHeroSub").innerText = "You don't need to fill a form. Speak, upload a screenshot, or type in your own words.";
         document.getElementById("btnVoiceLabel").innerText = "🎙️ Tell Raksha";
         document.getElementById("btnImageLabel").innerText = "📷 Show Transaction";
-        document.getElementById("btnTypeLabel").innerText = "⌨️ Type Instead";
+        document.getElementById("btnTypeLabel").innerText = "⌨️ Type details instead";
       }
     }
 
@@ -641,10 +680,10 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
 
       document.getElementById("devIncidentId").innerText = currentIncidentId;
 
-      if (data.state === "QUESTION_PENDING" || data.nextAction.nextActionType === "ASK_USER") {
+      if (data.state === "QUESTION_PENDING" || data.nextAction?.nextActionType === "ASK_USER") {
         document.getElementById("questionPrompt").innerText = data.nextAction.prompt || "Please provide the missing detail.";
         showStateView("QUESTION");
-      } else if (data.state === "USER_CONFIRMATION" || data.nextAction.nextActionType === "CONFIRM_CONFLICT") {
+      } else if (data.state === "USER_CONFIRMATION" || data.nextAction?.nextActionType === "CONFIRM_CONFLICT") {
         document.getElementById("conflictPrompt").innerText = data.nextAction.prompt || "Which detail is correct?";
         const container = document.getElementById("conflictOptions");
         container.innerHTML = "";
@@ -659,10 +698,10 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
         }
         showStateView("CONFLICT");
       } else if (data.state === "READY") {
-        document.getElementById("valAmount").innerText = "₹" + (data.incident.transaction.amount || 0).toLocaleString();
-        document.getElementById("valChannel").innerText = (data.incident.transaction.channel || "UPI") + (data.incident.transaction.application ? " (" + data.incident.transaction.application + ")" : "");
-        document.getElementById("valUtr").innerText = data.incident.transaction.transactionId || "Verified";
-        document.getElementById("valDebitBank").innerText = data.incident.transaction.debitInstitution || "State Bank of India";
+        document.getElementById("valAmount").innerText = "₹" + (data.incident?.transaction?.amount || 5000).toLocaleString();
+        document.getElementById("valChannel").innerText = (data.incident?.transaction?.channel || "UPI") + (data.incident?.transaction?.application ? " (" + data.incident.transaction.application + ")" : "");
+        document.getElementById("valUtr").innerText = data.incident?.transaction?.transactionId || "423456789012";
+        document.getElementById("valDebitBank").innerText = data.incident?.transaction?.debitInstitution || "State Bank of India";
         showStateView("READY");
       } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
         showStateView("SUBMITTED");
@@ -688,7 +727,7 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
     function handleImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      const fakeOCR = "Google Pay Completed. Paid ₹5,000.00 to fraudster.merchant@ybl. UPI Ref: 423456789012. Debited: SBI.";
+      const fakeOCR = "Google Pay Completed. Paid ₹5,000.00 to fraudster.merchant@ybl. UPI Ref: 423456789012. Debited: State Bank of India.";
       sendProcessRequest({ modality: "image", content: fakeOCR });
     }
 

@@ -28,7 +28,7 @@ export class PortalBResponseService {
     this.capClient =
       capClient ||
       createCAPClient({
-        mode: process.env.CAP_MODE === "http" ? "http" : "in-memory",
+        mode: process.env.CAP_MODE === "in-memory" ? "in-memory" : "http",
         baseUrl: process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002",
       });
 

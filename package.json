@@ -13,6 +13,8 @@
     "demo": "tsx scripts/demo-start.ts",
     "demo:start": "tsx scripts/demo-start.ts",
     "demo:reset": "tsx scripts/demo-reset.ts",
+    "demo:check": "tsx scripts/demo-check.ts",
+    "demo:scenario": "tsx scripts/demo-scenario.ts",
     "dev:core": "pnpm --filter @raksha/core dev",
     "dev:cap": "pnpm --filter @raksha/cap dev",
     "dev:portal-a": "pnpm --filter @raksha/portal-a dev",
