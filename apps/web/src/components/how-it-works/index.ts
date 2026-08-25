@@ -798,7 +798,7 @@ export function renderHowItWorksStyles(): string {
       border-color: rgba(234, 88, 12, 0.3);
     }
 
-    /* Card Image Box with Mascot & Background Watermark Icon */
+    /* Card Image Box with Mascot & Full-Opacity Background Brand Icon */
     .channel-img-box {
       height: 220px;
       position: relative;
@@ -810,38 +810,35 @@ export function renderHowItWorksStyles(): string {
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     
-    /* Big Watermark Icon behind character portraits */
-    .channel-bg-watermark {
+    /* Full Opacity Brand Icon directly behind mascot characters */
+    .channel-bg-icon {
       position: absolute;
-      top: 18px;
-      right: 18px;
-      width: 140px;
-      height: 140px;
+      top: 14px;
+      right: 14px;
+      width: 145px;
+      height: 145px;
       z-index: 1;
       pointer-events: none;
       display: grid;
       place-items: center;
-      transition: transform 0.4s ease, opacity 0.3s ease;
+      transition: transform 0.4s ease;
     }
-    .channel-bg-watermark svg {
+    .channel-bg-icon svg {
       width: 100%;
       height: 100%;
     }
-    .watermark-orange {
+    .icon-bg-orange {
       color: #ea580c;
-      opacity: 0.12;
+      filter: drop-shadow(0 12px 28px rgba(234, 88, 12, 0.25));
     }
-    .watermark-green {
-      color: #16a34a;
-      opacity: 0.12;
+    .icon-bg-green {
+      filter: drop-shadow(0 12px 28px rgba(37, 211, 102, 0.25));
     }
-    .watermark-blue {
-      color: #2563eb;
-      opacity: 0.12;
+    .icon-bg-blue {
+      filter: drop-shadow(0 12px 28px rgba(37, 99, 235, 0.25));
     }
-    .channel-card:hover .channel-bg-watermark {
-      transform: scale(1.08) rotate(-4deg);
-      opacity: 0.18;
+    .channel-card:hover .channel-bg-icon {
+      transform: scale(1.08) rotate(-3deg);
     }
 
     .channel-mascot-img {
@@ -851,14 +848,13 @@ export function renderHowItWorksStyles(): string {
       height: 100%;
       object-fit: cover;
       object-position: center top;
-      mix-blend-mode: multiply;
       transition: transform 0.4s ease;
     }
     .channel-card:hover .channel-mascot-img {
       transform: scale(1.04);
     }
 
-    /* AI Agents Spherical Overlapping Cluster Box */
+    /* AI Agents Spherical Constellation Box with Generous Spacing */
     .ai-agents-box {
       background: radial-gradient(circle at center, #ffffff 0%, #faf8f5 100%);
       padding: 0;
@@ -871,8 +867,8 @@ export function renderHowItWorksStyles(): string {
     }
     .ai-sphere-cluster {
       position: relative;
-      width: 200px;
-      height: 190px;
+      width: 230px;
+      height: 210px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -885,113 +881,109 @@ export function renderHowItWorksStyles(): string {
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
       cursor: pointer;
       flex-shrink: 0;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
     }
     .ai-sphere-node svg {
       width: 100%;
       height: 100%;
     }
 
-    /* Spherical Orbital Offsets */
-    .node-center {
-      width: 48px;
-      height: 48px;
-      z-index: 10;
-      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.15));
-    }
+    /* Spherical Radial Distribution (Clean Spacing) */
     .node-top {
-      top: 4px;
+      top: 6px;
       left: 50%;
       transform: translateX(-50%);
-      width: 44px;
-      height: 44px;
-      z-index: 8;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      width: 38px;
+      height: 38px;
+      z-index: 5;
     }
     .node-top-right {
-      top: 22px;
-      right: 18px;
-      width: 42px;
-      height: 42px;
-      z-index: 7;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      top: 24px;
+      right: 22px;
+      width: 38px;
+      height: 38px;
+      z-index: 5;
     }
     .node-right {
       top: 50%;
-      right: 2px;
+      right: 6px;
       transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      z-index: 8;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      width: 38px;
+      height: 38px;
+      z-index: 5;
     }
     .node-bot-right {
-      bottom: 22px;
-      right: 18px;
-      width: 42px;
-      height: 42px;
-      z-index: 7;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      bottom: 24px;
+      right: 22px;
+      width: 38px;
+      height: 38px;
+      z-index: 5;
     }
     .node-bot {
-      bottom: 4px;
+      bottom: 6px;
       left: 50%;
       transform: translateX(-50%);
-      width: 44px;
-      height: 44px;
-      z-index: 8;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      width: 38px;
+      height: 38px;
+      z-index: 5;
     }
     .node-bot-left {
-      bottom: 22px;
-      left: 18px;
-      width: 42px;
-      height: 42px;
-      z-index: 7;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      bottom: 24px;
+      left: 22px;
+      width: 38px;
+      height: 38px;
+      z-index: 5;
     }
     .node-left {
       top: 50%;
-      left: 2px;
-      transform: translateY(-50%);
-      width: 44px;
-      height: 44px;
-      z-index: 8;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
-    }
-    .node-top-left {
-      top: 22px;
-      left: 18px;
-      width: 42px;
-      height: 42px;
-      z-index: 7;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
-    }
-    .node-inner-left {
-      top: 50%;
-      left: 44px;
+      left: 6px;
       transform: translateY(-50%);
       width: 38px;
       height: 38px;
+      z-index: 5;
+    }
+    .node-top-left {
+      top: 24px;
+      left: 22px;
+      width: 38px;
+      height: 38px;
+      z-index: 5;
+    }
+
+    /* Inner Core Trio (Generously spaced) */
+    .node-inner-left {
+      top: 50%;
+      left: 56px;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
       z-index: 6;
-      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
+    }
+    .node-center {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 42px;
+      height: 42px;
+      z-index: 8;
+      filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.18));
     }
     .node-inner-right {
       top: 50%;
-      right: 44px;
+      right: 56px;
       transform: translateY(-50%);
-      width: 38px;
-      height: 38px;
+      width: 34px;
+      height: 34px;
       z-index: 6;
-      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
     }
 
     .ai-sphere-node:hover {
-      transform: scale(1.32) translateY(-3px) !important;
+      transform: scale(1.3) translateY(-3px) !important;
       z-index: 25 !important;
-      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.22)) !important;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.24)) !important;
     }
 
-    /* Prominent Floating Overlay Badges on Cards */
+    /* Prominent Floating Overlay Badge (1930 Pill on Card 1) */
     .channel-floating-badge {
       position: absolute;
       top: 14px;
@@ -1011,20 +1003,6 @@ export function renderHowItWorksStyles(): string {
       color: #ea580c;
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
     }
-    .badge-circle {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: #ffffff;
-      border: 1.5px solid rgba(0, 0, 0, 0.08);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
-    }
-    .badge-circle svg {
-      width: 22px;
-      height: 22px;
-    }
     .badge-dot-orange {
       width: 8px;
       height: 8px;
@@ -1032,8 +1010,6 @@ export function renderHowItWorksStyles(): string {
       background: #ea580c;
       animation: pulseLive 1.8s infinite;
     }
-    .badge-green { color: #16a34a; }
-    .badge-blue { color: #2563eb; }
 
     /* Card Content */
     .channel-content {
