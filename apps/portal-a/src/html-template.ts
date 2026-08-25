@@ -146,7 +146,7 @@ export function renderPortalAHtml(): string {
       return \`
         <div class="card">
           <h2>Intake dashboard</h2>
-          <p class="muted">Cases exist only in Portal A local state after CAP \`report_financial_fraud\`. Portal A does not read the Raksha database.</p>
+          <p class="muted">Cases exist only in Portal A local state after CAP report_financial_fraud. Portal A does not read the Raksha database.</p>
         </div>
         <div class="card">
           <h2>Cases</h2>
