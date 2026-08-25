@@ -773,36 +773,33 @@ export function renderHowItWorksStyles(): string {
 
     /* AI Agents Showcase Box */
     .ai-agents-box {
-      background: radial-gradient(circle at center, #f5f3ff 0%, #faf8f5 100%);
-      padding: 1.5rem 1rem;
+      background: radial-gradient(circle at center, #fdfbfa 0%, #faf8f5 100%);
+      padding: 1.5rem 1.25rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      min-height: 210px;
     }
-    .ai-logos-showcase {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.75rem;
+    .ai-logos-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 1.15rem;
       width: 100%;
-      max-width: 180px;
+      max-width: 230px;
     }
-    .ai-logo-pill {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 0.65rem 0.45rem;
-      display: grid;
-      place-items: center;
-      color: #334155;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-      transition: all 0.2s ease;
+    .ai-brand-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+      cursor: default;
     }
-    .ai-logo-pill:hover {
-      transform: scale(1.1);
-      border-color: #8b5cf6;
-      color: #7c3aed;
-      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    .ai-brand-item:hover {
+      transform: scale(1.18) translateY(-2px);
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.12));
     }
 
     /* Floating Badges on Cards */
