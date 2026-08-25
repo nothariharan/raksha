@@ -7,6 +7,7 @@
 import { CAPActionResponse, CAPEvent, IncidentAcceptedEventPayload } from "@raksha/schemas";
 import { createCAPClient, ICAPClient } from "@raksha/cap-sdk";
 import { globalEventBus } from "@raksha/shared";
+import { PortalBLifecycle, nextLifecycle, transitionLifecycle } from "./state-machine.js";
 
 export interface ReceivedAlert {
   caseId: string;
@@ -14,6 +15,7 @@ export interface ReceivedAlert {
   externalReference: string;
   receivedAt: string;
   status: "PENDING_REVIEW" | "LIEN_MARKED" | "ACCOUNT_FROZEN";
+  lifecycle: PortalBLifecycle;
 }
 
 export class PortalBResponseService {
@@ -44,6 +46,7 @@ export class PortalBResponseService {
           externalReference: payload.externalReference,
           receivedAt: event.timestamp,
           status: "PENDING_REVIEW",
+          lifecycle: "NEW",
         });
       }
     );
@@ -63,6 +66,7 @@ export class PortalBResponseService {
           externalReference: ev.payload.externalReference,
           receivedAt: ev.timestamp,
           status: "PENDING_REVIEW",
+          lifecycle: "NEW",
         });
         this.lastPolledTimestamp = ev.timestamp;
       }
@@ -83,6 +87,7 @@ export class PortalBResponseService {
     const alert = this.alerts.get(params.caseId);
     if (alert) {
       alert.status = params.actionTaken === "ACCOUNT_FROZEN" ? "ACCOUNT_FROZEN" : "LIEN_MARKED";
+      alert.lifecycle = "ACKNOWLEDGED";
     }
 
     return this.capClient.executeAction(
@@ -90,6 +95,20 @@ export class PortalBResponseService {
       params,
       params.idempotencyKey || `ack-${params.caseId}-${params.actionTaken}`
     );
+  }
+
+  async advanceAlertLifecycle(caseId: string): Promise<ReceivedAlert | null> {
+    const alert = this.alerts.get(caseId);
+    if (!alert) return null;
+
+    const next = nextLifecycle(alert.lifecycle);
+    if (next) {
+      alert.lifecycle = transitionLifecycle(alert.lifecycle, next);
+      if (alert.lifecycle === "ACKNOWLEDGED") {
+        alert.status = "LIEN_MARKED";
+      }
+    }
+    return alert;
   }
 
   listAlerts(): ReceivedAlert[] {
