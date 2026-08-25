@@ -1,12 +1,18 @@
 /**
  * Raksha Web App HTTP Server
- * Serves the citizen emergency interface, developer CAP console, and static brand assets.
+ * Serves the single-screen editorial hero, dedicated secondary routes, and static brand assets.
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { renderRakshaWebAppHtml } from "./html-template.js";
+import {
+  renderHomePageHtml,
+  renderHowPageHtml,
+  renderAgentsPageHtml,
+  renderCapPageHtml,
+  renderAppPageHtml,
+} from "./html-template.js";
 
 export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) {
   const coreUrl = config?.coreUrl || process.env.CORE_BASE_URL || "http://localhost:3001";
@@ -22,7 +28,7 @@ export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) 
       return;
     }
 
-    // Static Assets
+    // Static Assets (/images/* or /public/*)
     if (pathname.startsWith("/images/") || pathname.startsWith("/public/")) {
       const cleanPath = pathname.replace(/^\/public/, "");
       const fullPath = join(process.cwd(), "apps", "web", "public", cleanPath);
@@ -44,9 +50,38 @@ export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) 
       }
     }
 
-    if (pathname === "/" || pathname === "/index.html" || pathname === "/app") {
+    // Route: / (Single-Screen Editorial Hero)
+    if (pathname === "/" || pathname === "/index.html") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      res.end(renderRakshaWebAppHtml({ coreUrl, capUrl }));
+      res.end(renderHomePageHtml());
+      return;
+    }
+
+    // Route: /how (How Raksha Works)
+    if (pathname === "/how") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(renderHowPageHtml());
+      return;
+    }
+
+    // Route: /agents (For AI Agents & MCP)
+    if (pathname === "/agents") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(renderAgentsPageHtml());
+      return;
+    }
+
+    // Route: /cap (Civic Action Protocol Spec)
+    if (pathname === "/cap") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(renderCapPageHtml());
+      return;
+    }
+
+    // Route: /app or /demo (Interactive Citizen Console)
+    if (pathname === "/app" || pathname === "/demo") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(renderAppPageHtml({ coreUrl, capUrl }));
       return;
     }
 
