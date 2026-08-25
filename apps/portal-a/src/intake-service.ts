@@ -5,13 +5,21 @@
 
 import { FraudIncident, CAPActionResponse } from "@raksha/schemas";
 import { createCAPClient, ICAPClient } from "@raksha/cap-sdk";
+import {
+  PortalALifecycle,
+  nextLifecycle,
+  transitionLifecycle,
+} from "./state-machine.js";
 
 export interface PortalACase {
   portalCaseId: string;
   capCaseId: string;
   externalReference: string;
+  /** CAP case status mirrored from the last CAP response. */
   status: "ACCEPTED" | "REJECTED" | "INVESTIGATING" | "CLOSED";
+  lifecycle: PortalALifecycle;
   incidentId: string;
+  incident: FraudIncident;
   receivedAt: string;
   summary: string;
 }
@@ -39,7 +47,6 @@ export class PortalAIntakeService {
     portalCase: PortalACase | null;
     capResponse: CAPActionResponse;
   }> {
-    // 1. Submit through CAP with optional Idempotency Key
     const capResponse = await this.capClient.executeAction(
       "report_financial_fraud",
       { incident },
@@ -54,7 +61,6 @@ export class PortalAIntakeService {
       };
     }
 
-    // Check if we already have this case locally
     const existing = Array.from(this.localCases.values()).find(
       (c) => c.capCaseId === capResponse.caseId
     );
@@ -66,16 +72,23 @@ export class PortalAIntakeService {
       };
     }
 
-    // 2. Create Portal A internal case
+    const capCase = await this.capClient.getCase(capResponse.caseId);
+    const storedIncident =
+      capCase && capCase.payload && typeof capCase.payload === "object" && "id" in (capCase.payload as object)
+        ? (capCase.payload as FraudIncident)
+        : incident;
+
     const portalCaseId = `PA-${String(portalCaseCounter++).padStart(6, "0")}`;
     const portalCase: PortalACase = {
       portalCaseId,
       capCaseId: capResponse.caseId,
       externalReference: capResponse.externalReference || `1930-SYN-${capResponse.caseId}`,
       status: "ACCEPTED",
-      incidentId: incident.id,
+      lifecycle: "ACCEPTED",
+      incidentId: storedIncident.id,
+      incident: storedIncident,
       receivedAt: new Date().toISOString(),
-      summary: `Cyber Fraud Report: ₹${incident.transaction.amount || 0} via ${incident.transaction.channel || "UPI"}`,
+      summary: `Cyber Fraud Report: ₹${storedIncident.transaction.amount || 0} via ${storedIncident.transaction.channel || "UPI"}`,
     };
 
     this.localCases.set(portalCaseId, portalCase);
@@ -87,8 +100,42 @@ export class PortalAIntakeService {
     };
   }
 
+  async acknowledgeCase(portalCaseId: string): Promise<PortalACase | null> {
+    const portalCase = this.localCases.get(portalCaseId);
+    if (!portalCase) return null;
+
+    const target = nextLifecycle(portalCase.lifecycle);
+    if (!target) {
+      return portalCase;
+    }
+
+    portalCase.lifecycle = transitionLifecycle(portalCase.lifecycle, target);
+    const capCase = await this.capClient.getCase(portalCase.capCaseId);
+    if (capCase?.status) {
+      if (capCase.status === "ACCEPTED") portalCase.status = "ACCEPTED";
+    }
+
+    await this.capClient.emitEvent({
+      type: "case.updated",
+      caseId: portalCase.capCaseId,
+      incidentId: portalCase.incidentId,
+      source: "portal-a",
+      payload: {
+        portalCaseId: portalCase.portalCaseId,
+        lifecycle: portalCase.lifecycle,
+      },
+    });
+
+    this.localCases.set(portalCaseId, portalCase);
+    return portalCase;
+  }
+
   getPortalCase(portalCaseId: string): PortalACase | null {
     return this.localCases.get(portalCaseId) || null;
+  }
+
+  getPortalCaseByCapId(capCaseId: string): PortalACase | null {
+    return Array.from(this.localCases.values()).find((c) => c.capCaseId === capCaseId) || null;
   }
 
   listPortalCases(): PortalACase[] {
