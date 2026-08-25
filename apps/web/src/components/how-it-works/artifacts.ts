@@ -128,11 +128,13 @@ export function renderStepArtifact(stepKey: string): string {
       return `
         <div class="artifact-card artifact-cap">
           <div class="artifact-cap-nodes">
-            <div class="artifact-cap-box">
-              <div class="artifact-cap-tag">Action</div>
-              <div class="artifact-cap-val font-mono">report_financial_fraud</div>
+            <div class="artifact-cap-box cap-action">
+              <span class="artifact-cap-tag">Action</span>
+              <span class="artifact-cap-val font-mono">report_fraud</span>
             </div>
-            <div class="artifact-cap-arrow">▶</div>
+            <div class="artifact-cap-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+            </div>
             <div class="artifact-cap-box highlight">
               <div class="artifact-cap-icon">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -141,26 +143,21 @@ export function renderStepArtifact(stepKey: string): string {
               </div>
               <div class="artifact-cap-meta">
                 <strong>1930</strong>
-                <span>Cyber Crime Intake</span>
+                <span>Cyber Intake</span>
               </div>
             </div>
-            <div class="artifact-cap-arrow">▶</div>
+            <div class="artifact-cap-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+            </div>
             <div class="artifact-cap-box">
               <div class="artifact-cap-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="3" y1="21" x2="21" y2="21"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                  <polyline points="5 6 12 3 19 6"/>
-                  <line x1="4" y1="10" x2="4" y2="21"/>
-                  <line x1="20" y1="10" x2="20" y2="21"/>
-                  <line x1="8" y1="14" x2="8" y2="17"/>
-                  <line x1="12" y1="14" x2="12" y2="17"/>
-                  <line x1="16" y1="14" x2="16" y2="17"/>
+                  <line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/>
                 </svg>
               </div>
               <div class="artifact-cap-meta">
                 <strong>Bank / FIU</strong>
-                <span>Financial Response</span>
+                <span>Response</span>
               </div>
             </div>
           </div>

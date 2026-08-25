@@ -40,15 +40,15 @@ export function renderHowItWorksStyles(): string {
       border-top: 1px solid var(--border);
     }
     .how-container {
-      max-width: 1200px;
+      max-width: 1280px;
       margin: 0 auto;
     }
 
-    /* 2-Column Desktop Grid */
+    /* 2-Column Desktop Grid with generous right stage column */
     .how-grid {
       display: grid;
-      grid-template-columns: minmax(320px, 420px) 1fr;
-      gap: clamp(2.5rem, 5vw, 5.5rem);
+      grid-template-columns: 340px 1fr;
+      gap: clamp(2.5rem, 4.5vw, 5rem);
       align-items: start;
       position: relative;
     }
@@ -69,8 +69,8 @@ export function renderHowItWorksStyles(): string {
       color: var(--orange);
     }
     .how-title {
-      font-size: clamp(2.4rem, 4.5vw, 3.8rem);
-      line-height: 1.04;
+      font-size: clamp(2.4rem, 4.2vw, 3.6rem);
+      line-height: 1.05;
       font-weight: 800;
       letter-spacing: -0.055em;
       color: #0f172a;
@@ -134,6 +134,7 @@ export function renderHowItWorksStyles(): string {
       flex-direction: column;
       gap: 2.2rem;
       position: relative;
+      min-width: 0;
     }
 
     /* Persistent Case Header Card */
@@ -216,13 +217,13 @@ export function renderHowItWorksStyles(): string {
       position: relative;
     }
 
-    /* Step Item Card (Stacked) */
+    /* Step Item Card (Non-overflowing Responsive Grid) */
     .journey-step-row {
       display: grid;
-      grid-template-columns: 84px 1fr 1.15fr;
-      gap: 1.4rem;
+      grid-template-columns: 80px minmax(200px, 1fr) minmax(310px, 1.3fr);
+      gap: 1.35rem;
       align-items: center;
-      padding: 1.4rem 1.5rem;
+      padding: 1.35rem 1.6rem;
       background: #ffffff;
       border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 22px;
@@ -230,6 +231,7 @@ export function renderHowItWorksStyles(): string {
       transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       cursor: pointer;
+      min-width: 0;
     }
     .journey-step-row:hover {
       border-color: rgba(234, 88, 12, 0.25);
@@ -295,16 +297,18 @@ export function renderHowItWorksStyles(): string {
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
+      min-width: 0;
     }
     .journey-step-title {
-      font-size: 1.12rem;
+      font-size: 1.15rem;
       font-weight: 800;
       color: #0f172a;
       letter-spacing: -0.02em;
       margin: 0;
+      white-space: nowrap;
     }
     .journey-step-desc {
-      font-size: 0.84rem;
+      font-size: 0.85rem;
       line-height: 1.45;
       color: #64748b;
       margin: 0;
@@ -315,6 +319,7 @@ export function renderHowItWorksStyles(): string {
       display: flex;
       justify-content: flex-end;
       align-items: center;
+      min-width: 0;
     }
 
     /* Artifact Card Components */
@@ -325,6 +330,8 @@ export function renderHowItWorksStyles(): string {
       border-radius: 16px;
       padding: 0.85rem 1.1rem;
       box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+      min-width: 0;
+      overflow: hidden;
     }
 
     /* 1. Voice Artifact */
@@ -507,7 +514,7 @@ export function renderHowItWorksStyles(): string {
       gap: 1rem;
     }
     .artifact-confirm-title {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #0f172a;
     }
@@ -528,6 +535,7 @@ export function renderHowItWorksStyles(): string {
       font-weight: 700;
       cursor: pointer;
       transition: background 0.15s;
+      flex-shrink: 0;
     }
     .artifact-confirm-btn:hover {
       background: var(--orange);
@@ -537,40 +545,53 @@ export function renderHowItWorksStyles(): string {
       height: 12px;
     }
 
-    /* 5. CAP Artifact */
+    /* 5. CAP Artifact (Clean Non-overflowing Flex Grid) */
     .artifact-cap-nodes {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.5rem;
+      gap: 0.35rem;
+      width: 100%;
     }
     .artifact-cap-box {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
-      padding: 0.45rem 0.65rem;
+      padding: 0.38rem 0.55rem;
       display: flex;
       align-items: center;
-      gap: 0.45rem;
-      font-size: 0.72rem;
+      gap: 0.4rem;
+      font-size: 0.7rem;
+      flex: 1;
+      min-width: 0;
     }
     .artifact-cap-box.highlight {
       border-color: #bfdbfe;
       background: #eff6ff;
     }
+    .artifact-cap-box.cap-action {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.1rem;
+    }
     .artifact-cap-tag {
-      font-size: 0.62rem;
+      font-size: 0.56rem;
       color: #64748b;
-      font-weight: 600;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .artifact-cap-val {
       font-weight: 700;
       color: #2563eb;
+      font-size: 0.65rem;
+      white-space: nowrap;
     }
     .artifact-cap-icon {
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
       color: #2563eb;
+      flex-shrink: 0;
     }
     .artifact-cap-icon svg {
       width: 100%;
@@ -580,18 +601,29 @@ export function renderHowItWorksStyles(): string {
       display: flex;
       flex-direction: column;
       line-height: 1.15;
+      min-width: 0;
     }
     .artifact-cap-meta strong {
       font-size: 0.72rem;
       color: #0f172a;
+      white-space: nowrap;
     }
     .artifact-cap-meta span {
-      font-size: 0.6rem;
+      font-size: 0.56rem;
       color: #64748b;
+      white-space: nowrap;
     }
     .artifact-cap-arrow {
+      width: 14px;
+      height: 14px;
       color: #94a3b8;
-      font-size: 0.7rem;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .artifact-cap-arrow svg {
+      width: 100%;
+      height: 100%;
     }
 
     /* 6. Live Timeline Artifact */
@@ -678,7 +710,7 @@ export function renderHowItWorksStyles(): string {
       border-top: 1px solid var(--border);
     }
     .channels-container {
-      max-width: 1200px;
+      max-width: 1280px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -810,7 +842,7 @@ export function renderHowItWorksStyles(): string {
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     
-    /* Full Opacity Brand Icon positioned high in the top corner behind mascot characters */
+    /* Full Opacity Brand Icon positioned high in top corner behind mascot characters */
     .channel-bg-icon {
       position: absolute;
       top: -8px;
@@ -822,10 +854,6 @@ export function renderHowItWorksStyles(): string {
       display: grid;
       place-items: center;
       transition: transform 0.4s ease;
-    }
-    .channel-bg-icon svg {
-      width: 100%;
-      height: 100%;
     }
     .icon-bg-orange {
       color: #ea580c;
@@ -1081,7 +1109,7 @@ export function renderHowItWorksStyles(): string {
     }
 
     /* Responsive Breakpoints */
-    @media (max-width: 1024px) {
+    @media (max-width: 1080px) {
       .how-grid {
         grid-template-columns: 1fr;
         gap: 3rem;
@@ -1100,14 +1128,18 @@ export function renderHowItWorksStyles(): string {
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .journey-step-row {
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 80px 1fr;
         gap: 1rem;
       }
       .journey-step-artifact {
         grid-column: 1 / -1;
-        justify-content: stretch;
+        width: 100%;
+        margin-top: 0.35rem;
+      }
+      .journey-step-title {
+        white-space: normal;
       }
       .case-header-card {
         flex-direction: column;
