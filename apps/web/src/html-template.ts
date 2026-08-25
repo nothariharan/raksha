@@ -98,17 +98,17 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       border: 1px solid var(--card-border);
       padding: 0.4rem 0.8rem;
       border-radius: 8px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.4rem;
       transition: all 0.2s;
     }
-    .btn-dev.active {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--accent-amber);
-      border-color: var(--accent-amber);
+    .btn-dev:hover, .btn-dev.active {
+      color: var(--text);
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
     }
 
     main {
@@ -117,76 +117,78 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem 1rem;
-      max-width: 720px;
+      padding: 2rem;
+      max-width: 800px;
       margin: 0 auto;
       width: 100%;
-    }
-
-    .view-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 2.5rem 2rem;
-      width: 100%;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       text-align: center;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    h1.hero-title {
+    .sim-banner {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--accent-amber);
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .hero-title {
       font-size: 2.25rem;
       font-weight: 700;
       letter-spacing: -0.03em;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
     }
-
-    p.hero-sub {
+    .hero-subtitle {
       color: var(--text-muted);
-      font-size: 1rem;
+      font-size: 1.05rem;
       margin-bottom: 2.5rem;
-      max-width: 480px;
     }
 
-    .action-grid {
+    .input-methods {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.25rem;
       width: 100%;
-      margin-bottom: 1.5rem;
-    }
-    @media (max-width: 640px) {
-      .action-grid { grid-template-columns: 1fr; }
+      margin-bottom: 2rem;
     }
 
-    .action-btn {
-      background: rgba(255, 255, 255, 0.03);
+    .method-card {
+      background: var(--card);
       border: 1px solid var(--card-border);
-      color: var(--text);
-      padding: 1.5rem 1rem;
-      border-radius: 12px;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      justify-content: center;
+      gap: 1rem;
       cursor: pointer;
-      font-weight: 500;
-      font-size: 0.95rem;
-      transition: all 0.2s;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
     }
-    .action-btn:hover {
-      background: rgba(59, 130, 246, 0.08);
+    .method-card:hover {
       border-color: var(--primary);
       transform: translateY(-2px);
+      box-shadow: 0 12px 24px -10px rgba(59, 130, 246, 0.2);
     }
-    .action-btn svg { width: 32px; height: 32px; color: var(--primary); }
+    .method-icon {
+      font-size: 2.5rem;
+    }
+    .method-label {
+      font-weight: 600;
+      font-size: 1rem;
+    }
 
     .type-box {
       width: 100%;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 0.75rem;
       margin-top: 1rem;
@@ -298,154 +300,198 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       cursor: pointer;
       width: 100%;
       letter-spacing: -0.01em;
-      transition: all 0.2s;
+      transition: opacity 0.2s;
     }
-    .btn-report:hover {
-      background: #059669;
-      color: #fff;
-    }
+    .btn-report:hover { opacity: 0.9; }
 
-    /* Timeline */
+    /* Timeline Styles */
     .timeline {
-      width: 100%;
-      text-align: left;
-      margin-top: 1.5rem;
-      border-left: 2px solid var(--card-border);
-      padding-left: 1.5rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      text-align: left;
+      width: 100%;
+      margin-top: 1.5rem;
     }
-    .timeline-item { position: relative; }
-    .timeline-item::before {
-      content: "";
-      position: absolute;
-      left: -1.95rem;
-      top: 0.25rem;
-      width: 10px;
-      height: 10px;
+    .timeline-step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      position: relative;
+    }
+    .timeline-dot {
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      background: var(--primary);
+      background: var(--accent-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: black;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 0.2rem;
     }
-    .timeline-item.done::before { background: var(--accent-green); }
-    .timeline-title { font-weight: 600; font-size: 0.9rem; }
-    .timeline-time { font-size: 0.75rem; color: var(--text-muted); }
+    .timeline-content {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      padding: 0.8rem 1.2rem;
+      border-radius: 10px;
+      width: 100%;
+    }
+    .timeline-title { font-weight: 600; font-size: 0.95rem; }
+    .timeline-sub { font-size: 0.8rem; color: var(--text-muted); font-family: var(--mono); }
 
     /* Developer Drawer */
     #dev-panel {
-      display: none;
       position: fixed;
       right: 0;
       top: 65px;
       bottom: 0;
-      width: 440px;
-      background: #0c0f17;
+      width: 420px;
+      background: #090c14;
       border-left: 1px solid var(--card-border);
       padding: 1.5rem;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
       overflow-y: auto;
       font-family: var(--mono);
-      font-size: 0.8rem;
-      z-index: 90;
+      font-size: 0.85rem;
     }
-    #dev-panel.open { display: block; }
-    .dev-title { font-size: 0.9rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 1rem; }
-    .json-tree { background: #06080c; border: 1px solid #1a2030; border-radius: 8px; padding: 1rem; overflow-x: auto; color: #a5b4fc; }
-
-    .file-hidden { display: none; }
+    #dev-panel.open {
+      transform: translateX(0);
+    }
+    .dev-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+    .channel-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    .tab-btn {
+      background: #121622;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 0.3rem 0.2rem;
+      font-size: 0.7rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--text);
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.15);
+    }
+    pre.json-tree {
+      background: #06070a;
+      border: 1px solid #1a2030;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.75rem;
+      color: #a5b4fc;
+      max-height: 250px;
+    }
   </style>
 </head>
 <body>
-
   <header>
     <div class="brand">
       <span>🛡️ Raksha</span>
-      <span class="brand-badge">PROTOCOL v0.1</span>
+      <span class="brand-badge">CAP v0.1</span>
     </div>
     <div class="header-controls">
-      <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
-        <option value="en">English (EN)</option>
-        <option value="hi">हिंदी (HI)</option>
-        <option value="ta">தமிழ் (TA)</option>
-        <option value="te">తెలుగు (TE)</option>
-        <option value="kn">ಕನ್ನಡ (KN)</option>
-        <option value="bn">বাংলা (BN)</option>
-        <option value="mr">मराठी (MR)</option>
+      <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+        <option value="en">English</option>
+        <option value="hi">हिंदी (Hindi)</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+        <option value="te">తెలుగు (Telugu)</option>
       </select>
-      <button id="devToggle" class="btn-dev" onclick="toggleDeveloperMode()">
-        <span>⚡</span> Developer
+      <button class="btn-dev" id="devToggle" onclick="toggleDeveloperMode()">
+        <span>⚡</span> Developer Mode
       </button>
     </div>
   </header>
 
   <main>
-    <!-- View Container (State driven) -->
-    <div id="viewCard" class="view-card">
-      <!-- IDLE / INTAKE STATE -->
-      <div id="idleState" style="width: 100%;">
-        <h1 class="hero-title" id="txtHeroTitle">What happened?</h1>
-        <p class="hero-sub" id="txtHeroSub">You don't need to fill a form. Speak, upload a screenshot, or type in your own words.</p>
+    <div class="sim-banner">
+      ⚙️ SIMULATED 1930/CFCFRMS HANDOFF → BANK RESPONSE
+    </div>
 
-        <div class="action-grid">
-          <button class="action-btn" onclick="startVoiceIntake()">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-            <span id="btnVoiceLabel">🎙️ Tell Raksha</span>
-          </button>
-          <button class="action-btn" onclick="document.getElementById('fileInput').click()">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            <span id="btnImageLabel">📷 Show Transaction</span>
-          </button>
-          <button class="action-btn" onclick="toggleTypeBox()">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-            <span id="btnTypeLabel">⌨️ Type Instead</span>
-          </button>
+    <!-- MAIN STATE CONTAINER -->
+    <div id="appContainer" style="width: 100%;">
+
+      <!-- IDLE / INTAKE STATE -->
+      <div id="idleState">
+        <h1 class="hero-title" id="txtHeroTitle">What happened?</h1>
+        <p class="hero-subtitle" id="txtHeroSub">You don't need to fill a form. Speak, upload a screenshot, or type in your own words.</p>
+
+        <div class="input-methods">
+          <div class="method-card" onclick="simulateVoiceInput()">
+            <div class="method-icon">🎙️</div>
+            <div class="method-label" id="btnVoiceLabel">Tell Raksha</div>
+          </div>
+          <div class="method-card" onclick="document.getElementById('fileUpload').click()">
+            <div class="method-icon">📷</div>
+            <div class="method-label" id="btnImageLabel">Show Transaction</div>
+            <input type="file" id="fileUpload" style="display: none;" accept="image/*" onchange="handleImageUpload(event)">
+          </div>
+          <div class="method-card" onclick="toggleTypeBox()">
+            <div class="method-icon">⌨️</div>
+            <div class="method-label" id="btnTypeLabel">Type Instead</div>
+          </div>
         </div>
 
-        <input type="file" id="fileInput" class="file-hidden" accept="image/*" onchange="handleImageUpload(event)" />
-
-        <div id="typeBox" class="type-box" style="display: none;">
-          <textarea id="narrativeText" class="text-input" placeholder="e.g. Someone called from electricity department and I sent ₹5,000 via PhonePe..."></textarea>
-          <button class="btn-submit-text" onclick="submitTypedNarrative()">Send Report</button>
+        <div class="type-box" id="typeBox">
+          <textarea class="text-input" id="txtNarrative" placeholder="e.g. Someone called saying my electricity would be disconnected and stole ₹5,000 via PhonePe"></textarea>
+          <button class="btn-submit-text" onclick="submitTypeText()">Process Incident</button>
         </div>
       </div>
 
       <!-- PROCESSING STATE -->
       <div id="processingState" class="pulse-container" style="display: none;">
-        <div class="radar"></div>
-        <h2 style="font-weight: 600;" id="txtProcessing">Verifying & extracting transaction details...</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Deterministic extraction in progress across neural & banking parsers</p>
+        <div class="radar">⚡</div>
+        <h2 style="font-size: 1.3rem; font-weight: 600;">Extracting & Reconciling Emergency Details...</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Deterministic multi-source candidate synthesis</p>
       </div>
 
-      <!-- QUESTION PENDING STATE -->
-      <div id="questionState" style="display: none; width: 100%;">
-        <p style="color: var(--accent-amber); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">One More Thing Needed</p>
-        <h2 id="questionPrompt" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">What is the 12-digit transaction number (UTR)?</h2>
-        
-        <div style="display: flex; gap: 0.75rem; width: 100%;">
-          <input type="text" id="questionAnswerInput" class="text-input" style="min-height: auto; padding: 0.8rem 1rem;" placeholder="Enter missing detail here..." />
-          <button class="btn-submit-text" onclick="submitClarificationAnswer()">Submit</button>
+      <!-- QUESTION PENDING STATE (Single Question) -->
+      <div id="questionState" style="display: none;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;" id="questionPrompt">I only need one thing: please provide the 12-digit UTR number.</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">You can find this on your Google Pay, PhonePe, or Banking app receipt.</p>
+        <div style="display: flex; gap: 0.5rem; max-width: 450px; margin: 0 auto;">
+          <input type="text" id="txtQuestionAnswer" class="text-input" style="min-height: 48px; padding: 0.6rem 1rem;" placeholder="e.g. 423456789012">
+          <button class="btn-submit-text" style="height: 48px;" onclick="submitQuestionAnswer()">Submit</button>
         </div>
       </div>
 
-      <!-- CONFLICT / CONTRADICTION STATE -->
-      <div id="conflictState" style="display: none; width: 100%;">
-        <p style="color: var(--accent-red); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">Difference Detected</p>
-        <h2 id="conflictPrompt" style="font-size: 1.35rem; font-weight: 700; margin-bottom: 1rem;">Which amount was debited?</h2>
-        
-        <div class="conflict-cards" id="conflictOptions">
-          <!-- Dynamic Buttons inserted by JS -->
-        </div>
+      <!-- USER CONFIRMATION / CONFLICT STATE -->
+      <div id="conflictState" style="display: none;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;" id="conflictPrompt">Discrepancy Found. Which amount was stolen?</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">We found different values between your statement and description.</p>
+        <div class="conflict-cards" id="conflictOptions"></div>
       </div>
 
-      <!-- READY STATE -->
-      <div id="readyState" style="display: none; width: 100%;">
-        <p style="color: var(--accent-green); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">Verified Emergency Packet</p>
-        <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem;">Your report is ready for submission</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">All crucial transaction indicators and evidence seals are verified.</p>
+      <!-- READY STATE (Confirmation View) -->
+      <div id="readyState" style="display: none;">
+        <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--accent-green);">Payment Identified & Verified</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Review the synthesized transaction capsule before emergency dispatch.</p>
 
         <div class="details-grid">
           <div class="detail-item">
             <span class="detail-label">Stolen Amount</span>
-            <span class="detail-value highlight-amount" id="valAmount">₹0</span>
+            <span class="detail-value highlight-amount" id="valAmount">₹5,000</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Payment Mode / App</span>
@@ -470,10 +516,7 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
         <h2 style="font-size: 1.6rem; font-weight: 700; color: var(--accent-green); margin-bottom: 0.25rem;">Emergency Report Accepted</h2>
         <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">Official Tracking Reference: <strong id="valRefNum" style="color: var(--text);">1930-SYN-XXXXXX</strong></p>
 
-        <div class="timeline" id="eventTimeline">
-          <!-- Populated from persistent event store -->
-        </div>
-
+        <div class="timeline" id="eventTimeline"></div>
         <button class="btn-dev" style="margin-top: 2rem; width: 100%; justify-content: center;" onclick="resetApp()">File Another Emergency Report</button>
       </div>
 
@@ -483,13 +526,23 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
   <!-- Developer Console Drawer -->
   <div id="dev-panel">
     <div class="dev-title">⚡ DEVELOPER CAP TRACE</div>
-    <div style="margin-bottom: 1rem;">
+    <div class="channel-tabs">
+      <button class="tab-btn active" id="tabWeb" onclick="switchChannelTab('web')">Web</button>
+      <button class="tab-btn" id="tabWa" onclick="switchChannelTab('whatsapp')">WhatsApp</button>
+      <button class="tab-btn" id="tabPhone" onclick="switchChannelTab('phone')">Phone</button>
+      <button class="tab-btn" id="tabMcp" onclick="switchChannelTab('mcp')">MCP Agent</button>
+    </div>
+
+    <div style="margin-bottom: 0.75rem;">
+      <span style="color: var(--text-muted);">Active Channel:</span> <strong id="devChannel">Web (Citizen)</strong>
+    </div>
+    <div style="margin-bottom: 0.75rem;">
       <span style="color: var(--text-muted);">Current State:</span> <strong id="devState">IDLE</strong>
     </div>
-    <div style="margin-bottom: 1rem;">
+    <div style="margin-bottom: 0.75rem;">
       <span style="color: var(--text-muted);">Incident ID:</span> <strong id="devIncidentId">None</strong>
     </div>
-    <div class="dev-title" style="margin-top: 1rem;">RAW EVENT STREAM</div>
+    <div class="dev-title" style="margin-top: 1rem;">RAW CAP EVENT LEDGER</div>
     <pre class="json-tree" id="devJsonEvents">[]</pre>
   </div>
 
@@ -502,6 +555,23 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
     let currentIncident = null;
     let currentNextAction = null;
     let isDevOpen = false;
+    let currentChannel = "web";
+
+    function switchChannelTab(channel) {
+      currentChannel = channel;
+      document.getElementById("tabWeb").classList.toggle("active", channel === "web");
+      document.getElementById("tabWa").classList.toggle("active", channel === "whatsapp");
+      document.getElementById("tabPhone").classList.toggle("active", channel === "phone");
+      document.getElementById("tabMcp").classList.toggle("active", channel === "mcp");
+
+      const labelMap = {
+        web: "Web (Citizen UI)",
+        whatsapp: "WhatsApp (+919876543210)",
+        phone: "Phone (ElevenLabs Voicebot)",
+        mcp: "AI Agent (Model Context Protocol)"
+      };
+      document.getElementById("devChannel").innerText = labelMap[channel] || channel;
+    }
 
     function changeLanguage(lang) {
       currentLanguage = lang;
@@ -578,94 +648,114 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
         document.getElementById("conflictPrompt").innerText = data.nextAction.prompt || "Which detail is correct?";
         const container = document.getElementById("conflictOptions");
         container.innerHTML = "";
-        
-        const btn1 = document.createElement("button");
-        btn1.className = "conflict-btn";
-        btn1.innerText = "₹50,000 (Voice)";
-        btn1.onclick = () => resolveConflict("transaction.amount", 50000);
-        
-        const btn2 = document.createElement("button");
-        btn2.className = "conflict-btn";
-        btn2.innerText = "₹5,000 (Screenshot)";
-        btn2.onclick = () => resolveConflict("transaction.amount", 5000);
-
-        container.appendChild(btn1);
-        container.appendChild(btn2);
+        if (data.nextAction.options) {
+          data.nextAction.options.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "conflict-btn";
+            btn.innerText = opt.label;
+            btn.onclick = () => resolveConflict(data.nextAction.field, opt.value);
+            container.appendChild(btn);
+          });
+        }
         showStateView("CONFLICT");
-      } else if (data.state === "READY" || data.nextAction.nextActionType === "READY_FOR_HANDOFF") {
+      } else if (data.state === "READY") {
         document.getElementById("valAmount").innerText = "₹" + (data.incident.transaction.amount || 0).toLocaleString();
-        document.getElementById("valChannel").innerText = (data.incident.transaction.channel || "UPI") + " (" + (data.candidate.application || "Direct") + ")";
+        document.getElementById("valChannel").innerText = (data.incident.transaction.channel || "UPI") + (data.incident.transaction.application ? " (" + data.incident.transaction.application + ")" : "");
         document.getElementById("valUtr").innerText = data.incident.transaction.transactionId || "Verified";
         document.getElementById("valDebitBank").innerText = data.incident.transaction.debitInstitution || "State Bank of India";
         showStateView("READY");
+      } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
+        showStateView("SUBMITTED");
+        fetchTimeline();
       }
 
-      refreshDevEvents();
+      fetchDevEvents();
     }
 
-    function startVoiceIntake() {
-      const sampleVoiceText = currentLanguage === "hi" 
-        ? "बिजली विभाग के नाम से कॉल आया और मैंने फोनपे से पाँच हज़ार भेज दिए।"
-        : "Electricity department called me and I transferred 5000 through PhonePe.";
-      sendProcessRequest({ modality: "voice", content: sampleVoiceText });
+    function submitTypeText() {
+      const val = document.getElementById("txtNarrative").value;
+      if (!val) return;
+      sendProcessRequest({ modality: "text", content: val });
+    }
+
+    function simulateVoiceInput() {
+      const narrative = currentLanguage === "hi" 
+        ? "बिजली विभाग के नाम से कॉल आया और मैंने फोनपे से पाँच हज़ार भेज दिए।" 
+        : "Someone called pretending to be from electricity desk and stole 5000 via PhonePe";
+      sendProcessRequest({ modality: "voice", content: narrative });
     }
 
     function handleImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      const syntheticScreenshotOCR = "Google Pay - Completed\\nPaid ₹5,000.00 to fraudster@ybl\\nUPI Ref No: 423456789012\\nDate: 2026-08-24T18:42:00+05:30\\nDebited from: State Bank of India";
-      sendProcessRequest({ modality: "image", content: syntheticScreenshotOCR });
+      const fakeOCR = "Google Pay Completed. Paid ₹5,000.00 to fraudster.merchant@ybl. UPI Ref: 423456789012. Debited: SBI.";
+      sendProcessRequest({ modality: "image", content: fakeOCR });
     }
 
-    function submitTypedNarrative() {
-      const text = document.getElementById("narrativeText").value;
-      if (!text) return;
-      sendProcessRequest({ modality: "text", content: text });
-    }
-
-    function submitClarificationAnswer() {
-      const answer = document.getElementById("questionAnswerInput").value;
-      if (!answer) return;
+    function submitQuestionAnswer() {
+      const ans = document.getElementById("txtQuestionAnswer").value;
+      if (!ans) return;
+      const field = currentNextAction ? currentNextAction.field : "transaction.transactionId";
       sendProcessRequest({
         modality: "text",
-        content: answer,
-        userClarificationAnswer: {
-          field: currentNextAction?.missingField || "transaction.transactionId",
-          answerValue: answer
-        }
+        content: ans,
+        userClarificationAnswer: { field: field, answerValue: ans }
       });
     }
 
-    function resolveConflict(field, value) {
+    function resolveConflict(field, val) {
       sendProcessRequest({
         modality: "text",
-        content: "User confirmed " + value,
-        userClarificationAnswer: { field, answerValue: value }
+        content: "Resolved to " + val,
+        userClarificationAnswer: { field: field, answerValue: val }
       });
     }
 
     async function submitToCAP() {
       showStateView("PROCESSING");
-      const idempotencyKey = "web-" + currentIncidentId + "-" + Date.now();
-      const res = await fetch(CAP_URL + "/cap/actions/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-        body: JSON.stringify({
-          action: "report_financial_fraud",
-          payload: currentIncident,
-          idempotencyKey
-        })
-      });
+      try {
+        const idempKey = "web-cap-" + currentIncidentId;
+        const res = await fetch(CAP_URL + "/cap/actions/execute", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempKey
+          },
+          body: JSON.stringify({
+            action: "report_financial_fraud",
+            payload: currentIncident,
+            idempotencyKey: idempKey
+          })
+        });
 
-      const capResult = await res.json();
-      document.getElementById("valRefNum").innerText = capResult.externalReference || ("1930-SYN-" + capResult.caseId);
-      
-      await refreshDevEvents();
-      buildTimeline();
-      showStateView("SUBMITTED");
+        const capData = await res.json();
+        const refNum = capData.externalReference || ("1930-SYN-" + capData.caseId);
+        document.getElementById("valRefNum").innerText = refNum;
+        showStateView("SUBMITTED");
+        fetchTimeline();
+      } catch (err) {
+        alert("CAP Submission Failed: " + err.message);
+        showStateView("READY");
+      }
     }
 
-    async function refreshDevEvents() {
+    async function fetchTimeline() {
+      if (!currentIncidentId) return;
+      try {
+        const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
+        const data = await res.json();
+        const tl = document.getElementById("eventTimeline");
+        tl.innerHTML = "";
+        (data.events || []).forEach(evt => {
+          const div = document.createElement("div");
+          div.className = "timeline-step";
+          div.innerHTML = '<div class="timeline-dot">✓</div><div class="timeline-content"><div class="timeline-title">' + evt.type + '</div><div class="timeline-sub">' + evt.timestamp + ' • Source: ' + evt.source + '</div></div>';
+          tl.appendChild(div);
+        });
+      } catch {}
+    }
+
+    async function fetchDevEvents() {
       if (!currentIncidentId) return;
       try {
         const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
@@ -674,40 +764,14 @@ export function renderRakshaWebAppHtml(config?: { coreUrl?: string; capUrl?: str
       } catch {}
     }
 
-    async function buildTimeline() {
-      const timeline = document.getElementById("eventTimeline");
-      timeline.innerHTML = \`
-        <div class="timeline-item done">
-          <div class="timeline-title">Incident Created & Verified</div>
-          <div class="timeline-time">\${new Date().toLocaleTimeString()}</div>
-        </div>
-        <div class="timeline-item done">
-          <div class="timeline-title">Evidence Capsule Sealed (SHA-256 Digest Verified)</div>
-          <div class="timeline-time">\${new Date().toLocaleTimeString()}</div>
-        </div>
-        <div class="timeline-item done">
-          <div class="timeline-title">Dispatched via CAP (report_financial_fraud)</div>
-          <div class="timeline-time">\${new Date().toLocaleTimeString()}</div>
-        </div>
-        <div class="timeline-item done">
-          <div class="timeline-title">Portal A (1930 Nodal Desk) Accepted</div>
-          <div class="timeline-time">\${new Date().toLocaleTimeString()}</div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-title">Awaiting Bank Console (Portal B) Response Acknowledgment</div>
-          <div class="timeline-time">In Progress...</div>
-        </div>
-      \`;
-    }
-
     function resetApp() {
       currentIncidentId = null;
       currentIncident = null;
       currentNextAction = null;
+      document.getElementById("txtNarrative").value = "";
       showStateView("IDLE");
     }
   </script>
 </body>
-</html>
-`;
+</html>`;
 }

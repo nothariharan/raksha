@@ -1,22 +1,15 @@
-/**
- * Raksha Model Context Protocol (MCP) Server
- * Exposes typed civic action tools for autonomous AI agents.
- */
+import { createMCPServer } from "./http-server.js";
 
-import { DEFAULT_CAPABILITIES } from "@raksha/cap-sdk";
+export * from "./policy.js";
+export * from "./mcp-server.js";
+export * from "./mcp-demo-agent.js";
+export * from "./http-server.js";
 
-export const MCP_SERVER_INFO = {
-  name: "raksha-civic-action-protocol",
-  version: "0.1.0",
-  description: "Autonomous Emergency Incident & Civic Action Protocol MCP Server",
-  tools: DEFAULT_CAPABILITIES.map((cap) => ({
-    name: cap.name,
-    description: cap.description,
-    inputSchema: {
-      type: "object",
-      required: cap.requiredFields,
-    },
-  })),
-};
+const PORT = Number(process.env.PORT_MCP) || 3007;
 
-console.log(`[MCP Server] Initialized with tools:`, MCP_SERVER_INFO.tools.map((t) => t.name));
+if (process.env.NODE_ENV !== "test") {
+  const server = createMCPServer();
+  server.listen(PORT, () => {
+    console.log(`[Raksha MCP Server] Listening on http://localhost:${PORT}`);
+  });
+}

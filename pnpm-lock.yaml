@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@raksha/agent-mcp':
+        specifier: workspace:*
+        version: link:agents/mcp
       '@raksha/agent-phone':
         specifier: workspace:*
         version: link:agents/phone

@@ -7,6 +7,7 @@ import { CAPActionName, FraudIncident } from "@raksha/schemas";
 import { defaultEventRepository } from "@raksha/core";
 import { capabilityRegistry } from "./capability-registry.js";
 import { actionRouter } from "./action-router.js";
+import { CAP_GOVERNMENT_MANIFEST } from "./manifest.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -72,7 +73,11 @@ export function createCapServer() {
       // 2. GET /cap/capabilities
       if (pathname === "/cap/capabilities" && method === "GET") {
         const capabilities = capabilityRegistry.list();
-        sendJson(res, 200, { capabilities });
+        sendJson(res, 200, {
+          protocol: "cap/0.1",
+          manifest: CAP_GOVERNMENT_MANIFEST,
+          capabilities,
+        });
         return;
       }
 

@@ -168,8 +168,8 @@ export class PhoneToolsHandler {
     const refNum = capData.externalReference || `1930-SYN-${capData.caseId}`;
 
     const confirmationSpeech = lang === "hi"
-      ? `आपकी रिपोर्ट सफलतापूर्वक दर्ज कर ली गई है। आपका संदर्भ नंबर है: ${refNum}। आपातकालीन खाता फ्रीज अनुरोध बैंक नोडल अधिकारी को भेज दिया गया है।`
-      : `Your emergency fraud report is successfully filed. Your tracking reference is ${refNum}. The freeze request has been dispatched to the bank nodal desk.`;
+      ? `आपकी रिपोर्ट दर्ज हो गई है। आपका संदर्भ नंबर है: ${refNum}। संबंधित प्रतिक्रिया प्रक्रिया के लिए अनुरोध भेजा गया है (सिम्युलेटेड प्रदर्शन)।`
+      : `Your emergency fraud report is filed. Your tracking reference is ${refNum}. Emergency response processing request dispatched (Simulated Demonstration).`;
 
     return {
       success: true,

@@ -140,7 +140,7 @@ export class WhatsAppService {
     } else if (processData.state === "READY") {
       replyText = `✅ *Payment Identified*\n\n• Amount: *₹${(incident.transaction.amount || 0).toLocaleString()}*\n• Mode: *${incident.transaction.channel || "UPI"}*\n• Bank: *${incident.transaction.debitInstitution || "State Bank of India"}*\n• UTR: *${incident.transaction.transactionId || "Verified"}*\n\nIs this the fraudulent transaction?\nReply *YES* to dispatch emergency freeze report.`;
     } else if (processData.state === "SUBMITTED" || processData.state === "ACKNOWLEDGED") {
-      replyText = `🛡️ *Emergency Report Accepted*\n\nIncident ID: *${incident.id}*\nStatus: *${processData.state}*\nYour emergency freeze request has been dispatched.`;
+      replyText = `🛡️ *Emergency Report Accepted*\n\nIncident ID: *${incident.id}*\nStatus: *${processData.state}*\nYour emergency freeze request has been dispatched for simulated 1930 / bank response.`;
     } else {
       replyText = `Incident recorded: *${incident.id}*. Please share additional transaction details or screenshot.`;
     }
@@ -191,7 +191,7 @@ export class WhatsAppService {
 
     this.store.bindIncident(senderPhone, incidentId, "SUBMITTED");
 
-    const replyText = `🛡️ *Raksha Emergency Report Accepted*\n\nOfficial Tracking Ref: *${refNumber}*\nIncident ID: *${incidentId}*\n\nYour emergency fraud freeze packet has been handed over to the 1930 Cyber Cell & Bank Nodal Desk.\n\nNext step: Complete official follow-up using this reference.`;
+    const replyText = `🛡️ *Raksha Emergency Report Accepted*\n\nOfficial Tracking Ref: *${refNumber}*\nIncident ID: *${incidentId}*\n\nYour emergency fraud packet has been handed over for simulated 1930 / bank response.\n\nNext step: Complete official follow-up using this reference.`;
 
     this.store.cacheReply(messageId, {
       messageId,
