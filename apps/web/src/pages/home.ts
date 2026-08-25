@@ -1,4 +1,9 @@
 import { renderPageLayout } from "./layout.js";
+import {
+  renderHowItWorksStyles,
+  renderHowItWorksHtml,
+  renderHowItWorksScripts,
+} from "../components/how-it-works/index.js";
 
 export function renderHomePageHtml(): string {
   const extraStyles = `
@@ -1277,12 +1282,13 @@ export function renderHomePageHtml(): string {
         };
       })();
     </script>
+    ${renderHowItWorksScripts()}
   `;
 
   return renderPageLayout({
     title: "Financial cyber-fraud help",
-    bodyContent,
-    extraStyles,
+    bodyContent: bodyContent + renderHowItWorksHtml(),
+    extraStyles: extraStyles + renderHowItWorksStyles(),
     extraScripts,
     isSingleScreen: false,
   });

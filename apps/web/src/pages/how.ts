@@ -1,5 +1,21 @@
 import { renderPageLayout } from "./layout.js";
+import {
+  renderHowItWorksStyles,
+  renderHowItWorksHtml,
+  renderHowItWorksScripts,
+} from "../components/how-it-works/index.js";
+
 export function renderHowPageHtml(): string {
-const extraStyles=`.how{max-width:1180px;margin:0 auto;padding:clamp(3rem,8vw,7rem) 2rem}.intro{max-width:690px}.intro span{color:var(--orange);font-weight:800;font-size:.74rem;letter-spacing:.1em}.how h1{font-size:clamp(2.7rem,5vw,5.2rem);letter-spacing:-.065em;line-height:.98;margin:.65rem 0 1.1rem}.intro p{font-size:1.08rem;line-height:1.65;color:var(--text-muted)}.journey{display:grid;grid-template-columns:repeat(4,1fr);margin-top:5rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.journey article{padding:2rem 1.55rem 2.3rem;border-right:1px solid var(--border)}.journey article:last-child{border:0}.number{font-family:var(--mono);color:var(--orange);font-size:.78rem}.journey h2{font-size:1.35rem;letter-spacing:-.04em;margin:3.4rem 0 .6rem}.journey p{font-size:.88rem;color:var(--text-muted);line-height:1.6}.proof{margin-top:5rem;display:grid;grid-template-columns:1.1fr .9fr;gap:5rem;align-items:center}.proof h2{font-size:clamp(2rem,3.6vw,3.4rem);line-height:1.02;letter-spacing:-.055em}.proof p{margin-top:1rem;color:var(--text-muted);line-height:1.65}.proof-grid{display:grid;gap:.75rem}.proof-grid div{padding:1rem 0;border-bottom:1px solid var(--border);font-size:.9rem;font-weight:700}.proof-grid b{color:var(--orange);margin-right:.55rem}@media(max-width:760px){.how{padding:3rem 1.2rem}.journey{grid-template-columns:1fr 1fr;margin-top:3rem}.journey article:nth-child(2){border-right:0}.journey article{padding:1.3rem}.journey h2{margin-top:2.2rem}.proof{grid-template-columns:1fr;gap:2rem;margin-top:3.5rem}}`;
-const bodyContent=`<main class="how"><header class="intro"><span>HOW RAKSHA WORKS</span><h1>Urgent help should feel simple.</h1><p>Raksha takes the information you already have, checks it carefully, and prepares one clear handoff. You stay in control at every point.</p></header><section class="journey"><article><div class="number">01</div><h2>Tell us</h2><p>Call, voice note, message, or show a payment receipt. Use the channel that feels easiest right now.</p></article><article><div class="number">02</div><h2>We check</h2><p>Details from each source are reconciled. If something is missing or conflicts, we ask one plain-language question.</p></article><article><div class="number">03</div><h2>You confirm</h2><p>Review the essential facts before any high-impact action is submitted. Nothing is sent without citizen confirmation.</p></article><article><div class="number">04</div><h2>Stay updated</h2><p>Your evidence and case state stay connected, whether you return through the web, phone, WhatsApp, or an agent.</p></article></section><section class="proof"><div><h2>One report. Every channel.</h2><p>Behind the calm interface is a deterministic workflow designed to avoid guessing at the facts when time matters.</p></div><div class="proof-grid"><div><b>01</b>Multilingual, multimodal intake</div><div><b>02</b>Evidence linked to the case</div><div><b>03</b>Explicit confirmation for submission</div><div><b>04</b>Tamper-evident event history</div></div></section></main>`;
-return renderPageLayout({title:"How Raksha works",activeNav:"how",bodyContent,extraStyles});}
+  const extraStyles = renderHowItWorksStyles();
+  const bodyContent = renderHowItWorksHtml();
+  const extraScripts = renderHowItWorksScripts();
+
+  return renderPageLayout({
+    title: "How Raksha works — The 6-Step Case Journey",
+    activeNav: "how",
+    bodyContent,
+    extraStyles,
+    extraScripts,
+    isSingleScreen: false,
+  });
+}
