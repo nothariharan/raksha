@@ -123,13 +123,14 @@ export function renderHomePageHtml(): string {
     }
 
     /* Mode-Specific Fine Adjustments */
-    /* Web mode: Character lower down, shifted further left, Card higher up */
+    /* Web mode: Character lower down and shifted left, Card higher up with top z-index */
     .hero-stage[data-current-mode="web"] .hero-person {
-      object-position: 8% 66%;
-      transform: translate(-32px, 26px);
+      object-position: 2% 66%;
+      transform: translate(-48px, 26px);
     }
     .hero-stage[data-current-mode="web"] .companion-wrap {
       bottom: 31%;
+      z-index: 5;
     }
 
     /* Call mode: Shifted further to the left */
