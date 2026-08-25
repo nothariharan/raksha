@@ -7,6 +7,26 @@ import { HOW_IT_WORKS_STEPS, CASE_METADATA } from "./data.js";
 import { renderStepArtifact } from "./artifacts.js";
 import { renderChannelContinuityHtml } from "./channels.js";
 
+// Step Icon Helpers
+function getStepIconSvg(stepKey: string): string {
+  switch (stepKey) {
+    case "tell":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>`;
+    case "understand":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+    case "verify":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`;
+    case "confirm":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    case "cap":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+    case "update":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+    default:
+      return "";
+  }
+}
+
 export function renderHowItWorksStyles(): string {
   return `
     /* =========================================================
@@ -199,7 +219,7 @@ export function renderHowItWorksStyles(): string {
     /* Step Item Card (Stacked) */
     .journey-step-row {
       display: grid;
-      grid-template-columns: 48px 1fr 1.15fr;
+      grid-template-columns: 84px 1fr 1.15fr;
       gap: 1.4rem;
       align-items: center;
       padding: 1.4rem 1.5rem;
@@ -222,15 +242,21 @@ export function renderHowItWorksStyles(): string {
       box-shadow: 0 16px 36px -6px rgba(234, 88, 12, 0.12), 0 0 0 1.5px var(--orange);
     }
 
-    /* Left Number Badge */
+    /* Left Group: Number Dot + Icon Badge */
+    .journey-step-lead {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-shrink: 0;
+    }
     .journey-num-badge {
-      width: 44px;
-      height: 44px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: #f8fafc;
       border: 1.5px solid #e2e8f0;
       color: #64748b;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 800;
       display: grid;
       place-items: center;
@@ -243,6 +269,26 @@ export function renderHowItWorksStyles(): string {
       color: #ffffff;
       box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
     }
+
+    .journey-icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+    .journey-icon-badge svg {
+      width: 18px;
+      height: 18px;
+    }
+    .badge-step-tell { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+    .badge-step-understand { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+    .badge-step-verify { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-step-confirm { background: #faf5ff; color: #8b5cf6; border: 1px solid #e9d5ff; }
+    .badge-step-cap { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .badge-step-update { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
 
     /* Middle Step Description */
     .journey-step-text {
@@ -771,24 +817,44 @@ export function renderHowItWorksStyles(): string {
       transform: scale(1.04);
     }
 
-    /* AI Agents Showcase Box */
+    /* AI Agents Showcase Box (3-Row Clean Flow matching user sketch) */
     .ai-agents-box {
       background: radial-gradient(circle at center, #fdfbfa 0%, #faf8f5 100%);
-      padding: 1.5rem 1.25rem;
+      padding: 1.5rem 1rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       min-height: 210px;
     }
-    .ai-logos-row {
+    .ai-logos-flow {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      width: 100%;
+      max-width: 250px;
+    }
+    .ai-row-top {
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1.15rem;
+      gap: 0.75rem;
       width: 100%;
-      max-width: 230px;
+    }
+    .ai-row-mid {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      width: 100%;
+    }
+    .ai-row-bot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.85rem;
+      width: 100%;
     }
     .ai-brand-item {
       display: flex;
@@ -798,32 +864,37 @@ export function renderHowItWorksStyles(): string {
       cursor: default;
     }
     .ai-brand-item:hover {
-      transform: scale(1.18) translateY(-2px);
+      transform: scale(1.22) translateY(-2px);
       filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.12));
     }
 
-    /* Floating Badges on Cards */
+    /* Floating Badges on Cards (Pill style matching Image 3) */
     .channel-floating-badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 14px;
+      right: 14px;
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(8px);
+      gap: 0.4rem;
+      background: #ffffff;
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 999px;
-      padding: 0.3rem 0.65rem;
-      font-size: 0.68rem;
+      padding: 0.32rem 0.68rem;
+      font-size: 0.74rem;
       font-weight: 800;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     }
     .channel-floating-badge svg {
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
     }
-    .badge-orange { color: var(--orange); }
+    .badge-dot-orange {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ea580c;
+    }
+    .badge-orange { color: #ea580c; }
     .badge-green { color: #16a34a; }
     .badge-blue { color: #2563eb; }
     .badge-purple { color: #7c3aed; }
@@ -942,7 +1013,7 @@ export function renderHowItWorksStyles(): string {
 
     @media (max-width: 768px) {
       .journey-step-row {
-        grid-template-columns: 36px 1fr;
+        grid-template-columns: auto 1fr;
         gap: 1rem;
       }
       .journey-step-artifact {
@@ -974,7 +1045,12 @@ export function renderHowItWorksStyles(): string {
 export function renderHowItWorksHtml(): string {
   const stepsRowsHtml = HOW_IT_WORKS_STEPS.map((s, idx) => `
     <div class="journey-step-row ${idx === 0 ? "is-active" : ""}" data-step-id="${s.id}" data-step-key="${s.key}" id="step-${s.key}">
-      <div class="journey-num-badge">${s.num}</div>
+      <div class="journey-step-lead">
+        <div class="journey-num-badge">${s.num}</div>
+        <div class="journey-icon-badge badge-step-${s.key}">
+          ${getStepIconSvg(s.key)}
+        </div>
+      </div>
       <div class="journey-step-text">
         <h3 class="journey-step-title">${s.title}</h3>
         <p class="journey-step-desc">${s.description}</p>
@@ -992,7 +1068,7 @@ export function renderHowItWorksHtml(): string {
           <!-- Left Editorial Intro -->
           <div class="how-intro">
             <span class="how-kicker">HOW RAKSHA WORKS</span>
-            <h2 class="how-title">From “something went wrong” to “it’s <span class="hl-motion">in motion.</span>”</h2>
+            <h2 class="how-title">You bring the story.<br>We figure out the <span class="hl-motion">rest.</span></h2>
             <p class="how-desc">
               Raksha turns whatever you can share into a verified report and gets it to the right authorities. You stay in control at every step.
             </p>
