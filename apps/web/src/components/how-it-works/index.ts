@@ -810,13 +810,13 @@ export function renderHowItWorksStyles(): string {
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     
-    /* Full Opacity Brand Icon directly behind mascot characters */
+    /* Full Opacity Brand Icon positioned high in the top corner behind mascot characters */
     .channel-bg-icon {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 145px;
-      height: 145px;
+      top: -8px;
+      right: -8px;
+      width: 165px;
+      height: 165px;
       z-index: 1;
       pointer-events: none;
       display: grid;
@@ -829,16 +829,16 @@ export function renderHowItWorksStyles(): string {
     }
     .icon-bg-orange {
       color: #ea580c;
-      filter: drop-shadow(0 12px 28px rgba(234, 88, 12, 0.25));
+      filter: drop-shadow(0 14px 30px rgba(234, 88, 12, 0.28));
     }
     .icon-bg-green {
-      filter: drop-shadow(0 12px 28px rgba(37, 211, 102, 0.25));
+      filter: drop-shadow(0 14px 30px rgba(37, 211, 102, 0.28));
     }
     .icon-bg-blue {
-      filter: drop-shadow(0 12px 28px rgba(37, 99, 235, 0.25));
+      filter: drop-shadow(0 14px 30px rgba(37, 99, 235, 0.28));
     }
     .channel-card:hover .channel-bg-icon {
-      transform: scale(1.08) rotate(-3deg);
+      transform: scale(1.06) translate(2px, -2px) rotate(-3deg);
     }
 
     .channel-mascot-img {
