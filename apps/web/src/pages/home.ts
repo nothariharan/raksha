@@ -125,11 +125,11 @@ export function renderHomePageHtml(): string {
     /* Mode-Specific Fine Adjustments */
     /* Web mode: Character lower down, Card higher up */
     .hero-stage[data-current-mode="web"] .hero-person {
-      object-position: 20% 64%;
-      transform: translateY(22px);
+      object-position: 18% 66%;
+      transform: translateY(26px);
     }
     .hero-stage[data-current-mode="web"] .companion-wrap {
-      bottom: 22%;
+      bottom: 31%;
     }
 
     /* Call mode: Shifted further to the left */
