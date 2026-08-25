@@ -108,9 +108,24 @@ export function renderPageLayout(options: {
       color: var(--text-muted);
       text-decoration: none;
       transition: color 0.15s;
+      padding: 0.4rem 0;
+      position: relative;
     }
     .nav-link:hover { color: var(--text); }
-    .nav-link.active { color: var(--text); font-weight: 700; }
+    .nav-link.active {
+      color: var(--text);
+      font-weight: 700;
+    }
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background: var(--orange);
+      border-radius: 99px;
+    }
 
     .nav-actions {
       display: flex;
