@@ -114,12 +114,40 @@ export function renderHomePageHtml(): string {
       transition: opacity 0.3s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), object-position 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Directional Alignment: Character shifted sideways, Assets on opposite side */
+    /* Directional Alignment */
     .hero-stage[data-align="left"] .hero-person {
       object-position: 22% 50%;
     }
     .hero-stage[data-align="right"] .hero-person {
       object-position: 78% 50%;
+    }
+
+    /* Mode-Specific Fine Adjustments */
+    /* Web mode: Character lower down, Card higher up */
+    .hero-stage[data-current-mode="web"] .hero-person {
+      object-position: 20% 64%;
+      transform: translateY(22px);
+    }
+    .hero-stage[data-current-mode="web"] .companion-wrap {
+      bottom: 22%;
+    }
+
+    /* Call mode: Baseline vertical alignment */
+    .hero-stage[data-current-mode="call"] .hero-person {
+      object-position: 22% 48%;
+      transform: translateY(0px);
+    }
+    .hero-stage[data-current-mode="call"] .companion-wrap {
+      bottom: 12%;
+    }
+
+    /* WhatsApp mode: Baseline vertical alignment */
+    .hero-stage[data-current-mode="whatsapp"] .hero-person {
+      object-position: 78% 50%;
+      transform: translateY(0px);
+    }
+    .hero-stage[data-current-mode="whatsapp"] .companion-wrap {
+      bottom: 12%;
     }
 
     /* Animated Ambient Accent Badges */
@@ -164,7 +192,7 @@ export function renderHomePageHtml(): string {
       100% { transform: translateY(-8px); }
     }
     @keyframes pulseDot {
-      0%, 100% { transform: scale(1); opacity: 1; }
+      0%, 100% { transform: scale(1); }
       50% { transform: scale(1.25); opacity: 0.7; }
     }
 
@@ -172,8 +200,7 @@ export function renderHomePageHtml(): string {
     .companion-wrap {
       position: absolute;
       z-index: 2;
-      bottom: 12%;
-      transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.35s cubic-bezier(0.16, 1, 0.3, 1), right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.35s cubic-bezier(0.16, 1, 0.3, 1), right 0.35s cubic-bezier(0.16, 1, 0.3, 1), bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       animation: floatCard 6s ease-in-out infinite alternate;
     }
     /* Opposite side positioning */
@@ -838,6 +865,7 @@ export function renderHomePageHtml(): string {
       .hero-stage[data-align="left"] .hero-person,
       .hero-stage[data-align="right"] .hero-person {
         object-position: 50% 38%;
+        transform: none !important;
       }
       .companion-wrap,
       .hero-stage[data-align="left"] .companion-wrap,
@@ -906,7 +934,7 @@ export function renderHomePageHtml(): string {
         </div>
 
         <!-- Column 2: Center Stage with Mascot + Floating Animated Illustration Reference UI -->
-        <div class="hero-stage" id="heroStage" data-align="left">
+        <div class="hero-stage" id="heroStage" data-align="left" data-current-mode="call">
           <!-- Atmospheric Radial Orb -->
           <div class="stage-orb"></div>
 
@@ -1205,14 +1233,15 @@ export function renderHomePageHtml(): string {
 
           setTimeout(() => {
             stage.dataset.align = m.align;
+            stage.dataset.currentMode = name;
             person.src = m.image;
             person.alt = m.alt;
             wrap.innerHTML = cards[name];
             
             person.style.opacity = '1';
-            person.style.transform = 'none';
+            person.style.transform = '';
             wrap.style.opacity = '1';
-            wrap.style.transform = 'none';
+            wrap.style.transform = '';
           }, 180);
 
           detail.innerHTML = '<div class="mode-kicker">' + m.kicker + '</div><h2>' + m.heading + '</h2><p>' + m.copy + '</p><ul>' + m.bullets.map(x => '<li><b>•</b>' + x + '</li>').join('') + '</ul>';
