@@ -21,6 +21,7 @@ export function renderPageLayout(options: {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/samarkan" rel="stylesheet">
   <style>
     :root {
       --bg: #fafaf9;
@@ -92,10 +93,7 @@ export function renderPageLayout(options: {
       align-items: center;
       text-decoration: none;
     }
-    .brand-logo-img {
-      height: 26px;
-      object-fit: contain;
-    }
+    .brand-wordmark { color: var(--text); font-family: 'Samarkan', 'Palatino Linotype', serif; font-size: 2rem; line-height: 1; letter-spacing: .025em; }
 
     .nav-links {
       display: flex;
@@ -147,6 +145,14 @@ export function renderPageLayout(options: {
     }
     .btn-nav-demo:hover { background: #292524; }
 
+    @media (max-width: 760px) {
+      nav { padding: 0.7rem 1.15rem; }
+      .nav-links { display: none; }
+      .nav-actions { gap: 0.55rem; }
+      .lang-select { max-width: 116px; }
+      .btn-nav-demo { padding: 0.45rem 0.8rem; }
+    }
+
     ${extraStyles}
   </style>
 </head>
@@ -156,9 +162,7 @@ export function renderPageLayout(options: {
   </div>
 
   <nav>
-    <a href="/" class="brand-link">
-      <img src="/images/raksha-wordmark.png" alt="raksha" class="brand-logo-img" onerror="this.outerHTML='<span style=\\'font-weight:800; font-size:1.3rem; letter-spacing:-0.03em;\\'>raksha</span>'" />
-    </a>
+    <a href="/" class="brand-link" aria-label="Raksha home"><span class="brand-wordmark">Raksha</span></a>
 
     <div class="nav-links">
       <a href="/how" class="nav-link ${activeNav === "how" ? "active" : ""}">How it Works</a>

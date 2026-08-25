@@ -30,8 +30,14 @@ export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) 
 
     // Static Assets (/images/* or /public/*)
     if (pathname.startsWith("/images/") || pathname.startsWith("/public/")) {
-      const cleanPath = pathname.replace(/^\/public/, "");
-      const fullPath = join(process.cwd(), "apps", "web", "public", cleanPath);
+      // Strip the URL-root slash before joining. On Windows, joining an absolute
+      // child path can discard the public directory and turn valid assets into 404s.
+      const cleanPath = pathname.replace(/^\/(?:public\/)?/, "");
+      // `pnpm --filter @raksha/web dev` runs with apps/web as cwd, while the
+      // full demo launcher runs from the repository root. Support both paths.
+      const appPublicPath = join(process.cwd(), "public", cleanPath);
+      const workspacePublicPath = join(process.cwd(), "apps", "web", "public", cleanPath);
+      const fullPath = existsSync(appPublicPath) ? appPublicPath : workspacePublicPath;
       if (existsSync(fullPath)) {
         const ext = cleanPath.split(".").pop()?.toLowerCase();
         const mimeTypes: Record<string, string> = {
