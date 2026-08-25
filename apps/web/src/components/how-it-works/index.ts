@@ -790,12 +790,15 @@ export function renderHowItWorksStyles(): string {
       flex-direction: column;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.03);
+      position: relative;
     }
     .channel-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.1);
       border-color: rgba(234, 88, 12, 0.3);
     }
+
+    /* Card Image Box with Mascot & Background Watermark Icon */
     .channel-img-box {
       height: 220px;
       position: relative;
@@ -806,77 +809,186 @@ export function renderHowItWorksStyles(): string {
       overflow: hidden;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
-    .channel-img-box img {
+    
+    /* Big Watermark Icon behind character portraits */
+    .channel-bg-watermark {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 140px;
+      height: 140px;
+      z-index: 1;
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+      transition: transform 0.4s ease, opacity 0.3s ease;
+    }
+    .channel-bg-watermark svg {
+      width: 100%;
+      height: 100%;
+    }
+    .watermark-orange {
+      color: #ea580c;
+      opacity: 0.12;
+    }
+    .watermark-green {
+      color: #16a34a;
+      opacity: 0.12;
+    }
+    .watermark-blue {
+      color: #2563eb;
+      opacity: 0.12;
+    }
+    .channel-card:hover .channel-bg-watermark {
+      transform: scale(1.08) rotate(-4deg);
+      opacity: 0.18;
+    }
+
+    .channel-mascot-img {
+      position: relative;
+      z-index: 2;
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center top;
+      mix-blend-mode: multiply;
       transition: transform 0.4s ease;
     }
-    .channel-card:hover .channel-img-box img {
+    .channel-card:hover .channel-mascot-img {
       transform: scale(1.04);
     }
 
-    /* AI Agents Showcase Box (Big SVG Logos filling card) */
+    /* AI Agents Spherical Overlapping Cluster Box */
     .ai-agents-box {
-      background: radial-gradient(circle at center, #fdfbfa 0%, #faf8f5 100%);
-      padding: 1.25rem 0.6rem;
+      background: radial-gradient(circle at center, #ffffff 0%, #faf8f5 100%);
+      padding: 0;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 220px;
       overflow: hidden;
       position: relative;
     }
-    .ai-logos-flow {
+    .ai-sphere-cluster {
+      position: relative;
+      width: 200px;
+      height: 190px;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      width: 100%;
     }
-    .ai-row-top {
+    .ai-sphere-node {
+      position: absolute;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.9rem;
-      width: 100%;
-    }
-    .ai-row-mid {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2.2rem;
-      width: 100%;
-    }
-    .ai-row-bot {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.9rem;
-      width: 100%;
-    }
-    .ai-brand-item {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
-      cursor: default;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
+      cursor: pointer;
       flex-shrink: 0;
     }
-    .ai-brand-item svg {
+    .ai-sphere-node svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Spherical Orbital Offsets */
+    .node-center {
+      width: 48px;
+      height: 48px;
+      z-index: 10;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.15));
+    }
+    .node-top {
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 44px;
+      z-index: 8;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-top-right {
+      top: 22px;
+      right: 18px;
       width: 42px;
       height: 42px;
-      max-width: 42px;
-      max-height: 42px;
+      z-index: 7;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
     }
-    .ai-brand-item:hover {
-      transform: scale(1.24) translateY(-2px);
-      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.16));
+    .node-right {
+      top: 50%;
+      right: 2px;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      z-index: 8;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-bot-right {
+      bottom: 22px;
+      right: 18px;
+      width: 42px;
+      height: 42px;
+      z-index: 7;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-bot {
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 44px;
+      z-index: 8;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-bot-left {
+      bottom: 22px;
+      left: 18px;
+      width: 42px;
+      height: 42px;
+      z-index: 7;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-left {
+      top: 50%;
+      left: 2px;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      z-index: 8;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-top-left {
+      top: 22px;
+      left: 18px;
+      width: 42px;
+      height: 42px;
+      z-index: 7;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+    }
+    .node-inner-left {
+      top: 50%;
+      left: 44px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      z-index: 6;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
+    }
+    .node-inner-right {
+      top: 50%;
+      right: 44px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      z-index: 6;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
+    }
+
+    .ai-sphere-node:hover {
+      transform: scale(1.32) translateY(-3px) !important;
+      z-index: 25 !important;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.22)) !important;
     }
 
     /* Prominent Floating Overlay Badges on Cards */
@@ -922,9 +1034,8 @@ export function renderHowItWorksStyles(): string {
     }
     .badge-green { color: #16a34a; }
     .badge-blue { color: #2563eb; }
-    .badge-purple { color: #7c3aed; }
 
-    /* Card Content (Clean termination without bottom icon) */
+    /* Card Content */
     .channel-content {
       padding: 1.35rem 1.4rem 1.75rem;
       display: flex;

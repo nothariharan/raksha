@@ -66,10 +66,13 @@ export function renderChannelContinuityHtml(): string {
 
         <!-- 4 Channel Cards Grid -->
         <div class="channels-grid">
-          <!-- 1. Call Raksha -->
+          <!-- 1. Call Raksha (Big background icon behind mascot + Top-Right 1930 badge) -->
           <article class="channel-card card-call">
             <div class="channel-img-box">
-              <img src="/images/raksha/hero-call.png" alt="Citizen calling Raksha on phone" loading="lazy" />
+              <div class="channel-bg-watermark watermark-orange" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg>
+              </div>
+              <img class="channel-mascot-img" src="/images/raksha/hero-call.png" alt="Citizen calling Raksha on phone" loading="lazy" />
               <div class="channel-floating-badge badge-pill badge-orange">
                 <span class="badge-dot-orange"></span>
                 <span>1930</span>
@@ -81,10 +84,13 @@ export function renderChannelContinuityHtml(): string {
             </div>
           </article>
 
-          <!-- 2. WhatsApp Raksha -->
+          <!-- 2. WhatsApp Raksha (Big background icon behind mascot + Top-Right WhatsApp badge) -->
           <article class="channel-card card-whatsapp">
             <div class="channel-img-box">
-              <img src="/images/raksha/hero-whatsapp.png" alt="Elderly citizen using WhatsApp for Raksha" loading="lazy" />
+              <div class="channel-bg-watermark watermark-green" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 14.1c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.2-3.6-.8-3.1-1.3-5.1-4.5-5.3-4.7-.1-.2-1.3-1.8-1.3-3.4 0-1.6.8-2.4 1.1-2.7.3-.3.7-.4 1-.4h.7c.2 0 .5 0 .7.6.3.7.9 2.3.9 2.5 0 .2 0 .4-.1.6-.1.2-.3.4-.5.6-.2.2-.4.4-.2.8.3.6 1.4 2.2 3.1 3 2 .9 2.4.7 2.8.4.3-.4.8-1 1-1.3.2-.3.5-.3.8-.1.3.1 2 1 2.3 1.2.3.2.5.3.6.5.1.3.1 1-.1 1.6z"/></svg>
+              </div>
+              <img class="channel-mascot-img" src="/images/raksha/hero-whatsapp.png" alt="Elderly citizen using WhatsApp for Raksha" loading="lazy" />
               <div class="channel-floating-badge badge-circle badge-green" title="WhatsApp Raksha">
                 <svg viewBox="0 0 24 24" fill="#16a34a"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 14.1c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.2-3.6-.8-3.1-1.3-5.1-4.5-5.3-4.7-.1-.2-1.3-1.8-1.3-3.4 0-1.6.8-2.4 1.1-2.7.3-.3.7-.4 1-.4h.7c.2 0 .5 0 .7.6.3.7.9 2.3.9 2.5 0 .2 0 .4-.1.6-.1.2-.3.4-.5.6-.2.2-.4.4-.2.8.3.6 1.4 2.2 3.1 3 2 .9 2.4.7 2.8.4.3-.4.8-1 1-1.3.2-.3.5-.3.8-.1.3.1 2 1 2.3 1.2.3.2.5.3.6.5.1.3.1 1-.1 1.6z"/></svg>
               </div>
@@ -95,12 +101,15 @@ export function renderChannelContinuityHtml(): string {
             </div>
           </article>
 
-          <!-- 3. Raksha on the Web -->
+          <!-- 3. Raksha on the Web (Big background icon behind mascot + Top-Right Web badge) -->
           <article class="channel-card card-web">
             <div class="channel-img-box">
-              <img src="/images/raksha/hero-web.png" alt="Citizen filing incident on Raksha web console" loading="lazy" />
+              <div class="channel-bg-watermark watermark-blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <img class="channel-mascot-img" src="/images/raksha/hero-web.png" alt="Citizen filing incident on Raksha web console" loading="lazy" />
               <div class="channel-floating-badge badge-circle badge-blue" title="Raksha Web Console">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               </div>
             </div>
             <div class="channel-content">
@@ -109,36 +118,24 @@ export function renderChannelContinuityHtml(): string {
             </div>
           </article>
 
-          <!-- 4. AI Agents (11 Authentic Big AI Logos from thesvg.org) -->
+          <!-- 4. AI Agents (Spherical Overlapping Cluster - No top-right badge) -->
           <article class="channel-card card-agents">
             <div class="channel-img-box ai-agents-box">
-              <div class="ai-logos-flow">
-                <!-- Top Row: 5 Big Logos -->
-                <div class="ai-row-top">
-                  <div class="ai-brand-item" title="OpenAI / ChatGPT">\${openaiSvg}</div>
-                  <div class="ai-brand-item" title="Anthropic / Claude">\${claudeSvg}</div>
-                  <div class="ai-brand-item" title="Google Gemini">\${geminiSvg}</div>
-                  <div class="ai-brand-item" title="Microsoft Copilot">\${copilotSvg}</div>
-                  <div class="ai-brand-item" title="Cursor">\${cursorSvg}</div>
-                </div>
+              <div class="ai-sphere-cluster">
+                <!-- Outer Spherical Cloud -->
+                <div class="ai-sphere-node node-top" title="Anthropic / Claude">\${claudeSvg}</div>
+                <div class="ai-sphere-node node-top-right" title="Microsoft Copilot">\${copilotSvg}</div>
+                <div class="ai-sphere-node node-right" title="Cursor">\${cursorSvg}</div>
+                <div class="ai-sphere-node node-bot-right" title="Perplexity AI">\${perplexitySvg}</div>
+                <div class="ai-sphere-node node-bot" title="DeepSeek">\${deepseekSvg}</div>
+                <div class="ai-sphere-node node-bot-left" title="Meta Llama">\${metaSvg}</div>
+                <div class="ai-sphere-node node-left" title="Hugging Face">\${huggingFaceSvg}</div>
+                <div class="ai-sphere-node node-top-left" title="Mistral AI">\${mistralSvg}</div>
 
-                <!-- Mid Row: 2 Big Logos -->
-                <div class="ai-row-mid">
-                  <div class="ai-brand-item" title="Perplexity AI">\${perplexitySvg}</div>
-                  <div class="ai-brand-item" title="Mistral AI">\${mistralSvg}</div>
-                </div>
-
-                <!-- Bottom Row: 4 Big Logos -->
-                <div class="ai-row-bot">
-                  <div class="ai-brand-item" title="Meta Llama">\${metaSvg}</div>
-                  <div class="ai-brand-item" title="Hugging Face">\${huggingFaceSvg}</div>
-                  <div class="ai-brand-item" title="DeepSeek">\${deepseekSvg}</div>
-                  <div class="ai-brand-item" title="Groq">\${groqSvg}</div>
-                </div>
-              </div>
-
-              <div class="channel-floating-badge badge-circle badge-purple" title="AI Agents Protocol">
-                <svg viewBox="0 0 24 24" fill="#7c3aed"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
+                <!-- Inner Core Layer -->
+                <div class="ai-sphere-node node-inner-left" title="Groq">\${groqSvg}</div>
+                <div class="ai-sphere-node node-inner-right" title="OpenAI / ChatGPT">\${openaiSvg}</div>
+                <div class="ai-sphere-node node-center" title="Google Gemini">\${geminiSvg}</div>
               </div>
             </div>
             <div class="channel-content">
@@ -197,4 +194,4 @@ export function renderChannelContinuityHtml(): string {
 `;
 
 fs.writeFileSync('apps/web/src/components/how-it-works/channels.ts', tsCode);
-console.log('Built channels.ts without bottom icons and with larger badges & AI logos');
+console.log('Successfully built channels.ts with background watermarks and AI spherical cluster');
