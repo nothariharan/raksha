@@ -76,10 +76,10 @@ export function renderPageLayout(options: {
 
     /* Navbar */
     nav {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      padding: 0.75rem 3rem;
+      padding: 0.75rem clamp(1.5rem, 3.5vw, 3.5rem);
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -91,6 +91,7 @@ export function renderPageLayout(options: {
     .brand-link {
       display: flex;
       align-items: center;
+      justify-self: start;
       text-decoration: none;
     }
     .brand-wordmark { color: var(--text); font-family: 'Samarkan', 'Palatino Linotype', serif; font-size: 2rem; line-height: 1; letter-spacing: .025em; }
@@ -98,6 +99,7 @@ export function renderPageLayout(options: {
     .nav-links {
       display: flex;
       align-items: center;
+      justify-self: center;
       gap: 2.2rem;
       font-size: 0.88rem;
       font-weight: 500;
@@ -113,6 +115,7 @@ export function renderPageLayout(options: {
     .nav-actions {
       display: flex;
       align-items: center;
+      justify-self: end;
       gap: 1rem;
     }
 
@@ -146,7 +149,11 @@ export function renderPageLayout(options: {
     .btn-nav-demo:hover { background: #292524; }
 
     @media (max-width: 760px) {
-      nav { padding: 0.7rem 1.15rem; }
+      nav {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.7rem 1.15rem;
+      }
       .nav-links { display: none; }
       .nav-actions { gap: 0.55rem; }
       .lang-select { max-width: 116px; }
