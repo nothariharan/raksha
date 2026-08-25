@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      thesvg:
+        specifier: ^3.3.1
+        version: 3.3.1
     devDependencies:
       '@raksha/agent-mcp':
         specifier: workspace:*
@@ -598,6 +602,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@thesvg/icons@3.3.1':
+    resolution: {integrity: sha512-lEU5R2QEkUIeR52uklDtg+VETTKQSuho4h8lwnMiKsOH9fmpEAoKhNfP2AdWMsjEJgMyBc9iWvuY1v6WRoejlA==}
+    engines: {node: '>=18'}
+
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -809,6 +817,10 @@ packages:
 
   strip-literal@3.1.0:
     resolution: {integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==}
+
+  thesvg@3.3.1:
+    resolution: {integrity: sha512-oMgEuNxcUQMdMOq3Di5kSLV7iIgOtFSE2a3yzKAewPoa92t6k2dB3Sh8Z9vfK144zT39XwK7sWg4RSm++7FHDw==}
+    engines: {node: '>=18'}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -1087,6 +1099,8 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.62.5':
     optional: true
 
+  '@thesvg/icons@3.3.1': {}
+
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -1328,6 +1342,10 @@ snapshots:
   strip-literal@3.1.0:
     dependencies:
       js-tokens: 9.0.1
+
+  thesvg@3.3.1:
+    dependencies:
+      '@thesvg/icons': 3.3.1
 
   tinybench@2.9.0: {}
 
