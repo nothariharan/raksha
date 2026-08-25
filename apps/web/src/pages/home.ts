@@ -132,10 +132,10 @@ export function renderHomePageHtml(): string {
       bottom: 22%;
     }
 
-    /* Call mode: Baseline vertical alignment */
+    /* Call mode: Shifted further to the left */
     .hero-stage[data-current-mode="call"] .hero-person {
-      object-position: 22% 48%;
-      transform: translateY(0px);
+      object-position: 12% 48%;
+      transform: translateX(-24px);
     }
     .hero-stage[data-current-mode="call"] .companion-wrap {
       bottom: 12%;
