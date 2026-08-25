@@ -797,7 +797,7 @@ export function renderHowItWorksStyles(): string {
       border-color: rgba(234, 88, 12, 0.3);
     }
     .channel-img-box {
-      height: 210px;
+      height: 220px;
       position: relative;
       background: #ffffff;
       display: flex;
@@ -817,134 +817,136 @@ export function renderHowItWorksStyles(): string {
       transform: scale(1.04);
     }
 
-    /* AI Agents Showcase Box (3-Row Clean Flow matching user sketch) */
+    /* AI Agents Showcase Box (Big SVG Logos filling card) */
     .ai-agents-box {
       background: radial-gradient(circle at center, #fdfbfa 0%, #faf8f5 100%);
-      padding: 1.5rem 1rem;
+      padding: 1.25rem 0.6rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      min-height: 210px;
+      height: 220px;
+      overflow: hidden;
+      position: relative;
     }
     .ai-logos-flow {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.85rem;
+      justify-content: center;
+      gap: 1rem;
       width: 100%;
-      max-width: 250px;
     }
     .ai-row-top {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.75rem;
+      gap: 0.9rem;
       width: 100%;
     }
     .ai-row-mid {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1.5rem;
+      gap: 2.2rem;
       width: 100%;
     }
     .ai-row-bot {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.85rem;
+      gap: 0.9rem;
       width: 100%;
     }
     .ai-brand-item {
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 44px;
+      height: 44px;
       transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
       cursor: default;
+      flex-shrink: 0;
+    }
+    .ai-brand-item svg {
+      width: 42px;
+      height: 42px;
+      max-width: 42px;
+      max-height: 42px;
     }
     .ai-brand-item:hover {
-      transform: scale(1.22) translateY(-2px);
-      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.12));
+      transform: scale(1.24) translateY(-2px);
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.16));
     }
 
-    /* Floating Badges on Cards (Pill style matching Image 3) */
+    /* Prominent Floating Overlay Badges on Cards */
     .channel-floating-badge {
       position: absolute;
       top: 14px;
       right: 14px;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 999px;
-      padding: 0.32rem 0.68rem;
-      font-size: 0.74rem;
-      font-weight: 800;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      z-index: 10;
     }
-    .channel-floating-badge svg {
-      width: 15px;
-      height: 15px;
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #ffffff;
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      border-radius: 999px;
+      padding: 0.42rem 0.95rem;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #ea580c;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+    }
+    .badge-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #ffffff;
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+    }
+    .badge-circle svg {
+      width: 22px;
+      height: 22px;
     }
     .badge-dot-orange {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #ea580c;
+      animation: pulseLive 1.8s infinite;
     }
-    .badge-orange { color: #ea580c; }
     .badge-green { color: #16a34a; }
     .badge-blue { color: #2563eb; }
     .badge-purple { color: #7c3aed; }
 
-    /* Card Content */
+    /* Card Content (Clean termination without bottom icon) */
     .channel-content {
-      padding: 1.4rem 1.25rem 1.6rem;
+      padding: 1.35rem 1.4rem 1.75rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
       flex: 1;
-      gap: 0.55rem;
+      gap: 0.45rem;
     }
     .channel-content h3 {
-      font-size: 1.15rem;
+      font-size: 1.18rem;
       font-weight: 800;
       color: #0f172a;
       margin: 0;
       letter-spacing: -0.02em;
     }
     .channel-content p {
-      font-size: 0.84rem;
+      font-size: 0.88rem;
       line-height: 1.45;
       color: #64748b;
-      margin: 0 0 0.85rem;
-      flex: 1;
+      margin: 0;
     }
-    .channel-circle-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-      transition: all 0.2s ease;
-    }
-    .channel-card:hover .channel-circle-icon {
-      transform: scale(1.08);
-    }
-    .channel-circle-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-    .icon-orange { color: var(--orange); }
-    .icon-green { color: #16a34a; }
-    .icon-blue { color: #2563eb; }
-    .icon-purple { color: #7c3aed; }
 
     /* Bottom Trust Props Bar */
     .trust-bar {

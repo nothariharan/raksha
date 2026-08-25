@@ -8,7 +8,6 @@ let openaiSvg = icons['openai'].replace(/fill="#fff"/gi, 'fill="#10A37F"');
 // Optimize Cursor fill for light background: replace fill: #edecec with fill: #171717
 let cursorSvg = icons['cursor'].replace(/fill:\s*#edecec/gi, 'fill: #171717');
 
-// Copilot, Claude, Gemini, Perplexity, Mistral, Meta, HuggingFace, DeepSeek, Groq
 let claudeSvg = icons['claude'];
 let geminiSvg = icons['google-gemini'];
 let copilotSvg = icons['microsoft-copilot'];
@@ -71,7 +70,7 @@ export function renderChannelContinuityHtml(): string {
           <article class="channel-card card-call">
             <div class="channel-img-box">
               <img src="/images/raksha/hero-call.png" alt="Citizen calling Raksha on phone" loading="lazy" />
-              <div class="channel-floating-badge badge-orange">
+              <div class="channel-floating-badge badge-pill badge-orange">
                 <span class="badge-dot-orange"></span>
                 <span>1930</span>
               </div>
@@ -79,9 +78,6 @@ export function renderChannelContinuityHtml(): string {
             <div class="channel-content">
               <h3>Call Raksha</h3>
               <p>Speak to us in your language.</p>
-              <div class="channel-circle-icon icon-orange">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg>
-              </div>
             </div>
           </article>
 
@@ -89,16 +85,13 @@ export function renderChannelContinuityHtml(): string {
           <article class="channel-card card-whatsapp">
             <div class="channel-img-box">
               <img src="/images/raksha/hero-whatsapp.png" alt="Elderly citizen using WhatsApp for Raksha" loading="lazy" />
-              <div class="channel-floating-badge badge-green">
+              <div class="channel-floating-badge badge-circle badge-green" title="WhatsApp Raksha">
                 <svg viewBox="0 0 24 24" fill="#16a34a"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 14.1c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.2-3.6-.8-3.1-1.3-5.1-4.5-5.3-4.7-.1-.2-1.3-1.8-1.3-3.4 0-1.6.8-2.4 1.1-2.7.3-.3.7-.4 1-.4h.7c.2 0 .5 0 .7.6.3.7.9 2.3.9 2.5 0 .2 0 .4-.1.6-.1.2-.3.4-.5.6-.2.2-.4.4-.2.8.3.6 1.4 2.2 3.1 3 2 .9 2.4.7 2.8.4.3-.4.8-1 1-1.3.2-.3.5-.3.8-.1.3.1 2 1 2.3 1.2.3.2.5.3.6.5.1.3.1 1-.1 1.6z"/></svg>
               </div>
             </div>
             <div class="channel-content">
               <h3>WhatsApp Raksha</h3>
               <p>Send voice notes, photos or messages.</p>
-              <div class="channel-circle-icon icon-green">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 14.1c-.2.6-1.2 1.1-1.7 1.2-.5.1-1.1.2-3.6-.8-3.1-1.3-5.1-4.5-5.3-4.7-.1-.2-1.3-1.8-1.3-3.4 0-1.6.8-2.4 1.1-2.7.3-.3.7-.4 1-.4h.7c.2 0 .5 0 .7.6.3.7.9 2.3.9 2.5 0 .2 0 .4-.1.6-.1.2-.3.4-.5.6-.2.2-.4.4-.2.8.3.6 1.4 2.2 3.1 3 2 .9 2.4.7 2.8.4.3-.4.8-1 1-1.3.2-.3.5-.3.8-.1.3.1 2 1 2.3 1.2.3.2.5.3.6.5.1.3.1 1-.1 1.6z"/></svg>
-              </div>
             </div>
           </article>
 
@@ -106,24 +99,21 @@ export function renderChannelContinuityHtml(): string {
           <article class="channel-card card-web">
             <div class="channel-img-box">
               <img src="/images/raksha/hero-web.png" alt="Citizen filing incident on Raksha web console" loading="lazy" />
-              <div class="channel-floating-badge badge-blue">
+              <div class="channel-floating-badge badge-circle badge-blue" title="Raksha Web Console">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               </div>
             </div>
             <div class="channel-content">
               <h3>Raksha on the Web</h3>
               <p>Upload receipts, add details and review.</p>
-              <div class="channel-circle-icon icon-blue">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-              </div>
             </div>
           </article>
 
-          <!-- 4. AI Agents (11 Authentic Multi-AI Logos from thesvg.org) -->
+          <!-- 4. AI Agents (11 Authentic Big AI Logos from thesvg.org) -->
           <article class="channel-card card-agents">
             <div class="channel-img-box ai-agents-box">
               <div class="ai-logos-flow">
-                <!-- Top Row: 5 Logos -->
+                <!-- Top Row: 5 Big Logos -->
                 <div class="ai-row-top">
                   <div class="ai-brand-item" title="OpenAI / ChatGPT">\${openaiSvg}</div>
                   <div class="ai-brand-item" title="Anthropic / Claude">\${claudeSvg}</div>
@@ -132,13 +122,13 @@ export function renderChannelContinuityHtml(): string {
                   <div class="ai-brand-item" title="Cursor">\${cursorSvg}</div>
                 </div>
 
-                <!-- Mid Row: 2 Logos -->
+                <!-- Mid Row: 2 Big Logos -->
                 <div class="ai-row-mid">
                   <div class="ai-brand-item" title="Perplexity AI">\${perplexitySvg}</div>
                   <div class="ai-brand-item" title="Mistral AI">\${mistralSvg}</div>
                 </div>
 
-                <!-- Bottom Row: 4 Logos -->
+                <!-- Bottom Row: 4 Big Logos -->
                 <div class="ai-row-bot">
                   <div class="ai-brand-item" title="Meta Llama">\${metaSvg}</div>
                   <div class="ai-brand-item" title="Hugging Face">\${huggingFaceSvg}</div>
@@ -147,16 +137,13 @@ export function renderChannelContinuityHtml(): string {
                 </div>
               </div>
 
-              <div class="channel-floating-badge badge-purple">
+              <div class="channel-floating-badge badge-circle badge-purple" title="AI Agents Protocol">
                 <svg viewBox="0 0 24 24" fill="#7c3aed"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
               </div>
             </div>
             <div class="channel-content">
               <h3>AI Agents</h3>
               <p>Let AI agents assist and continue for you.</p>
-              <div class="channel-circle-icon icon-purple">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
-              </div>
             </div>
           </article>
         </div>
@@ -210,4 +197,4 @@ export function renderChannelContinuityHtml(): string {
 `;
 
 fs.writeFileSync('apps/web/src/components/how-it-works/channels.ts', tsCode);
-console.log('Updated channels.ts with thesvg icons optimized for light theme');
+console.log('Built channels.ts without bottom icons and with larger badges & AI logos');

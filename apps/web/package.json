@@ -21,7 +21,8 @@
     "@raksha/cap-sdk": "workspace:*",
     "@raksha/i18n": "workspace:*",
     "@raksha/schemas": "workspace:*",
-    "@raksha/shared": "workspace:*"
+    "@raksha/shared": "workspace:*",
+    "thesvg": "^3.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",
