@@ -123,10 +123,10 @@ export function renderHomePageHtml(): string {
     }
 
     /* Mode-Specific Fine Adjustments */
-    /* Web mode: Character lower down, Card higher up */
+    /* Web mode: Character lower down, shifted further left, Card higher up */
     .hero-stage[data-current-mode="web"] .hero-person {
-      object-position: 18% 66%;
-      transform: translateY(26px);
+      object-position: 8% 66%;
+      transform: translate(-32px, 26px);
     }
     .hero-stage[data-current-mode="web"] .companion-wrap {
       bottom: 31%;
