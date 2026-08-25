@@ -108,11 +108,18 @@ export function renderHomePageHtml(): string {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      object-position: 54% 50%;
       filter: drop-shadow(0 20px 28px rgba(85, 57, 38, 0.14));
       z-index: 3;
       pointer-events: none;
-      transition: opacity 0.3s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.3s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), object-position 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Directional Alignment: Character shifted sideways, Assets on opposite side */
+    .hero-stage[data-align="left"] .hero-person {
+      object-position: 22% 50%;
+    }
+    .hero-stage[data-align="right"] .hero-person {
+      object-position: 78% 50%;
     }
 
     /* Animated Ambient Accent Badges */
@@ -120,7 +127,6 @@ export function renderHomePageHtml(): string {
       position: absolute;
       z-index: 4;
       top: 8%;
-      right: 2%;
       background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(10px);
       border: 1px solid var(--border);
@@ -133,8 +139,18 @@ export function renderHomePageHtml(): string {
       font-size: 0.72rem;
       font-weight: 700;
       color: var(--text);
+      transition: left 0.35s ease, right 0.35s ease;
       animation: floatBadge 4s ease-in-out infinite alternate;
     }
+    .hero-stage[data-align="left"] .stage-accent {
+      left: 2%;
+      right: auto;
+    }
+    .hero-stage[data-align="right"] .stage-accent {
+      right: 2%;
+      left: auto;
+    }
+
     .stage-accent-dot {
       width: 8px;
       height: 8px;
@@ -156,11 +172,20 @@ export function renderHomePageHtml(): string {
     .companion-wrap {
       position: absolute;
       z-index: 2;
-      left: -20px;
       bottom: 12%;
-      transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.35s cubic-bezier(0.16, 1, 0.3, 1), right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       animation: floatCard 6s ease-in-out infinite alternate;
     }
+    /* Opposite side positioning */
+    .hero-stage[data-align="left"] .companion-wrap {
+      left: auto;
+      right: -8px;
+    }
+    .hero-stage[data-align="right"] .companion-wrap {
+      left: -8px;
+      right: auto;
+    }
+
     @keyframes floatCard {
       0% { transform: translateY(0px); }
       100% { transform: translateY(-6px); }
@@ -810,7 +835,26 @@ export function renderHomePageHtml(): string {
       .mode-detail { width: 100%; display: block; }
       .mode-detail h2 { margin-bottom: 0.7rem; }
       .mode-detail ul { margin-top: 1rem; }
-      .companion-wrap { left: 0; bottom: 12%; transform: scale(0.88); transform-origin: left bottom; }
+      .hero-stage[data-align="left"] .hero-person,
+      .hero-stage[data-align="right"] .hero-person {
+        object-position: 50% 38%;
+      }
+      .companion-wrap,
+      .hero-stage[data-align="left"] .companion-wrap,
+      .hero-stage[data-align="right"] .companion-wrap {
+        left: 50% !important;
+        right: auto !important;
+        bottom: 12% !important;
+        transform: translateX(-50%) scale(0.88);
+        transform-origin: center bottom;
+      }
+      .stage-accent,
+      .hero-stage[data-align="left"] .stage-accent,
+      .hero-stage[data-align="right"] .stage-accent {
+        top: 3%;
+        right: 4% !important;
+        left: auto !important;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -862,11 +906,11 @@ export function renderHomePageHtml(): string {
         </div>
 
         <!-- Column 2: Center Stage with Mascot + Floating Animated Illustration Reference UI -->
-        <div class="hero-stage" id="heroStage">
+        <div class="hero-stage" id="heroStage" data-align="left">
           <!-- Atmospheric Radial Orb -->
           <div class="stage-orb"></div>
 
-          <!-- Foreground Mascot Person -->
+          <!-- Foreground Mascot Person (Left-aligned for Call mode) -->
           <img id="heroPerson" class="hero-person" src="/images/raksha/hero-call.png" alt="Young person calling Raksha for help" />
 
           <!-- Floating Ambient Security Badge -->
@@ -875,7 +919,7 @@ export function renderHomePageHtml(): string {
             <span id="stageAccentText">Toll-Free 24/7 Helpline</span>
           </div>
 
-          <!-- Interactive Companion Illustration Card -->
+          <!-- Interactive Companion Illustration Card (Right-aligned for Call mode) -->
           <div class="companion-wrap" id="companionWrap">
             <!-- Calling Interface Card (Image 0) -->
             <div class="call-card" id="activeCard">
@@ -1085,6 +1129,7 @@ export function renderHomePageHtml(): string {
 
         const modes = {
           call: {
+            align: 'left',
             color: '#e85d17',
             bg: '#fff1e8',
             border: '#f2c6ad',
@@ -1097,6 +1142,7 @@ export function renderHomePageHtml(): string {
             bullets: ['No forms to navigate', 'Multilingual support', 'A guided next step']
           },
           whatsapp: {
+            align: 'right',
             color: '#008069',
             bg: '#e6f7f2',
             border: '#a2e3d3',
@@ -1109,6 +1155,7 @@ export function renderHomePageHtml(): string {
             bullets: ['Voice notes and photos', 'One case across channels', 'No portal to learn']
           },
           web: {
+            align: 'left',
             color: '#2563eb',
             bg: '#eff6ff',
             border: '#bfdbfe',
@@ -1157,6 +1204,7 @@ export function renderHomePageHtml(): string {
           }
 
           setTimeout(() => {
+            stage.dataset.align = m.align;
             person.src = m.image;
             person.alt = m.alt;
             wrap.innerHTML = cards[name];
