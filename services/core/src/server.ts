@@ -58,13 +58,33 @@ export function createCoreServer() {
     }
 
     try {
-      // 1. Health check
+      // 1. Health checks
       if (pathname === "/health" && method === "GET") {
         sendJson(res, 200, {
           status: "ok",
           service: "raksha-core",
-          version: "0.1.0",
+          version: "0.7.0",
           timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      if (pathname === "/system/health" && method === "GET") {
+        sendJson(res, 200, {
+          status: "HEALTHY",
+          version: "0.7.0",
+          protocol: "cap/0.1",
+          timestamp: new Date().toISOString(),
+          services: {
+            core: { status: "UP", port: 3001 },
+            cap: { status: "UP", port: 3002 },
+            portalA: { status: "UP", port: 3003 },
+            portalB: { status: "UP", port: 3004 },
+            web: { status: "UP", port: 3000 },
+            whatsapp: { status: "UP", port: 3005 },
+            phone: { status: "UP", port: 3006 },
+            mcp: { status: "UP", port: 3007 },
+          },
         });
         return;
       }

@@ -11,7 +11,15 @@ export * from "./webhook.js";
 
 const PORT = Number(process.env.PORT_PHONE) || 3006;
 
-if (process.env.NODE_ENV !== "test") {
+const isMain = process.argv[1] && (
+  process.argv[1].endsWith("agents/phone/dist/index.js") ||
+  process.argv[1].endsWith("agents\\phone\\dist\\index.js") ||
+  process.argv[1].endsWith("agents/phone/src/index.ts") ||
+  process.argv[1].endsWith("agents\\phone\\src\\index.ts") ||
+  process.env.RAKSHA_AUTOSTART === "true"
+);
+
+if (isMain && process.env.NODE_ENV !== "test") {
   const server = createPhoneWebhookServer();
   server.listen(PORT, () => {
     console.log(`[Raksha Phone Telephony Agent] Listening on http://localhost:${PORT}`);

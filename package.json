@@ -1,6 +1,6 @@
 {
   "name": "raksha",
-  "version": "0.1.0",
+  "version": "0.7.0",
   "type": "module",
   "private": true,
   "description": "Raksha — Multimodal Emergency Public-Service Protocol for Financial Cyber-Fraud Reporting",
@@ -10,6 +10,9 @@
     "typecheck": "pnpm -r run typecheck",
     "test": "tsx test/run-e2e.ts",
     "test:e2e:cap": "tsx test/run-e2e.ts",
+    "demo": "tsx scripts/demo-start.ts",
+    "demo:start": "tsx scripts/demo-start.ts",
+    "demo:reset": "tsx scripts/demo-reset.ts",
     "dev:core": "pnpm --filter @raksha/core dev",
     "dev:cap": "pnpm --filter @raksha/cap dev",
     "dev:portal-a": "pnpm --filter @raksha/portal-a dev",

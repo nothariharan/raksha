@@ -1,0 +1,21 @@
+{
+  "name": "Ramesh Kumar",
+  "preferredLanguage": "hi",
+  "mobile": "+919876543210",
+  "city": "Bengaluru",
+  "state": "Karnataka",
+  "narrativeHi": "बिजली विभाग के नाम से कॉल आया और कहा कि तुरंत 5,000 रुपये फोनपे से नहीं भेजे तो बिजली कट जाएगी। मैंने स्टेट बैंक ऑफ़ इंडिया खाते से 5,000 रुपये भेज दिए।",
+  "narrativeEn": "Someone called pretending to be from electricity department stating power will be cut off unless I pay 5000 immediately via PhonePe. I transferred 5000 from my SBI account.",
+  "fraudCategory": "ELECTRICITY_BILL_SCAM",
+  "transaction": {
+    "amount": 5000,
+    "currency": "INR",
+    "channel": "UPI",
+    "application": "PhonePe",
+    "transactionId": "423456789012",
+    "timestamp": "2026-08-25T18:42:00+05:30",
+    "debitInstitution": "State Bank of India",
+    "beneficiaryIdentifier": "fraudster.merchant@ybl",
+    "beneficiaryInstitution": "Yes Bank Ltd"
+  }
+}

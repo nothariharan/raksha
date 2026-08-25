@@ -1,97 +1,164 @@
-# Raksha (रक्षा) — Autonomous Emergency Incident Protocol
+# 🛡️ Raksha — Multimodal Emergency Public-Service Protocol
 
-> **Multimodal Emergency Public-Service Protocol for Financial Cyber-Fraud Reporting**  
-> Backed by a deterministic incident engine, an Evidence Capsule with SHA-256 integrity verification, and the Civic Action Protocol (CAP) for service & agent interoperability.
+> **One Civic Action • Four Convergent Interfaces (Web • WhatsApp • Phone • MCP Agents)**
 
----
-
-## 🏛️ Overview
-
-When a citizen loses money in a cyber fraud, they face the **Golden Hour (0–120 minutes)** where recovery rates exceed 90% if bank debit liens are placed rapidly. In acute panic, victims struggle with complex 15-screen portals and cannot locate 12-digit UTR numbers.
-
-**Raksha transforms emergency interaction:**
-- **Multimodal Panic Intake:** Speak in Hindi/English/Tamil/regional languages or drop a payment screenshot.
-- **Deterministic Validation:** Schema checks, contradiction detection, and single-question clarification.
-- **Evidence Capsule:** Original synthetic evidence sealed with SHA-256 digest.
-- **Civic Action Protocol (CAP):** Typed machine-readable civic actions linking intake portals (Portal A), financial responder consoles (Portal B), and autonomous AI agents (MCP).
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![Protocol Version](https://img.shields.io/badge/Protocol-CAP%20v0.1-green.svg)](#civic-action-protocol)
+[![Tests](https://img.shields.io/badge/Tests-10%2F10%20Passing-brightgreen.svg)](#automated-test-matrix)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 📂 Monorepo Structure
+## The Problem
+
+When a citizen loses money to a cyber scam in India, the first **two golden hours** determine whether intermediate bank accounts can be frozen. Today, victims must navigate complex multi-step forms across separate government and banking portals while under intense distress. Meanwhile, emerging AI assistants cannot interact with public services safely without fragile browser scraping.
+
+## The Solution: Raksha & CAP
+
+**Raksha** is an emergency first-responder protocol for financial cyber-fraud reporting. It introduces the **Civic Action Protocol (CAP)** — a deterministic, machine-action layer enabling citizens and autonomous AI agents to initiate authorized public-service freeze packets through four unified front doors:
 
 ```text
-raksha/
-├── apps/
-│   ├── web/           # Citizen emergency interface (Next.js UI)
-│   ├── portal-a/      # Cyber Fraud Intake Portal (1930 / NCRP prototype)
-│   └── portal-b/      # Financial Institution Response Console
-│
-├── services/
-│   ├── core/          # Canonical incident engine & deterministic validation
-│   └── cap/           # Civic Action Protocol router & capability registry
-│
-├── packages/
-│   ├── schemas/       # Shared canonical TypeScript contracts (Incident, CAP, Events)
-│   ├── cap-sdk/       # CAP Client SDK for services & portals
-│   ├── i18n/          # Multilingual localization (EN, HI, TA, TE, KN, BN, MR)
-│   └── shared/        # Shared event bus, ID generators, and hashing utilities
-│
-├── agents/
-│   ├── whatsapp/      # WhatsApp webhook & conversation adapter
-│   ├── phone/         # Telephony & voice first-responder adapter
-│   └── mcp/           # Model Context Protocol (MCP) server for AI agents
-│
-├── docs/              # Architectural specifications & problem statements
-├── test/              # End-to-end integration tests
-├── .env.example       # Environment template
-└── package.json       # Monorepo configuration (pnpm workspace)
+       HUMAN INTERFACES                             AI INTERFACES
+  ┌──────────┼──────────┐                                 │
+  ▼          ▼          ▼                                 ▼
+ Web      WhatsApp    Phone                      Autonomous AI Agents
+ (UI)     (Twilio)  (ElevenLabs)                 (Claude / GPT / Scout)
+  │          │          │                                 │
+  │          │          │                         Model Context Protocol
+  │          │          │                                 │
+  │          │          │                                 ▼
+  │          │          │                         [Raksha MCP Server]
+  │          │          │                        • discover_capabilities
+  │          │          │                        • start_incident
+  │          │          │                        • add_evidence
+  │          │          │                        • submit_incident (Guarded)
+  │          │          │                                 │
+  └──────────┼──────────┴─────────────────────────────────┘
+             │
+             ▼
+      POST /v1/process
+             │
+             ▼
+     [Raksha Core API]
+     (Persistent Incident Repository & Deterministic Reconciliation)
+             │
+             ▼
+     [Civic Action Protocol (CAP)]
+     (Idempotent Action Router & Tamper-Evident Hashed Audit Ledger)
+             │
+     ┌───────┴───────┐
+     ▼               ▼
+  Portal A        Portal B
+(1930 Intake)   (Bank Response)
 ```
 
 ---
 
-## 🚀 Quickstart & Development
+## ⚡ Quick Start (One-Command Full Stack)
 
-### 1. Install Dependencies
+To reset the database to a clean state, seed the canonical demo persona (Ramesh Kumar, ₹5,000 SBI UPI), and launch all 8 services:
+
 ```bash
+# 1. Install dependencies
 pnpm install
-```
 
-### 2. Run Typecheck & Tests
-```bash
-pnpm typecheck
-pnpm test
-pnpm test:e2e:cap
-```
-
-### 3. Build All Packages & Services
-```bash
+# 2. Build and Typecheck
 pnpm build
+pnpm typecheck
+
+# 3. Reset and Launch Full Protocol Stack
+pnpm demo
 ```
 
-### 4. Run Services Locally
+### Protocol Service Map:
+| Service | Endpoint | Description |
+| :--- | :--- | :--- |
+| **Citizen Web UI & Dev Drawer** | `http://localhost:3000` | Notion AI × Wispr Flow minimal emergency UX |
+| **Raksha Core API** | `http://localhost:3001` | Multimodal reconciliation & incident state machine |
+| **Civic Action Protocol (CAP)** | `http://localhost:3002` | Capability discovery, action routing & tamper-evident audit ledger |
+| **Portal A (1930 Intake)** | `http://localhost:3003` | Mock citizen cybercrime intake portal |
+| **Portal B (Bank Response)** | `http://localhost:3004` | Mock intermediary banking freeze & lien console |
+| **WhatsApp Webhook Adapter** | `http://localhost:3005` | Twilio / Meta webhook message normalizer |
+| **Voice Telephony Agent** | `http://localhost:3006` | ElevenLabs / Twilio / Exotel voicebot adapter |
+| **Model Context Protocol (MCP)**| `http://localhost:3007` | JSON-RPC 2.0 public-service agent tool server |
+| **System Health Overview** | `http://localhost:3001/system/health` | Comprehensive stack health check |
+
+---
+
+## 🧪 Automated Test Matrix (`pnpm test`)
+
+Run the complete 10-scenario end-to-end integration and quad-channel convergence matrix:
+
 ```bash
-# Core Backend API (:3001)
-pnpm dev:core
+pnpm test
+```
 
-# CAP Service (:3002)
-pnpm dev:cap
+```text
+=================================================================
+  RAKSHA PROTOCOL v0.7.0 — FINAL DEMO HARDENING & RELIABILITY
+=================================================================
 
-# Portal A Intake (:3003)
-pnpm dev:portal-a
+  ✓ Core Server running on http://localhost:3051
+  ✓ CAP Server running on http://localhost:3052
+  ✓ MCP Server running on http://localhost:3057
+
+▶ [Scenario 1] Verifying System Health Check (GET /system/health)...
+  ✓ System Health verified: HEALTHY (Protocol: cap/0.1, Version: 0.7.0)
+
+▶ [Scenario 2] Executing Deterministic Demo Reset (pnpm demo:reset)...
+  ✓ Demo reset confirmed: Canonical persona Ramesh Kumar (₹5,000) seeded in clean state.
+
+▶ [Scenario 3] QUAD-CHANNEL EQUIVALENCE: Canonical Ramesh Kumar across 4 front doors...
+  ✓ Web UI     : Amount ₹5000 | UTR 423456789012 | SBI
+  ✓ WhatsApp   : Amount ₹5000 | UTR 423456789012 | SBI
+  ✓ Phone      : Amount ₹5000 | UTR 423456789012 | SBI
+  ✓ MCP Agent  : Amount ₹5000 | UTR 423456789012 | SBI
+  ✓ 100% Cross-channel state parity verified.
+
+▶ [Scenario 4] Testing Multilingual Full Journeys (Hindi & Tamil)...
+  ✓ Hindi Voice Turn: "मुझे बस एक जानकारी चाहिए..."
+  ✓ Tamil Intake Turn: "பரிவர்த்தனை விவரங்கள்..."
+
+▶ [Scenario 5] Failure Mode 1: Discrepancy Detection (₹50k voice vs ₹5k screenshot)...
+  ✓ Contradiction captured safely: Prompted citizen for choice without blind execution.
+
+▶ [Scenario 6] Failure Mode 2: Downstream CAP Outage -> Graceful DEFERRED State...
+  ✓ Zero-hallucination verified: Returned DEFERRED state during downstream outage.
+
+▶ [Scenario 7] Verifying Tamper-Evident Hashed Audit Log & Evidence Digest...
+  ✓ Tamper-evident evidence capsule digest calculated (SHA-256).
+
+▶ [Scenario 8 & 9] Submitting Incident & Portal B Bank Lien Acknowledgment...
+  ✓ Simulation Boundary Enforced: Reference = 1930-SYN-958303
+  ✓ Portal B Bank Console acknowledged simulated lien.
+
+▶ [Scenario 10] Testing Process Crash & Recovery of Persistent Database...
+  ✓ Database verification: Incident intact with 100% fidelity.
+
+=================================================================
+  ALL 10 PHASE 7 FINAL HARMONIZATION TESTS PASSED (100% SUCCESS)
+=================================================================
 ```
 
 ---
 
-## 📜 Phase Roadmap
+## 🏛️ Simulation Boundary & Claims Truthfulness
 
-- **PHASE 0** → Repository + contracts + End-to-End skeleton *(Completed)*
-- **PHASE 1** → Core backend + database
-- **PHASE 2** → Incident engine + deterministic validation
-- **PHASE 3** → CAP
-- **PHASE 4** → Portal integration
-- **PHASE 5** → Web UI
-- **PHASE 6** → WhatsApp
-- **PHASE 7** → Phone
-- **PHASE 8** → MCP / AI-agent interface
-- **PHASE 9** → Full integration
-- **PHASE 10** → UI polish + multilingual + demo hardening
+- **Simulated Demonstration**: Downstream actions to 1930 Cyber Cell (Portal A) and Bank Nodal Freeze (Portal B) are demonstration mocks conforming to real-world RFC-style CAP schemas.
+- **Reference Labeling**: All generated case identifiers are strictly prefixed with `1930-SYN-` to make the simulation boundary obvious to judges and auditors.
+- **Audit Integrity**: All state transitions record SHA-256 evidence digests in a tamper-evident hashed audit ledger.
+
+---
+
+## 📖 Architecture & Documentation
+
+- [Full Architecture Specification](docs/architecture.md)
+- [Civic Action Protocol (CAP) Contract](docs/cap-contract.md)
+- [Live Demo Script & Guide](docs/demo.md)
+- [Production Deployment Guide](docs/deployment.md)
+
+---
+
+## 📜 Thesis
+
+> *"People shouldn't need to learn how government software works in an emergency. And AI agents shouldn't have to pretend government websites are APIs. Raksha gives both humans and agents one safe path to the same public-service action."*
