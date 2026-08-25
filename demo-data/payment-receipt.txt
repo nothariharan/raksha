@@ -1,0 +1,8 @@
+Google Pay - Completed
+Paid to: Electricity Dept Desk (fraudster.merchant@ybl)
+Amount: ₹5,000.00
+Date: 25 Aug 2026, 6:42 PM
+UPI Transaction ID: 423456789012
+Google Transaction ID: CICAgODU_47aWg
+From: State Bank of India (••• 4182)
+To UPI ID: fraudster.merchant@ybl

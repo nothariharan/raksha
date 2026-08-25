@@ -10,20 +10,22 @@ import {
   VoiceToolCall,
   VoiceToolResult,
 } from "./providers/interface.js";
-import { defaultElevenLabsProvider } from "./providers/elevenlabs-provider.js";
-import { defaultTwilioProvider } from "./providers/twilio-provider.js";
-import { defaultExotelProvider } from "./providers/exotel-provider.js";
+import { ElevenLabsTelephonyProvider, defaultElevenLabsProvider } from "./providers/elevenlabs-provider.js";
+import { TwilioTelephonyProvider, defaultTwilioProvider } from "./providers/twilio-provider.js";
+import { ExotelTelephonyProvider, defaultExotelProvider } from "./providers/exotel-provider.js";
 import { defaultPhoneSessionManager, PhoneSessionManager } from "./session-manager.js";
+import { defaultPhoneToolsHandler, PhoneToolsHandler } from "./phone-tools.js";
 
 export class PhoneService {
   private providers: Map<TelephonyProviderType, ITelephonyProvider> = new Map();
   private sessions: PhoneSessionManager;
 
-  constructor(sessions?: PhoneSessionManager) {
+  constructor(sessions?: PhoneSessionManager, tools?: PhoneToolsHandler) {
     this.sessions = sessions || defaultPhoneSessionManager;
-    this.providers.set("elevenlabs", defaultElevenLabsProvider);
-    this.providers.set("twilio", defaultTwilioProvider);
-    this.providers.set("exotel", defaultExotelProvider);
+    const t = tools || defaultPhoneToolsHandler;
+    this.providers.set("elevenlabs", new ElevenLabsTelephonyProvider(t, this.sessions));
+    this.providers.set("twilio", new TwilioTelephonyProvider(t, this.sessions));
+    this.providers.set("exotel", new ExotelTelephonyProvider(t, this.sessions));
   }
 
   getProvider(name: TelephonyProviderType = "elevenlabs"): ITelephonyProvider {

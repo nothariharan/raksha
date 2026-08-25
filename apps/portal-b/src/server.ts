@@ -1,5 +1,5 @@
 /**
- * Portal B REST API + Operational FI Console UI server.
+ * Portal B REST API + Operational Financial Intermediary Console UI server.
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
@@ -71,7 +71,8 @@ export function createPortalBServer() {
         sendJson(res, 200, {
           status: "ok",
           service: "raksha-portal-b",
-          version: "0.1.0",
+          version: "0.7.0",
+          timestamp: new Date().toISOString(),
         });
         return;
       }
@@ -82,7 +83,7 @@ export function createPortalBServer() {
       }
 
       if (pathname === "/portal-b/alerts" && method === "GET") {
-        const alerts = portalBResponseService.listAlerts();
+        const alerts = await portalBResponseService.pollEventsFromHttp();
         sendJson(res, 200, { alerts });
         return;
       }
@@ -102,18 +103,6 @@ export function createPortalBServer() {
           return;
         }
         sendJson(res, 200, { alert });
-        return;
-      }
-
-      const advanceMatch = pathname.match(/^\/portal-b\/alerts\/([^/]+)\/advance$/);
-      if (advanceMatch && method === "POST") {
-        const id = decodeURIComponent(advanceMatch[1]);
-        const updated = await portalBResponseService.advanceAlertLifecycle(id);
-        if (!updated) {
-          sendJson(res, 404, { error: `Alert not found: ${id}` });
-          return;
-        }
-        sendJson(res, 200, { alert: updated });
         return;
       }
 
@@ -141,6 +130,13 @@ export function createPortalBServer() {
         });
 
         sendJson(res, result.success ? 200 : 400, result);
+        return;
+      }
+
+      if (pathname === "/portal-b/acknowledge" && method === "POST") {
+        const body = await parseJsonBody<any>(req);
+        const result = await portalBResponseService.acknowledgeFreeze(body);
+        sendJson(res, 200, result);
         return;
       }
 
