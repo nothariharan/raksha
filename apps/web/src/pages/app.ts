@@ -147,18 +147,18 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     }
     .btn-dispatch:hover { background: var(--orange-hover); }
 
-    /* Raksha Minimal Live Voice Experience (FluidOrb) */
+    /* Raksha Minimal Live Voice Experience (FluidOrb - White / Light Theme) */
     .call-modal-overlay {
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 50% 30%, #151926 0%, #090b10 100%);
-      backdrop-filter: blur(28px);
+      background: rgba(250, 250, 249, 0.98);
+      backdrop-filter: blur(24px);
       z-index: 9999;
       display: none;
       place-items: center;
       padding: 1.5rem;
-      animation: fadeIn 0.3s ease;
-      color: #f8fafc;
+      animation: fadeIn 0.25s ease;
+      color: #1c1917;
     }
     .call-modal-overlay.active { display: flex; justify-content: center; align-items: center; }
 
@@ -178,37 +178,39 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.82rem;
-      color: #94a3b8;
+      font-size: 0.84rem;
+      color: #78716c;
     }
     .call-back-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
-      padding: 0.4rem 0.85rem;
+      background: #ffffff;
+      border: 1px solid #e7e5e4;
+      color: #57534e;
+      padding: 0.45rem 0.95rem;
       border-radius: 999px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
       transition: all 0.2s;
     }
     .call-back-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #f8fafc;
+      background: #f5f5f4;
+      color: #1c1917;
+      border-color: #d6d3d1;
     }
     .call-brand-mark {
       font-weight: 800;
-      letter-spacing: 0.2em;
-      font-size: 0.78rem;
-      color: #cbd5e1;
+      letter-spacing: 0.18em;
+      font-size: 0.85rem;
+      color: #1c1917;
       text-transform: uppercase;
     }
     .call-lang-indicator {
-      font-size: 0.8rem;
-      color: #64748b;
+      font-size: 0.82rem;
+      color: #78716c;
       font-weight: 500;
     }
 
@@ -224,7 +226,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     .fluid-orb-container {
       width: 240px;
       height: 240px;
-      margin: 1.2rem auto 1.5rem auto;
+      margin: 1.5rem auto 1.6rem auto;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -235,7 +237,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       height: 240px;
       border-radius: 50%;
       display: block;
-      box-shadow: 0 0 50px -10px rgba(249, 115, 22, 0.25);
+      box-shadow: 0 16px 40px -10px rgba(234, 88, 12, 0.22), 0 0 0 1px rgba(234, 88, 12, 0.12);
     }
     @media (max-width: 500px) {
       .fluid-orb-container, .fluid-orb-canvas {
@@ -248,23 +250,24 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.35rem 0.9rem;
+      padding: 0.4rem 1rem;
       border-radius: 999px;
-      background: rgba(249, 115, 22, 0.1);
-      border: 1px solid rgba(249, 115, 22, 0.22);
-      color: #fb923c;
-      font-size: 0.82rem;
+      background: #ffffff;
+      border: 1px solid #fed7aa;
+      color: #c2410c;
+      font-size: 0.84rem;
       font-weight: 600;
-      letter-spacing: 0.02em;
-      margin-bottom: 1.2rem;
+      letter-spacing: 0.01em;
+      margin-bottom: 1.3rem;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08);
       transition: all 0.25s ease;
     }
     .call-state-pill .dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: #f97316;
-      box-shadow: 0 0 8px #f97316;
+      background: #ea580c;
+      box-shadow: 0 0 8px rgba(234, 88, 12, 0.6);
       animation: pulseDot 1.6s infinite;
     }
 
@@ -276,22 +279,22 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.65rem;
+      gap: 0.75rem;
       padding: 0 1rem;
-      margin-bottom: 1.2rem;
+      margin-bottom: 1.3rem;
     }
     .turn-prompt {
-      font-size: 1.12rem;
-      font-weight: 600;
-      color: #f8fafc;
+      font-size: 1.22rem;
+      font-weight: 700;
+      color: #1c1917;
       line-height: 1.55;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.015em;
       transition: opacity 0.3s;
     }
     .turn-user {
-      font-size: 1.02rem;
-      color: #fdba74;
-      font-weight: 500;
+      font-size: 1.05rem;
+      color: #ea580c;
+      font-weight: 600;
       line-height: 1.45;
       font-style: italic;
       transition: opacity 0.3s;
@@ -301,27 +304,28 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #ffffff;
+      border: 1px solid #e7e5e4;
       border-radius: 999px;
-      padding: 0.4rem 1rem;
-      font-size: 0.82rem;
-      color: #94a3b8;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.84rem;
+      color: #78716c;
       margin-bottom: 1.4rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
       transition: all 0.3s ease;
       animation: fadeIn 0.4s ease;
     }
     .capsule-id {
       font-weight: 700;
-      color: #38bdf8;
+      color: #0284c7;
     }
     .capsule-facts {
-      color: #f1f5f9;
+      color: #1c1917;
       font-weight: 600;
     }
     .capsule-state {
       font-weight: 700;
-      color: #f59e0b;
+      color: #d97706;
       margin-left: 0.25rem;
     }
 
@@ -333,44 +337,46 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       width: 100%;
     }
     .btn-end-conversation {
-      background: rgba(249, 115, 22, 0.12);
-      color: #fed7aa;
-      border: 1px solid rgba(249, 115, 22, 0.3);
-      padding: 0.65rem 1.6rem;
+      background: #ffffff;
+      color: #c2410c;
+      border: 1.5px solid #fed7aa;
+      padding: 0.68rem 1.7rem;
       border-radius: 999px;
       font-weight: 600;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08);
       transition: all 0.2s ease;
     }
     .btn-end-conversation:hover {
-      background: rgba(249, 115, 22, 0.22);
-      border-color: rgba(249, 115, 22, 0.5);
-      color: #ffffff;
+      background: #fff7ed;
+      border-color: #ea580c;
+      color: #9a3412;
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
     }
     .btn-end-conversation .end-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #f97316;
+      background: #ea580c;
     }
 
     .btn-view-technical {
       background: none;
       border: none;
-      color: #64748b;
-      font-size: 0.78rem;
-      font-weight: 500;
+      color: #a8a29e;
+      font-size: 0.8rem;
+      font-weight: 600;
       cursor: pointer;
       transition: color 0.2s;
       padding: 0.4rem 0.6rem;
     }
     .btn-view-technical:hover {
-      color: #94a3b8;
+      color: #57534e;
     }
   `;
 const bodyContent = `
@@ -428,7 +434,7 @@ const bodyContent = `
 
         </div>
 
-        <div style="font-size: 0.72rem; color: #475569; text-align: center;">
+        <div style="font-size: 0.76rem; color: #a8a29e; text-align: center; font-weight: 500;">
           Simulated demonstration · Powered by ElevenLabs Voice Agent & GPT-4o
         </div>
 
