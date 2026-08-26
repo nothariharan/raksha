@@ -356,12 +356,6 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(234, 88, 12, 0.35);
     }
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.85rem;
-      width: 100%;
-    }
     .btn-end-conversation {
       background: #ffffff;
       color: #c2410c;
@@ -403,6 +397,47 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     }
     .btn-view-technical:hover {
       color: #57534e;
+    }
+
+    /* Developer Drawer */
+    #devDrawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100vh;
+      background: #0f172a;
+      color: #f8fafc;
+      box-shadow: -4px 0 25px rgba(0, 0, 0, 0.3);
+      padding: 1.5rem;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10000;
+      overflow-y: auto;
+      font-family: var(--font);
+    }
+    #devDrawer.open {
+      transform: translateX(0);
+    }
+    .drawer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .json-view {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: #38bdf8;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
     }
   `;
 const bodyContent = `
