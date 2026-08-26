@@ -162,7 +162,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     .call-modal-overlay.active { display: grid; }
 
     .call-modal-box {
-      width: min(740px, 100%);
+      width: min(760px, 100%);
       background: #11141d;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 28px;
@@ -170,7 +170,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       color: #ffffff;
       box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(249, 115, 22, 0.2);
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
+      grid-template-columns: 1.15fr 0.85fr;
       gap: 1.8rem;
       position: relative;
     }
@@ -212,21 +212,21 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     }
 
     .call-avatar-glow {
-      width: 84px;
-      height: 84px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       background: radial-gradient(circle, #f97316 0%, #ea580c 50%, rgba(17, 20, 29, 0) 75%);
       display: grid;
       place-items: center;
-      font-size: 2.2rem;
-      margin-bottom: 0.75rem;
+      font-size: 2rem;
+      margin-bottom: 0.6rem;
       position: relative;
       box-shadow: 0 0 30px rgba(249, 115, 22, 0.35);
       animation: floatGlow 3s ease-in-out infinite;
     }
     @keyframes floatGlow {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
+      50% { transform: translateY(-4px); }
     }
 
     .call-caption-box {
@@ -235,9 +235,9 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
       padding: 0.85rem 1rem;
-      margin: 0.75rem 0;
-      min-height: 80px;
-      max-height: 120px;
+      margin: 0.65rem 0;
+      min-height: 90px;
+      max-height: 130px;
       overflow-y: auto;
       text-align: left;
       font-size: 0.88rem;
@@ -250,8 +250,8 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       align-items: center;
       justify-content: center;
       gap: 3px;
-      height: 32px;
-      margin: 0.5rem 0;
+      height: 30px;
+      margin: 0.4rem 0;
       width: 100%;
     }
     .modal-waveform span {
@@ -294,7 +294,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.5rem 0;
+      padding: 0.45rem 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       font-size: 0.85rem;
     }
@@ -305,7 +305,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     .call-btn-row {
       display: flex;
       gap: 0.75rem;
-      margin-top: 1rem;
+      margin-top: 0.85rem;
       width: 100%;
     }
     .btn-end-call {
@@ -334,23 +334,23 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         
         <!-- Left: Realtime Voice & Waveform -->
         <div class="call-modal-left">
-          <div class="call-modal-badge">
+          <div class="call-modal-badge" id="callStatusBadgeWrap">
             <span class="dot"></span>
             <span id="callStatusBadge">CONNECTING...</span>
           </div>
 
-          <div class="call-avatar-glow">🛡️</div>
-          <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.2rem;">Raksha Emergency Helpline</h3>
-          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">Official Indian Cybercrime & Bank Protocol</p>
+          <div class="call-avatar-glow" id="callAvatarGlow">🛡️</div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;">Raksha Emergency Assistant</h3>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">Empathetic First-Response Intake</p>
 
           <!-- Waveform Visualizer -->
           <div class="modal-waveform" id="modalWaveform">
-            ${Array.from({ length: 24 }).map((_, i) => `<span style="animation-delay: ${(i * 0.06).toFixed(2)}s; height: ${20 + (i % 6) * 15}%;"></span>`).join('')}
+            ${Array.from({ length: 24 }).map((_, i) => `<span style="animation-delay: ${(i * 0.06).toFixed(2)}s; height: ${15 + (i % 5) * 8}%;"></span>`).join('')}
           </div>
 
-          <!-- Live Captions -->
+          <!-- Live Dynamic Captions -->
           <div class="call-caption-box" id="liveTranscriptBox">
-            <span style="color: #94a3b8; font-style: italic;">Connecting to ElevenLabs Agent (GPT-4o-mini)...</span>
+            <span style="color: #64748b; font-style: italic;">Connecting to live voice responder...</span>
           </div>
 
           <div class="call-btn-row">
@@ -363,31 +363,43 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         <!-- Right: Real-time Incident Sync -->
         <div class="call-modal-right">
           <div>
-            <div class="sync-title">🛡️ Real-Time Incident Sync</div>
+            <div class="sync-title">🛡️ LIVE CASE INSPECTOR</div>
             <div class="sync-row">
               <span class="sync-lbl">Case ID</span>
-              <span class="sync-val" id="syncCaseId">RKS-000001</span>
+              <span class="sync-val" id="syncCaseId">—</span>
             </div>
             <div class="sync-row">
               <span class="sync-lbl">Amount</span>
-              <span class="sync-val sync-amount" id="syncAmount">₹5,000</span>
+              <span class="sync-val sync-amount" id="syncAmount">—</span>
             </div>
             <div class="sync-row">
-              <span class="sync-lbl">App & Bank</span>
-              <span class="sync-val" id="syncAppBank">PhonePe · SBI</span>
+              <span class="sync-lbl">Payment App</span>
+              <span class="sync-val" id="syncApp">—</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-lbl">Debit Bank</span>
+              <span class="sync-val" id="syncBank">—</span>
             </div>
             <div class="sync-row">
               <span class="sync-lbl">UTR / Ref</span>
-              <span class="sync-val" id="syncUtr">423456789012</span>
+              <span class="sync-val" id="syncUtr">—</span>
             </div>
             <div class="sync-row">
-              <span class="sync-lbl">Protocol State</span>
-              <span class="sync-val" style="color: #38bdf8;" id="syncState">READY</span>
+              <span class="sync-lbl">Status</span>
+              <span class="sync-val" style="color: #38bdf8;" id="syncState">Listening for details</span>
+            </div>
+
+            <!-- Tiny Progressive Timeline -->
+            <div class="mini-timeline" id="miniTimeline" style="margin-top: 1.1rem; font-size: 0.76rem; color: #94a3b8; display: flex; flex-direction: column; gap: 0.4rem;">
+              <div id="tlStep1" style="color: #64748b;">○ Incident discovery</div>
+              <div id="tlStep2" style="color: #64748b;">○ Evidence & UTR extracted</div>
+              <div id="tlStep3" style="color: #64748b;">○ Citizen confirmed</div>
+              <div id="tlStep4" style="color: #64748b;">○ CAP freeze packet submitted</div>
             </div>
           </div>
 
-          <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem;">
-            ⚡ Verified by Civic Action Protocol (CAP). Ready for simulated 1930 / bank freeze.
+          <div id="syncFooterNote" style="font-size: 0.74rem; color: #64748b; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem;">
+            Raksha is preparing your report as you speak.
           </div>
         </div>
 
@@ -522,25 +534,186 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       let activeConversation = null;
       let conversationPollInterval = null;
 
+      function resetLiveCallDisplay() {
+        currentIncidentId = null;
+        currentIncident = null;
+        document.getElementById("syncCaseId").innerText = "—";
+        document.getElementById("syncAmount").innerText = "—";
+        document.getElementById("syncApp").innerText = "—";
+        document.getElementById("syncBank").innerText = "—";
+        document.getElementById("syncUtr").innerText = "—";
+        document.getElementById("syncState").innerText = "Listening for details";
+        document.getElementById("syncState").style.color = "#38bdf8";
+        
+        document.getElementById("tlStep1").innerHTML = "○ Incident discovery";
+        document.getElementById("tlStep1").style.color = "#64748b";
+        document.getElementById("tlStep2").innerHTML = "○ Evidence & UTR extracted";
+        document.getElementById("tlStep2").style.color = "#64748b";
+        document.getElementById("tlStep3").innerHTML = "○ Citizen confirmed";
+        document.getElementById("tlStep3").style.color = "#64748b";
+        document.getElementById("tlStep4").innerHTML = "○ CAP freeze packet submitted";
+        document.getElementById("tlStep4").style.color = "#64748b";
+
+        document.getElementById("syncFooterNote").innerText = "Raksha is preparing your report as you speak.";
+        document.getElementById("liveTranscriptBox").innerHTML = '<span style="color:#64748b;font-style:italic;">Connecting to live voice responder...</span>';
+      }
+
+      function mapStateToLabel(state) {
+        switch (state) {
+          case "INTAKE": return "Collecting details";
+          case "PROCESSING": return "Reconciling evidence...";
+          case "QUESTION_PENDING": return "Need one more detail";
+          case "USER_CONFIRMATION": return "Waiting for your approval";
+          case "READY": return "Ready for confirmation";
+          case "SUBMITTED": return "Submitted — simulated response";
+          case "ACKNOWLEDGED": return "Simulated lien acknowledged";
+          default: return "Listening for details";
+        }
+      }
+
+      function updateIncidentUI(inc, state, externalRef) {
+        if (!inc && !currentIncidentId) return;
+
+        if (inc?.id || currentIncidentId) {
+          document.getElementById("syncCaseId").innerText = inc?.id || currentIncidentId;
+          document.getElementById("tlStep1").innerHTML = "● Incident created (" + (inc?.id || currentIncidentId) + ")";
+          document.getElementById("tlStep1").style.color = "#10b981";
+        }
+
+        if (inc?.transaction?.amount) {
+          document.getElementById("syncAmount").innerText = "₹" + inc.transaction.amount.toLocaleString();
+        }
+
+        if (inc?.transaction?.application) {
+          document.getElementById("syncApp").innerText = inc.transaction.application;
+        }
+
+        if (inc?.transaction?.debitInstitution) {
+          document.getElementById("syncBank").innerText = inc.transaction.debitInstitution;
+        }
+
+        if (inc?.transaction?.transactionId) {
+          document.getElementById("syncUtr").innerText = inc.transaction.transactionId;
+          document.getElementById("tlStep2").innerHTML = "● Evidence sealed & UTR verified";
+          document.getElementById("tlStep2").style.color = "#10b981";
+        }
+
+        const effectiveState = state || inc?.state || "INTAKE";
+        document.getElementById("syncState").innerText = mapStateToLabel(effectiveState);
+
+        if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
+          document.getElementById("syncState").style.color = "#f59e0b";
+          document.getElementById("tlStep2").innerHTML = "● Evidence sealed & UTR verified";
+          document.getElementById("tlStep2").style.color = "#10b981";
+        }
+
+        if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
+          document.getElementById("syncState").style.color = "#10b981";
+          document.getElementById("tlStep3").innerHTML = "● Citizen confirmed";
+          document.getElementById("tlStep3").style.color = "#10b981";
+          const ref = externalRef || "1930-SYN-" + (inc?.id || "295411").replace("RKS-", "");
+          document.getElementById("tlStep4").innerHTML = "● CAP executed (" + ref + ")";
+          document.getElementById("tlStep4").style.color = "#10b981";
+          document.getElementById("syncFooterNote").innerText = "Submitted to simulated 1930 / bank response layer.";
+        }
+      }
+
+      async function sendVoiceTurnToBackend(speechText) {
+        try {
+          const res = await fetch(CORE_URL + "/v1/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              incidentId: currentIncidentId || undefined,
+              source: "phone",
+              modality: "voice",
+              content: speechText,
+              language: "hi"
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentIncidentId = data.incidentId;
+            currentIncident = data.incident;
+            updateIncidentUI(data.incident, data.state);
+            fetchDevEvents();
+          }
+        } catch (e) {
+          console.warn("Backend process sync:", e);
+        }
+      }
+
       async function startLiveVoiceCall() {
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
+        resetLiveCallDisplay();
         
         const badge = document.getElementById("callStatusBadge");
         const transcriptBox = document.getElementById("liveTranscriptBox");
         const waveform = document.getElementById("modalWaveform");
 
-        badge.innerText = "CONNECTING MIC & AI...";
-        transcriptBox.innerHTML = '<span style="color:#94a3b8;font-style:italic;">Requesting microphone access & connecting to ElevenLabs Agent (GPT-4o-mini)...</span>';
+        badge.innerText = "CONNECTING...";
+        transcriptBox.innerHTML = '<span style="color:#64748b;font-style:italic;">Connecting to live voice responder...</span>';
 
         try {
           const { Conversation } = await import("https://cdn.jsdelivr.net/npm/@elevenlabs/client@0.0.10/+esm");
           
           activeConversation = await Conversation.startSession({
             agentId: "agent_1201kxw5b2fvearadb4p3brmtya9",
+            clientTools: {
+              raksha_start_incident: async (params) => {
+                const res = await fetch(CORE_URL + "/v1/process", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    source: "phone",
+                    modality: "voice",
+                    content: params.narrative || "Emergency Fraud Intake",
+                    language: params.language || "hi"
+                  })
+                });
+                const data = await res.json();
+                currentIncidentId = data.incidentId;
+                currentIncident = data.incident;
+                updateIncidentUI(data.incident, data.state);
+                return JSON.stringify({ incidentId: data.incidentId, state: data.state });
+              },
+              raksha_process_input: async (params) => {
+                const res = await fetch(CORE_URL + "/v1/process", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    incidentId: currentIncidentId,
+                    source: "phone",
+                    modality: "voice",
+                    content: params.userSpeech,
+                    language: params.language || "hi"
+                  })
+                });
+                const data = await res.json();
+                currentIncident = data.incident;
+                updateIncidentUI(data.incident, data.state);
+                return JSON.stringify({ incidentId: data.incidentId, state: data.state });
+              },
+              raksha_submit_incident: async (params) => {
+                const res = await fetch(CAP_URL + "/cap/actions/execute", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Idempotency-Key": "call-cap-" + currentIncidentId },
+                  body: JSON.stringify({
+                    action: "report_financial_fraud",
+                    payload: currentIncident,
+                    idempotencyKey: "call-cap-" + currentIncidentId
+                  })
+                });
+                const capData = await res.json();
+                const ref = capData.externalReference || ("1930-SYN-" + (capData.caseId || "295411"));
+                updateIncidentUI(currentIncident, "SUBMITTED", ref);
+                return JSON.stringify({ status: "SUBMITTED", referenceNumber: ref });
+              }
+            },
             onConnect: () => {
-              badge.innerText = "LIVE CALL (ELEVENLABS · GPT-4O-MINI)";
-              transcriptBox.innerHTML = '<div style="color:#38bdf8;font-weight:700;margin-bottom:0.25rem;">Raksha Emergency Helpline Connected</div><div>नमस्ते! आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?</div>';
+              badge.innerText = "🎙️ LISTENING";
+              transcriptBox.innerHTML = '<div style="color:#38bdf8;font-weight:700;margin-bottom:0.25rem;">Raksha Assistant Connected</div>';
               startIncidentPoll();
             },
             onDisconnect: () => {
@@ -549,14 +722,14 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
             },
             onError: (err) => {
               console.error("[ElevenLabs Error]:", err);
-              badge.innerText = "VOICE HELPLINE ACTIVE";
+              badge.innerText = "CALL ACTIVE";
             },
             onModeChange: ({ mode }) => {
               if (mode === "speaking") {
                 badge.innerText = "🔊 RAKSHA SPEAKING...";
                 waveform.classList.remove("listening");
               } else {
-                badge.innerText = "🎙️ LISTENING TO YOU...";
+                badge.innerText = "🎙️ LISTENING...";
                 waveform.classList.add("listening");
               }
             },
@@ -565,6 +738,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
               p.style.marginTop = "0.35rem";
               if (source === "user") {
                 p.innerHTML = '<strong style="color:#fb923c;">You:</strong> ' + message;
+                sendVoiceTurnToBackend(message);
               } else {
                 p.innerHTML = '<strong style="color:#38bdf8;">Raksha:</strong> ' + message;
               }
@@ -575,8 +749,8 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
           });
         } catch (err) {
           console.warn("Direct WebRTC fallback:", err);
-          badge.innerText = "VOICE HELPLINE ACTIVE";
-          transcriptBox.innerHTML = '<div style="color:#fb923c;font-weight:700;margin-bottom:0.25rem;">Raksha Emergency Helpline Connected</div><div>नमस्ते! रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?</div>';
+          badge.innerText = "SIMULATOR ACTIVE";
+          transcriptBox.innerHTML = '<div style="color:#fb923c;font-weight:700;margin-bottom:0.25rem;">Raksha Assistant Connected</div>';
           startIncidentPoll();
         }
       }
@@ -594,7 +768,6 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       function startIncidentPoll() {
         stopIncidentPoll();
         conversationPollInterval = setInterval(fetchLatestIncidentSync, 2000);
-        fetchLatestIncidentSync();
       }
 
       function stopIncidentPoll() {
@@ -605,17 +778,13 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       }
 
       async function fetchLatestIncidentSync() {
+        if (!currentIncidentId) return;
         try {
-          const res = await fetch(CORE_URL + "/v1/incidents/RKS-DEMO-001");
+          const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId);
           if (!res.ok) return;
           const data = await res.json();
-          currentIncidentId = data.id;
           currentIncident = data;
-          document.getElementById("syncCaseId").innerText = data.id || "RKS-000001";
-          document.getElementById("syncAmount").innerText = "₹" + (data.transaction?.amount || 5000).toLocaleString();
-          document.getElementById("syncAppBank").innerText = (data.transaction?.application || "PhonePe") + " · " + (data.transaction?.debitInstitution || "SBI");
-          document.getElementById("syncUtr").innerText = data.transaction?.transactionId || "423456789012";
-          document.getElementById("syncState").innerText = data.state || "READY";
+          updateIncidentUI(data, data.state);
           document.getElementById("devIncId").innerText = data.id;
         } catch {}
       }
