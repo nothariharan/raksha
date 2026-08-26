@@ -9,6 +9,20 @@ function getEnv(k) {
 const accountSid = getEnv("TWILIO_ACCOUNT_SID");
 const authToken = getEnv("TWILIO_AUTH_TOKEN");
 const fromNumber = getEnv("TWILIO_FROM_NUMBER") || "+16055999677";
+const elevenLabsApiKey = getEnv("ELEVENLABS_API_KEY");
+const agentId = getEnv("ELEVENLABS_INTAKE_AGENT_ID") || "agent_1201kxw5b2fvearadb4p3brmtya9";
+
+export async function getSignedStreamUrl() {
+  const url = `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`;
+  const res = await fetch(url, {
+    headers: { "xi-api-key": elevenLabsApiKey }
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to get signed URL: ${res.status} ${await res.text()}`);
+  }
+  const data = await res.json();
+  return data.signed_url;
+}
 
 export async function callNumber(toNumber) {
   if (!toNumber) {
@@ -16,10 +30,15 @@ export async function callNumber(toNumber) {
     process.exit(1);
   }
 
-  console.log(`Initiating Twilio call from ${fromNumber} to ${toNumber}...`);
+  console.log(`1. Requesting signed ElevenLabs session for agent ${agentId}...`);
+  const signedStreamUrl = await getSignedStreamUrl();
+  console.log(`✓ Got signed WebSocket URL`);
+
+  console.log(`2. Initiating Twilio call from ${fromNumber} to ${toNumber}...`);
   
-  // TwiML that connects directly to the ElevenLabs agent
-  const twiml = `<Response><Connect><Stream url="wss://api.elevenlabs.io/v1/convai/conversation?agent_id=agent_1201kxw5b2fvearadb4p3brmtya9" /></Connect></Response>`;
+  // Escape XML entities in stream URL
+  const escapedUrl = signedStreamUrl.replace(/&/g, "&amp;");
+  const twiml = `<Response><Connect><Stream url="${escapedUrl}" /></Connect></Response>`;
 
   const body = new URLSearchParams({
     To: toNumber,
