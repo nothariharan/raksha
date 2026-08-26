@@ -33,6 +33,16 @@ export class PortalBResponseService {
       });
 
     this.initSubscription();
+
+    // Pre-seed Canonical Demo Alert (RKS-DEMO-001, ₹5,000 SBI Lien)
+    this.alerts.set("CAP-DEMO-001", {
+      caseId: "CAP-DEMO-001",
+      incidentId: "RKS-DEMO-001",
+      externalReference: "1930-SYN-295411",
+      receivedAt: new Date().toISOString(),
+      status: "LIEN_MARKED",
+      lifecycle: "ACKNOWLEDGED",
+    });
   }
 
   private initSubscription(): void {
