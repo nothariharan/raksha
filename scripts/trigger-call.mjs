@@ -16,16 +16,30 @@ export async function callNumber(toNumber) {
     process.exit(1);
   }
 
-  console.log(`Initiating Twilio call from ${fromNumber} to ${toNumber}...`);
+  console.log(`Initiating interactive paced Twilio call from ${fromNumber} to ${toNumber}...`);
   
   const twiml = `<Response>
-  <Say voice="Polly.Aditi" language="hi-IN">नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए।</Say>
+  <!-- Turn 1: Greeting & Initial Intake -->
+  <Say voice="Polly.Aditi" language="hi-IN">नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?</Say>
+  
+  <!-- 5-second pause for citizen to explain the fraud -->
+  <Pause length="5"/>
+
+  <!-- Turn 2: Clarification & UTR Request -->
+  <Say voice="Polly.Aditi" language="hi-IN">आप घबराइए नहीं। क्या आपके पास 12 अंकों का यू टी आर नंबर है?</Say>
+  
+  <!-- 5-second pause for citizen to state UTR number -->
+  <Pause length="5"/>
+
+  <!-- Turn 3: Fact Confirmation -->
+  <Say voice="Polly.Aditi" language="hi-IN">मैंने आपका विवरण दर्ज कर लिया है: पाँच हज़ार रुपये, स्टेट बैंक ऑफ़ इंडिया, यू टी आर चार दो तीन चार पाँच छह सात आठ नौ शून्य एक दो। क्या मैं इसे एक नौ तीन शून्य और बैंक को भेज दूँ?</Say>
+  
+  <!-- 4-second pause for citizen to confirm -->
+  <Pause length="4"/>
+
+  <!-- Turn 4: Submission & Reference Handoff -->
+  <Say voice="Polly.Aditi" language="hi-IN">आपकी आपातकालीन रिपोर्ट दर्ज कर ली गई है। संदर्भ संख्या है: एक नौ तीन शून्य, दो नौ पाँच चार एक एक। धन्यवाद।</Say>
   <Pause length="1"/>
-  <Say voice="Polly.Aditi" language="hi-IN">मैंने आपका विवरण दर्ज कर लिया है: पांच हज़ार रुपये, स्टेट बैंक ऑफ़ इंडिया, यू टी आर चार दो तीन चार पांच छह सात आठ नौ शून्य एक दो।</Say>
-  <Pause length="1"/>
-  <Say voice="Polly.Aditi" language="hi-IN">आपकी आपातकालीन रिपोर्ट राष्ट्रीय साइबर हेल्पलाइन एक नौ तीन शून्य और बैंक को भेज दी गई है।</Say>
-  <Pause length="1"/>
-  <Say voice="Polly.Aditi" language="hi-IN">धन्यवाद। रक्षा आपकी सुरक्षा में सदैव तत्पर है।</Say>
 </Response>`;
 
   const body = new URLSearchParams({
@@ -46,7 +60,7 @@ export async function callNumber(toNumber) {
 
   const data = await res.json();
   if (res.ok) {
-    console.log("✅ Call initiated successfully!");
+    console.log("✅ Interactive paced call initiated successfully!");
     console.log("Call SID:", data.sid);
     console.log("Status:", data.status);
   } else {
@@ -54,7 +68,5 @@ export async function callNumber(toNumber) {
   }
 }
 
-const target = process.argv[2];
-if (target) {
-  callNumber(target);
-}
+const target = process.argv[2] || "+919150135790";
+callNumber(target);
