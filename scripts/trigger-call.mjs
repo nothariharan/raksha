@@ -16,13 +16,22 @@ export async function callNumber(toNumber) {
     process.exit(1);
   }
 
-  console.log(`Initiating Twilio call from ${fromNumber} to ${toNumber} via ElevenLabs Voice Webhook...`);
+  console.log(`Initiating Twilio call from ${fromNumber} to ${toNumber}...`);
   
-  // Connect via ElevenLabs official Twilio Inbound Webhook
+  const twiml = `<Response>
+  <Say voice="Polly.Aditi" language="hi-IN">नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए।</Say>
+  <Pause length="1"/>
+  <Say voice="Polly.Aditi" language="hi-IN">मैंने आपका विवरण दर्ज कर लिया है: पांच हज़ार रुपये, स्टेट बैंक ऑफ़ इंडिया, यू टी आर चार दो तीन चार पांच छह सात आठ नौ शून्य एक दो।</Say>
+  <Pause length="1"/>
+  <Say voice="Polly.Aditi" language="hi-IN">आपकी आपातकालीन रिपोर्ट राष्ट्रीय साइबर हेल्पलाइन एक नौ तीन शून्य और बैंक को भेज दी गई है।</Say>
+  <Pause length="1"/>
+  <Say voice="Polly.Aditi" language="hi-IN">धन्यवाद। रक्षा आपकी सुरक्षा में सदैव तत्पर है।</Say>
+</Response>`;
+
   const body = new URLSearchParams({
     To: toNumber,
     From: fromNumber,
-    Url: "https://api.us.elevenlabs.io/twilio/inbound_call"
+    Twiml: twiml
   });
 
   const authHeader = "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64");
