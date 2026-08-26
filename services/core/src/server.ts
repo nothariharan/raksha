@@ -147,6 +147,49 @@ export function createCoreServer() {
         return;
       }
 
+      // 3b. ElevenLabs Real-Time Voice Synthesis Stream
+      if (pathname === "/v1/tts" && method === "POST") {
+        const body = await parseJsonBody<{ text: string; voiceId?: string }>(req);
+        const text = body.text || "नमस्ते, रक्षा आपातकालीन हेल्पलाइन में आपका स्वागत है।";
+        const apiKey = process.env.ELEVENLABS_API_KEY;
+        const voiceId = body.voiceId || "21m00Tcm4TlvDq8ikWAM";
+
+        if (!apiKey || apiKey.startsWith("synthetic")) {
+          sendJson(res, 200, { synthesized: false });
+          return;
+        }
+
+        try {
+          const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
+            method: "POST",
+            headers: {
+              "xi-api-key": apiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text,
+              model_id: "eleven_multilingual_v2",
+              voice_settings: { stability: 0.5, similarity_boost: 0.8 },
+            }),
+          });
+
+          if (ttsRes.ok) {
+            const audioBuffer = await ttsRes.arrayBuffer();
+            res.writeHead(200, {
+              "Content-Type": "audio/mpeg",
+              "Content-Length": audioBuffer.byteLength,
+              "Access-Control-Allow-Origin": "*",
+            });
+            res.end(Buffer.from(audioBuffer));
+            return;
+          }
+        } catch (e) {
+          console.warn("[Core TTS Error]:", e);
+        }
+        sendJson(res, 500, { error: "TTS generation failed" });
+        return;
+      }
+
       // 4. POST /v1/incidents
       if (pathname === "/v1/incidents" && method === "POST") {
         const body = await parseJsonBody<CreateIncidentInput>(req);

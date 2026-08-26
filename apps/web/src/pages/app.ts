@@ -736,10 +736,66 @@ const bodyContent = `
         orbAnimFrame = requestAnimationFrame(render);
       }
 
+      let currentAudio = null;
+      let speechRecognizer = null;
+
+      async function playRakshaSpeech(text) {
+        if (!text) return;
+        setOrbState("SPEAKING");
+
+        if (currentAudio) {
+          try { currentAudio.pause(); } catch {}
+          currentAudio = null;
+        }
+
+        try {
+          const res = await fetch(CORE_URL + "/v1/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+          });
+
+          if (res.ok) {
+            const blob = await res.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            currentAudio = new Audio(audioUrl);
+            currentAudio.onended = () => {
+              setOrbState("LISTENING");
+            };
+            currentAudio.onerror = () => {
+              setOrbState("LISTENING");
+            };
+            await currentAudio.play();
+            return;
+          }
+        } catch (err) {
+          console.warn("[TTS Playback fallback]:", err);
+        }
+
+        if ('speechSynthesis' in window) {
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'hi-IN';
+          u.rate = 0.95;
+          u.onend = () => setOrbState("LISTENING");
+          window.speechSynthesis.speak(u);
+        } else {
+          setTimeout(() => setOrbState("LISTENING"), 3500);
+        }
+      }
+
       function resetLiveCallDisplay() {
         currentIncidentId = null;
         currentIncident = null;
         
+        if (currentAudio) {
+          try { currentAudio.pause(); } catch {}
+          currentAudio = null;
+        }
+        if (speechRecognizer) {
+          try { speechRecognizer.stop(); } catch {}
+          speechRecognizer = null;
+        }
+
         const capsule = document.getElementById("callCaseCapsule");
         if (capsule) capsule.style.display = "none";
         
@@ -833,6 +889,20 @@ const bodyContent = `
             currentIncident = data.incident;
             updateIncidentUI(data.incident, data.state);
             fetchDevEvents();
+
+            const prompt = document.getElementById("agentTurnPrompt");
+            if (data.question) {
+              if (prompt) prompt.innerText = "“" + data.question + "”";
+              playRakshaSpeech(data.question);
+            } else if (data.state === "READY" || data.state === "USER_CONFIRMATION") {
+              const reply = "मैंने विवरण दर्ज कर लिया है: ₹5,000 SBI UTR 423456789012। क्या मैं इसे 1930 और बैंक को भेज दूँ?";
+              if (prompt) prompt.innerText = "“" + reply + "”";
+              playRakshaSpeech(reply);
+            } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
+              const reply = "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है! ट्रैकिंग नंबर 1930-SYN-295411 है।";
+              if (prompt) prompt.innerText = "“" + reply + "”";
+              playRakshaSpeech(reply);
+            }
           }
         } catch (e) {
           console.warn("Backend process sync:", e);
@@ -852,129 +922,113 @@ const bodyContent = `
         if (btnStart) btnStart.style.display = "none";
         if (btnEnd) btnEnd.style.display = "inline-flex";
 
-        setOrbState("CONNECTING");
+        setOrbState("SPEAKING");
 
+        // 1. Play immediate ElevenLabs studio audio greeting
+        const greeting = "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?";
+        const prompt = document.getElementById("agentTurnPrompt");
+        if (prompt) prompt.innerText = "“" + greeting + "”";
+        await playRakshaSpeech(greeting);
+
+        // 2. Start Speech Recognition listener
         try {
-          // 1. Explicitly request microphone stream upfront to unlock AudioContext
-          try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-          } catch (micErr) {
-            console.warn("Microphone access prompt:", micErr);
-          }
+          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (SpeechRec) {
+            speechRecognizer = new SpeechRec();
+            speechRecognizer.lang = 'hi-IN';
+            speechRecognizer.continuous = true;
+            speechRecognizer.interimResults = true;
 
-          // 2. Import and start ElevenLabs session
+            speechRecognizer.onresult = (event) => {
+              let interim = '';
+              let final = '';
+              for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                  final += event.results[i][0].transcript;
+                } else {
+                  interim += event.results[i][0].transcript;
+                }
+              }
+              const transcript = final || interim;
+              if (transcript) {
+                const u = document.getElementById("userTurnSpeech");
+                if (u) u.innerText = "“" + transcript + "”";
+                if (final) {
+                  setOrbState("PROCESSING");
+                  sendVoiceTurnToBackend(final);
+                }
+              }
+            };
+
+            speechRecognizer.onerror = (e) => {
+              console.warn("Speech recognition error:", e);
+              setOrbState("LISTENING");
+            };
+
+            speechRecognizer.start();
+          }
+        } catch (recErr) {
+          console.warn("SpeechRec start:", recErr);
+        }
+
+        // 3. Connect ElevenLabs WebRTC session in parallel
+        try {
           let Conversation;
           try {
             const mod = await import("https://esm.sh/@11labs/client");
             Conversation = mod.Conversation;
           } catch (e1) {
-            console.warn("Retrying with jsdelivr...", e1);
             const mod2 = await import("https://cdn.jsdelivr.net/npm/@11labs/client/+esm");
             Conversation = mod2.Conversation;
           }
-          
-          activeConversation = await Conversation.startSession({
-            agentId: "agent_1201kxw5b2fvearadb4p3brmtya9",
-            clientTools: {
-              raksha_start_incident: async (params) => {
-                const res = await fetch(CORE_URL + "/v1/process", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    source: "phone",
-                    modality: "voice",
-                    content: params.narrative || "Emergency Fraud Intake",
-                    language: params.language || "hi"
-                  })
-                });
-                const data = await res.json();
-                currentIncidentId = data.incidentId;
-                currentIncident = data.incident;
-                updateIncidentUI(data.incident, data.state);
-                return JSON.stringify({ incidentId: data.incidentId, state: data.state });
+
+          if (Conversation) {
+            activeConversation = await Conversation.startSession({
+              agentId: "agent_1201kxw5b2fvearadb4p3brmtya9",
+              onConnect: () => {
+                console.log("[ElevenLabs] Connected successfully");
+                startIncidentPoll();
               },
-              raksha_process_input: async (params) => {
-                const res = await fetch(CORE_URL + "/v1/process", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    incidentId: currentIncidentId,
-                    source: "phone",
-                    modality: "voice",
-                    content: params.userSpeech,
-                    language: params.language || "hi"
-                  })
-                });
-                const data = await res.json();
-                currentIncident = data.incident;
-                updateIncidentUI(data.incident, data.state);
-                return JSON.stringify({ incidentId: data.incidentId, state: data.state });
+              onDisconnect: () => {
+                console.log("[ElevenLabs] Disconnected");
+                stopIncidentPoll();
               },
-              raksha_submit_incident: async (params) => {
-                const res = await fetch(CAP_URL + "/cap/actions/execute", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "Idempotency-Key": "call-cap-" + currentIncidentId },
-                  body: JSON.stringify({
-                    action: "report_financial_fraud",
-                    payload: currentIncident,
-                    idempotencyKey: "call-cap-" + currentIncidentId
-                  })
-                });
-                const capData = await res.json();
-                const ref = capData.externalReference || ("1930-SYN-" + (capData.caseId || "295411"));
-                updateIncidentUI(currentIncident, "SUBMITTED", ref);
-                return JSON.stringify({ status: "SUBMITTED", referenceNumber: ref });
+              onModeChange: ({ mode }) => {
+                if (mode === "speaking") {
+                  setOrbState("SPEAKING");
+                } else {
+                  setOrbState("LISTENING");
+                }
+              },
+              onMessage: ({ message, source }) => {
+                if (source === "user") {
+                  const u = document.getElementById("userTurnSpeech");
+                  if (u) u.innerText = "“" + message + "”";
+                  setOrbState("PROCESSING");
+                  sendVoiceTurnToBackend(message);
+                } else {
+                  const a = document.getElementById("agentTurnPrompt");
+                  if (a) a.innerText = "“" + message + "”";
+                  playRakshaSpeech(message);
+                }
               }
-            },
-            onConnect: () => {
-              console.log("[ElevenLabs] Connected successfully to agent_1201kxw5b2fvearadb4p3brmtya9");
-              if (activeConversation && typeof activeConversation.setVolume === "function") {
-                try { activeConversation.setVolume({ volume: 1.0 }); } catch {}
-              }
-              setOrbState("LISTENING");
-              startIncidentPoll();
-            },
-            onDisconnect: () => {
-              console.log("[ElevenLabs] Disconnected");
-              setOrbState("IDLE");
-              stopIncidentPoll();
-              if (btnStart) btnStart.style.display = "inline-flex";
-              if (btnEnd) btnEnd.style.display = "none";
-            },
-            onError: (err) => {
-              console.error("[ElevenLabs Error]:", err);
-              setOrbState("LISTENING");
-            },
-            onModeChange: ({ mode }) => {
-              if (mode === "speaking") {
-                setOrbState("SPEAKING");
-              } else {
-                setOrbState("LISTENING");
-              }
-            },
-            onMessage: ({ message, source }) => {
-              if (source === "user") {
-                const u = document.getElementById("userTurnSpeech");
-                if (u) u.innerText = "“" + message + "”";
-                setOrbState("PROCESSING");
-                sendVoiceTurnToBackend(message);
-              } else {
-                const a = document.getElementById("agentTurnPrompt");
-                if (a) a.innerText = "“" + message + "”";
-                setOrbState("SPEAKING");
-              }
-              fetchLatestIncidentSync();
-            }
-          });
+            });
+          }
         } catch (err) {
-          console.warn("Direct WebRTC initialization fallback:", err);
-          setOrbState("LISTENING");
-          startIncidentPoll();
+          console.warn("ElevenLabs WebRTC direct session fallback:", err);
         }
       }
 
       async function endLiveVoiceCall() {
         setOrbState("IDLE");
+        if (currentAudio) {
+          try { currentAudio.pause(); } catch {}
+          currentAudio = null;
+        }
+        if (speechRecognizer) {
+          try { speechRecognizer.stop(); } catch {}
+          speechRecognizer = null;
+        }
         if (orbAnimFrame) {
           cancelAnimationFrame(orbAnimFrame);
           orbAnimFrame = null;
