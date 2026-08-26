@@ -996,7 +996,8 @@ const bodyContent = `
             };
 
             speechRecognizer.onerror = (e) => {
-              console.warn("Speech recognition error:", e);
+              if (e.error === 'no-speech' || e.error === 'aborted') return;
+              console.warn("[SpeechRecognition info]:", e.error);
               setOrbState("LISTENING");
             };
 
