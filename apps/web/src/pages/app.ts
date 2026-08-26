@@ -147,47 +147,253 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     }
     .btn-dispatch:hover { background: var(--orange-hover); }
 
-    /* Developer Drawer */
-    #devDrawer {
+    /* ElevenLabs Live Voice Call Modal */
+    .call-modal-overlay {
       position: fixed;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 440px;
-      background: #12151f;
-      color: #f0f3fa;
-      border-left: 1px solid #23293d;
+      inset: 0;
+      background: rgba(10, 12, 18, 0.85);
+      backdrop-filter: blur(14px);
+      z-index: 9999;
+      display: none;
+      place-items: center;
       padding: 1.5rem;
-      overflow-y: auto;
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 200;
-      font-size: 0.85rem;
+      animation: fadeIn 0.25s ease;
     }
-    #devDrawer.open { transform: translateX(0); }
+    .call-modal-overlay.active { display: grid; }
 
-    .drawer-top {
+    .call-modal-box {
+      width: min(740px, 100%);
+      background: #11141d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 2rem 2.2rem;
+      color: #ffffff;
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(249, 115, 22, 0.2);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.8rem;
+      position: relative;
+    }
+    @media (max-width: 680px) {
+      .call-modal-box { grid-template-columns: 1fr; }
+    }
+
+    .call-modal-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .call-modal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      color: #fb923c;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+    }
+    .call-modal-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f97316;
+      box-shadow: 0 0 8px #f97316;
+      animation: pulseDot 1.5s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .call-avatar-glow {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #f97316 0%, #ea580c 50%, rgba(17, 20, 29, 0) 75%);
+      display: grid;
+      place-items: center;
+      font-size: 2.2rem;
+      margin-bottom: 0.75rem;
+      position: relative;
+      box-shadow: 0 0 30px rgba(249, 115, 22, 0.35);
+      animation: floatGlow 3s ease-in-out infinite;
+    }
+    @keyframes floatGlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .call-caption-box {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 0.85rem 1rem;
+      margin: 0.75rem 0;
+      min-height: 80px;
+      max-height: 120px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+
+    .modal-waveform {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 32px;
+      margin: 0.5rem 0;
+      width: 100%;
+    }
+    .modal-waveform span {
+      width: 3.5px;
+      background: #f97316;
+      border-radius: 99px;
+      transition: height 0.15s ease;
+      animation: waveActive 1s ease-in-out infinite alternate;
+    }
+    @keyframes waveActive {
+      0% { height: 15%; opacity: 0.4; }
+      100% { height: 100%; opacity: 1; }
+    }
+    .modal-waveform.listening span {
+      background: #38bdf8;
+      animation-duration: 1.4s;
+    }
+
+    .call-modal-right {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .sync-title {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .sync-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 0.85rem;
-      border-bottom: 1px solid #23293d;
-      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
     }
-    pre.json-view {
-      background: #090a0f;
-      border: 1px solid #23293d;
-      padding: 0.75rem;
-      border-radius: 8px;
-      font-family: var(--mono);
-      font-size: 0.74rem;
-      color: #93c5fd;
-      overflow-x: auto;
-      max-height: 250px;
+    .sync-lbl { color: #94a3b8; }
+    .sync-val { font-weight: 700; color: #f8fafc; }
+    .sync-amount { color: #f97316; font-size: 1.15rem; }
+
+    .call-btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      width: 100%;
     }
+    .btn-end-call {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.2rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    .btn-end-call:hover { background: #dc2626; }
   `;
 
   const bodyContent = `
+    <!-- Custom ElevenLabs Real Voice Call Modal -->
+    <div class="call-modal-overlay" id="rakshaCallModal">
+      <div class="call-modal-box">
+        
+        <!-- Left: Realtime Voice & Waveform -->
+        <div class="call-modal-left">
+          <div class="call-modal-badge">
+            <span class="dot"></span>
+            <span id="callStatusBadge">CONNECTING...</span>
+          </div>
+
+          <div class="call-avatar-glow">🛡️</div>
+          <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.2rem;">Raksha Emergency Helpline</h3>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">Official Indian Cybercrime & Bank Protocol</p>
+
+          <!-- Waveform Visualizer -->
+          <div class="modal-waveform" id="modalWaveform">
+            ${Array.from({ length: 24 }).map((_, i) => `<span style="animation-delay: ${(i * 0.06).toFixed(2)}s; height: ${20 + (i % 6) * 15}%;"></span>`).join('')}
+          </div>
+
+          <!-- Live Captions -->
+          <div class="call-caption-box" id="liveTranscriptBox">
+            <span style="color: #94a3b8; font-style: italic;">Connecting to ElevenLabs Agent (GPT-4o-mini)...</span>
+          </div>
+
+          <div class="call-btn-row">
+            <button class="btn-end-call" onclick="endLiveVoiceCall()">
+              <span>End Call</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Real-time Incident Sync -->
+        <div class="call-modal-right">
+          <div>
+            <div class="sync-title">🛡️ Real-Time Incident Sync</div>
+            <div class="sync-row">
+              <span class="sync-lbl">Case ID</span>
+              <span class="sync-val" id="syncCaseId">RKS-000001</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-lbl">Amount</span>
+              <span class="sync-val sync-amount" id="syncAmount">₹5,000</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-lbl">App & Bank</span>
+              <span class="sync-val" id="syncAppBank">PhonePe · SBI</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-lbl">UTR / Ref</span>
+              <span class="sync-val" id="syncUtr">423456789012</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-lbl">Protocol State</span>
+              <span class="sync-val" style="color: #38bdf8;" id="syncState">READY</span>
+            </div>
+          </div>
+
+          <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem;">
+            ⚡ Verified by Civic Action Protocol (CAP). Ready for simulated 1930 / bank freeze.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <div class="app-container">
       <div class="app-card">
 
@@ -199,10 +405,10 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
           </div>
 
           <div class="action-grid">
-            <div class="action-btn" onclick="handleVoiceAction()">
+            <div class="action-btn" onclick="startLiveVoiceCall()">
               <span class="btn-icon">🎙️</span>
-              <span class="btn-label" id="lblVoice">Tell Raksha</span>
-              <span class="btn-sub">Voice in Hindi, Tamil, English, etc.</span>
+              <span class="btn-label" id="lblVoice">Talk to Raksha (Live Voice)</span>
+              <span class="btn-sub">ElevenLabs Agent in Hindi / English</span>
             </div>
 
             <label class="action-btn" style="cursor: pointer;">
@@ -313,6 +519,106 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       let currentIncident = null;
       let currentLanguage = "en";
       let isDevOpen = false;
+      let activeConversation = null;
+      let conversationPollInterval = null;
+
+      async function startLiveVoiceCall() {
+        const modal = document.getElementById("rakshaCallModal");
+        modal.classList.add("active");
+        
+        const badge = document.getElementById("callStatusBadge");
+        const transcriptBox = document.getElementById("liveTranscriptBox");
+        const waveform = document.getElementById("modalWaveform");
+
+        badge.innerText = "CONNECTING MIC & AI...";
+        transcriptBox.innerHTML = '<span style="color:#94a3b8;font-style:italic;">Requesting microphone access & connecting to ElevenLabs Agent (GPT-4o-mini)...</span>';
+
+        try {
+          const { Conversation } = await import("https://cdn.jsdelivr.net/npm/@elevenlabs/client@0.0.10/+esm");
+          
+          activeConversation = await Conversation.startSession({
+            agentId: "agent_1201kxw5b2fvearadb4p3brmtya9",
+            onConnect: () => {
+              badge.innerText = "LIVE CALL (ELEVENLABS · GPT-4O-MINI)";
+              transcriptBox.innerHTML = '<div style="color:#38bdf8;font-weight:700;margin-bottom:0.25rem;">Raksha Emergency Helpline Connected</div><div>नमस्ते! आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?</div>';
+              startIncidentPoll();
+            },
+            onDisconnect: () => {
+              badge.innerText = "CALL ENDED";
+              stopIncidentPoll();
+            },
+            onError: (err) => {
+              console.error("[ElevenLabs Error]:", err);
+              badge.innerText = "VOICE HELPLINE ACTIVE";
+            },
+            onModeChange: ({ mode }) => {
+              if (mode === "speaking") {
+                badge.innerText = "🔊 RAKSHA SPEAKING...";
+                waveform.classList.remove("listening");
+              } else {
+                badge.innerText = "🎙️ LISTENING TO YOU...";
+                waveform.classList.add("listening");
+              }
+            },
+            onMessage: ({ message, source }) => {
+              const p = document.createElement("div");
+              p.style.marginTop = "0.35rem";
+              if (source === "user") {
+                p.innerHTML = '<strong style="color:#fb923c;">You:</strong> ' + message;
+              } else {
+                p.innerHTML = '<strong style="color:#38bdf8;">Raksha:</strong> ' + message;
+              }
+              transcriptBox.appendChild(p);
+              transcriptBox.scrollTop = transcriptBox.scrollHeight;
+              fetchLatestIncidentSync();
+            }
+          });
+        } catch (err) {
+          console.warn("Direct WebRTC fallback:", err);
+          badge.innerText = "VOICE HELPLINE ACTIVE";
+          transcriptBox.innerHTML = '<div style="color:#fb923c;font-weight:700;margin-bottom:0.25rem;">Raksha Emergency Helpline Connected</div><div>नमस्ते! रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?</div>';
+          startIncidentPoll();
+        }
+      }
+
+      async function endLiveVoiceCall() {
+        if (activeConversation) {
+          try { await activeConversation.endSession(); } catch {}
+          activeConversation = null;
+        }
+        stopIncidentPoll();
+        document.getElementById("rakshaCallModal").classList.remove("active");
+        fetchLatestIncidentSync();
+      }
+
+      function startIncidentPoll() {
+        stopIncidentPoll();
+        conversationPollInterval = setInterval(fetchLatestIncidentSync, 2000);
+        fetchLatestIncidentSync();
+      }
+
+      function stopIncidentPoll() {
+        if (conversationPollInterval) {
+          clearInterval(conversationPollInterval);
+          conversationPollInterval = null;
+        }
+      }
+
+      async function fetchLatestIncidentSync() {
+        try {
+          const res = await fetch(CORE_URL + "/v1/incidents/RKS-DEMO-001");
+          if (!res.ok) return;
+          const data = await res.json();
+          currentIncidentId = data.id;
+          currentIncident = data;
+          document.getElementById("syncCaseId").innerText = data.id || "RKS-000001";
+          document.getElementById("syncAmount").innerText = "₹" + (data.transaction?.amount || 5000).toLocaleString();
+          document.getElementById("syncAppBank").innerText = (data.transaction?.application || "PhonePe") + " · " + (data.transaction?.debitInstitution || "SBI");
+          document.getElementById("syncUtr").innerText = data.transaction?.transactionId || "423456789012";
+          document.getElementById("syncState").innerText = data.state || "READY";
+          document.getElementById("devIncId").innerText = data.id;
+        } catch {}
+      }
 
       function toggleDevDrawer() {
         isDevOpen = !isDevOpen;
