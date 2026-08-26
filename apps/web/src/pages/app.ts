@@ -336,6 +336,32 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       gap: 0.85rem;
       width: 100%;
     }
+    .btn-start-speaking {
+      background: #ea580c;
+      color: #ffffff;
+      border: none;
+      padding: 0.72rem 1.85rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      box-shadow: 0 4px 16px rgba(234, 88, 12, 0.28);
+      transition: all 0.2s ease;
+    }
+    .btn-start-speaking:hover {
+      background: #c2410c;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(234, 88, 12, 0.35);
+    }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      width: 100%;
+    }
     .btn-end-conversation {
       background: #ffffff;
       color: #c2410c;
@@ -420,9 +446,14 @@ const bodyContent = `
             <span id="capsuleState" class="capsule-state"></span>
           </div>
 
-          <!-- Subtle Call Controls -->
+          <!-- Call Controls -->
           <div class="call-controls">
-            <button class="btn-end-conversation" onclick="endLiveVoiceCall()">
+            <button class="btn-start-speaking" id="btnStartSpeaking" onclick="connectAndStartSpeaking()">
+              <span style="font-size: 1.1rem;">🎙️</span>
+              <span id="lblStartBtn">Start speaking</span>
+            </button>
+
+            <button class="btn-end-conversation" id="btnEndConversation" style="display: none;" onclick="endLiveVoiceCall()">
               <span class="end-dot"></span>
               <span>End conversation</span>
             </button>
@@ -719,12 +750,19 @@ const bodyContent = `
         if (stateEl) stateEl.innerText = "";
 
         const prompt = document.getElementById("agentTurnPrompt");
-        if (prompt) prompt.innerText = "“नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। बताइए क्या हुआ?”";
+        if (prompt) prompt.innerText = "“नमस्ते, रक्षा आपातकालीन हेल्पलाइन में आपका स्वागत है। बोलना शुरू करने के लिए नीचे दिए गए बटन पर क्लिक करें।”";
         
         const userSpeech = document.getElementById("userTurnSpeech");
         if (userSpeech) userSpeech.innerText = "";
 
-        setOrbState("CONNECTING");
+        const btnStart = document.getElementById("btnStartSpeaking");
+        const btnEnd = document.getElementById("btnEndConversation");
+        if (btnStart) btnStart.style.display = "inline-flex";
+        if (btnEnd) btnEnd.style.display = "none";
+
+        setOrbState("IDLE");
+        const badge = document.getElementById("callStatusBadge");
+        if (badge) badge.innerText = "Tap below to start speaking";
       }
 
       function updateIncidentUI(inc, state, externalRef) {
@@ -801,11 +839,19 @@ const bodyContent = `
         }
       }
 
-      async function startLiveVoiceCall() {
+      function startLiveVoiceCall() {
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
         resetLiveCallDisplay();
         initFluidOrbCanvas();
+      }
+
+      async function connectAndStartSpeaking() {
+        const btnStart = document.getElementById("btnStartSpeaking");
+        const btnEnd = document.getElementById("btnEndConversation");
+        if (btnStart) btnStart.style.display = "none";
+        if (btnEnd) btnEnd.style.display = "inline-flex";
+
         setOrbState("CONNECTING");
 
         try {
@@ -816,7 +862,7 @@ const bodyContent = `
             console.warn("Microphone access prompt:", micErr);
           }
 
-          // 2. Start ElevenLabs WebRTC session
+          // 2. Import and start ElevenLabs session
           let Conversation;
           try {
             const mod = await import("https://esm.sh/@11labs/client");
@@ -892,6 +938,8 @@ const bodyContent = `
               console.log("[ElevenLabs] Disconnected");
               setOrbState("IDLE");
               stopIncidentPoll();
+              if (btnStart) btnStart.style.display = "inline-flex";
+              if (btnEnd) btnEnd.style.display = "none";
             },
             onError: (err) => {
               console.error("[ElevenLabs Error]:", err);
@@ -1233,6 +1281,7 @@ const bodyContent = `
 
       // Export globally on window immediately
       window.startLiveVoiceCall = startLiveVoiceCall;
+      window.connectAndStartSpeaking = connectAndStartSpeaking;
       window.endLiveVoiceCall = endLiveVoiceCall;
       window.toggleDevDrawer = toggleDevDrawer;
       window.toggleTypeArea = toggleTypeArea;
