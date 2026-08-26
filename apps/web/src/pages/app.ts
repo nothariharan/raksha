@@ -572,19 +572,19 @@ const bodyContent = `
           <div class="details-grid">
             <div>
               <div class="dt-lbl">Amount</div>
-              <div class="dt-val dt-amount" id="repAmount">₹5,000</div>
+              <div class="dt-val dt-amount" id="repAmount">—</div>
             </div>
             <div>
               <div class="dt-lbl">Channel</div>
-              <div class="dt-val" id="repChannel">UPI (PhonePe)</div>
+              <div class="dt-val" id="repChannel">—</div>
             </div>
             <div>
               <div class="dt-lbl">12-Digit UTR</div>
-              <div class="dt-val" id="repUtr">423456789012</div>
+              <div class="dt-val" id="repUtr">—</div>
             </div>
             <div>
               <div class="dt-lbl">Debit Bank</div>
-              <div class="dt-val" id="repBank">State Bank of India</div>
+              <div class="dt-val" id="repBank">—</div>
             </div>
           </div>
 
@@ -888,14 +888,21 @@ const bodyContent = `
           }
 
           const effectiveState = state || inc?.state || "INTAKE";
+          const badge = document.getElementById("callStatusBadge");
           if (capsuleState) {
             if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
               capsuleState.innerHTML = " · <span style='color:#d97706;font-weight:700;'>Ready for confirmation</span>";
+              if (badge) badge.innerText = "Awaiting citizen confirmation";
             } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
               const ref = externalRef || "1930-SYN-" + (effectiveId || "295411").replace("RKS-", "");
               capsuleState.innerHTML = " · <span style='color:#16a34a;font-weight:700;'>Submitted (" + ref + ")</span>";
+              if (badge) badge.innerText = "✓ CAP action dispatched";
+            } else if (effectiveState === "QUESTION_PENDING") {
+              capsuleState.innerHTML = " · <span style='color:#3b82f6;font-weight:700;'>Gathering info</span>";
+              if (badge) badge.innerText = "Gathering missing information";
             } else {
               capsuleState.innerText = "";
+              if (badge) badge.innerText = "Listening for details…";
             }
           }
         }
@@ -930,7 +937,13 @@ const bodyContent = `
               if (prompt) prompt.innerText = "“" + data.question + "”";
               playRakshaSpeech(data.question);
             } else if (data.state === "READY" || data.state === "USER_CONFIRMATION") {
-              const reply = "मैंने विवरण दर्ज कर लिया है: ₹5,000 SBI UTR 423456789012। क्या मैं इसे 1930 और बैंक को भेज दूँ?";
+              const isHi = currentLanguage === "hi";
+              const amt = data.incident.transaction.amount || "—";
+              const bank = data.incident.transaction.debitInstitution || "—";
+              const utr = data.incident.transaction.transactionId || "—";
+              const reply = isHi
+                ? "मैंने विवरण दर्ज कर लिया है: ₹" + amt + " " + bank + " UTR " + utr + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
+                : "I have recorded the details: ₹" + amt + " " + bank + " UTR " + utr + ". Shall I dispatch this to 1930 and the bank?";
               if (prompt) prompt.innerText = "“" + reply + "”";
               playRakshaSpeech(reply);
             } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
@@ -1275,8 +1288,8 @@ const bodyContent = `
         } else if (state === "READY" || state === "USER_CONFIRMATION") {
           const inc = data.incident;
           if (inc && inc.transaction) {
-            document.getElementById("repAmount").innerText = "₹" + (inc.transaction.amount?.toLocaleString() || "—");
-            document.getElementById("repChannel").innerText = inc.transaction.application || "UPI";
+            document.getElementById("repAmount").innerText = inc.transaction.amount ? "₹" + inc.transaction.amount.toLocaleString() : "—";
+            document.getElementById("repChannel").innerText = inc.transaction.application || inc.transaction.channel || "—";
             document.getElementById("repUtr").innerText = inc.transaction.transactionId || "—";
             document.getElementById("repBank").innerText = inc.transaction.debitInstitution || "—";
           }
@@ -1344,6 +1357,10 @@ const bodyContent = `
         currentIncidentId = null;
         currentIncident = null;
         document.getElementById("narrativeText").value = "";
+        document.getElementById("repAmount").innerText = "—";
+        document.getElementById("repChannel").innerText = "—";
+        document.getElementById("repUtr").innerText = "—";
+        document.getElementById("repBank").innerText = "—";
         showWsView("IDLE");
       }
 
