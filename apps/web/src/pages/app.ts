@@ -211,22 +211,22 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       50% { transform: scale(1.3); opacity: 0.6; }
     }
 
-    .call-avatar-glow {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #f97316 0%, #ea580c 50%, rgba(17, 20, 29, 0) 75%);
-      display: grid;
-      place-items: center;
-      font-size: 2rem;
-      margin-bottom: 0.6rem;
+    .call-orb-wrapper {
+      width: 130px;
+      height: 130px;
+      margin: 0.2rem auto 0.75rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: relative;
-      box-shadow: 0 0 30px rgba(249, 115, 22, 0.35);
-      animation: floatGlow 3s ease-in-out infinite;
+      background: transparent;
     }
-    @keyframes floatGlow {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
+    .call-orb-canvas {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: block;
     }
 
     .call-caption-box {
@@ -339,7 +339,10 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
             <span id="callStatusBadge">CONNECTING...</span>
           </div>
 
-          <div class="call-avatar-glow" id="callAvatarGlow">🛡️</div>
+          <!-- Voice Powered WebGL Orb -->
+          <div class="call-orb-wrapper">
+            <div id="callOrbContainer" class="call-orb-canvas"></div>
+          </div>
           <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;">Raksha Emergency Assistant</h3>
           <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">Empathetic First-Response Intake</p>
 
@@ -533,6 +536,148 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       let isDevOpen = false;
       let activeConversation = null;
       let conversationPollInterval = null;
+      let isSpeakingOrListening = false;
+      let orbAnimFrame = null;
+
+      function initVoiceOrbCanvas() {
+        const container = document.getElementById("callOrbContainer");
+        if (!container) return;
+        if (orbAnimFrame) {
+          cancelAnimationFrame(orbAnimFrame);
+          orbAnimFrame = null;
+        }
+        container.innerHTML = "";
+        
+        const canvas = document.createElement("canvas");
+        canvas.width = 130;
+        canvas.height = 130;
+        canvas.style.width = "130px";
+        canvas.style.height = "130px";
+        canvas.style.borderRadius = "50%";
+        container.appendChild(canvas);
+
+        const gl = canvas.getContext("webgl", { alpha: true, antialias: true });
+        if (!gl) return;
+
+        const vs = [
+          "attribute vec2 position;",
+          "varying vec2 vUv;",
+          "void main() {",
+          "  vUv = (position + 1.0) * 0.5;",
+          "  gl_Position = vec4(position, 0.0, 1.0);",
+          "}"
+        ].join("\\n");
+
+        const fs = [
+          "precision highp float;",
+          "uniform float iTime;",
+          "uniform vec3 iResolution;",
+          "uniform float hover;",
+          "uniform float rot;",
+          "varying vec2 vUv;",
+          "vec3 hash33(vec3 p3) {",
+          "  p3 = fract(p3 * vec3(0.1031, 0.11369, 0.13787));",
+          "  p3 += dot(p3, p3.yxz + 19.19);",
+          "  return -1.0 + 2.0 * fract(vec3(p3.x + p3.y, p3.x + p3.z, p3.y + p3.z) * p3.zyx);",
+          "}",
+          "float snoise3(vec3 p) {",
+          "  const float K1 = 0.333333333;",
+          "  const float K2 = 0.166666667;",
+          "  vec3 i = floor(p + (p.x + p.y + p.z) * K1);",
+          "  vec3 d0 = p - (i - (i.x + i.y + i.z) * K2);",
+          "  vec3 e = step(vec3(0.0), d0 - d0.yzx);",
+          "  vec3 i1 = e * (1.0 - e.zxy);",
+          "  vec3 i2 = 1.0 - e.zxy * (1.0 - e);",
+          "  vec3 d1 = d0 - (i1 - K2);",
+          "  vec3 d2 = d0 - (i2 - K1);",
+          "  vec3 d3 = d0 - 0.5;",
+          "  vec4 h = max(0.6 - vec4(dot(d0, d0), dot(d1, d1), dot(d2, d2), dot(d3, d3)), 0.0);",
+          "  vec4 n = h * h * h * h * vec4(dot(d0, hash33(i)), dot(d1, hash33(i + i1)), dot(d2, hash33(i + i2)), dot(d3, hash33(i + 1.0)));",
+          "  return dot(vec4(31.316), n);",
+          "}",
+          "vec4 extractAlpha(vec3 colorIn) {",
+          "  float a = max(max(colorIn.r, colorIn.g), colorIn.b);",
+          "  return vec4(colorIn.rgb / (a + 1e-5), a);",
+          "}",
+          "const vec3 baseColor1 = vec3(0.98, 0.45, 0.15);",
+          "const vec3 baseColor2 = vec3(0.22, 0.68, 0.92);",
+          "const vec3 baseColor3 = vec3(0.08, 0.10, 0.16);",
+          "const float innerRadius = 0.58;",
+          "vec4 draw(vec2 uv) {",
+          "  float ang = atan(uv.y, uv.x);",
+          "  float len = length(uv);",
+          "  float invLen = len > 0.0 ? 1.0 / len : 0.0;",
+          "  float n0 = snoise3(vec3(uv * 0.75, iTime * 0.55)) * 0.5 + 0.5;",
+          "  float r0 = mix(0.55, 0.85, n0);",
+          "  float d0 = distance(uv, (r0 * invLen) * uv);",
+          "  float v0 = 1.0 / (1.0 + d0 * 12.0);",
+          "  v0 *= smoothstep(r0 * 1.05, r0, len);",
+          "  float cl = cos(ang + iTime * 2.0) * 0.5 + 0.5;",
+          "  float a = iTime * -1.2;",
+          "  vec2 pos = vec2(cos(a), sin(a)) * r0;",
+          "  float d = distance(uv, pos);",
+          "  float v1 = 1.5 / (1.0 + d * d * 6.0) * (1.0 / (1.0 + d0 * 45.0));",
+          "  float v2 = smoothstep(1.0, mix(innerRadius, 1.0, n0 * 0.5), len);",
+          "  float v3 = smoothstep(innerRadius, 0.95, len);",
+          "  vec3 col = mix(baseColor1, baseColor2, cl);",
+          "  col = mix(baseColor3, col, v0);",
+          "  col = (col + v1) * v2 * v3;",
+          "  col = clamp(col, 0.0, 1.0);",
+          "  return extractAlpha(col);",
+          "}",
+          "void main() {",
+          "  vec2 center = iResolution.xy * 0.5;",
+          "  float size = min(iResolution.x, iResolution.y);",
+          "  vec2 uv = (gl_FragCoord.xy - center) / size * 2.0;",
+          "  float s = sin(rot);",
+          "  float c = cos(rot);",
+          "  uv = vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y);",
+          "  uv.x += hover * 0.08 * sin(uv.y * 10.0 + iTime);",
+          "  uv.y += hover * 0.08 * sin(uv.x * 10.0 + iTime);",
+          "  vec4 col = draw(uv);",
+          "  gl_FragColor = vec4(col.rgb * col.a, col.a);",
+          "}"
+        ].join("\\n");
+
+        const compileShader = (type, src) => {
+          const s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          return s;
+        };
+        const prog = gl.createProgram();
+        gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+        const posAttr = gl.getAttribLocation(prog, "position");
+        gl.enableVertexAttribArray(posAttr);
+        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+
+        const uTime = gl.getUniformLocation(prog, "iTime");
+        const uRes = gl.getUniformLocation(prog, "iResolution");
+        const uHover = gl.getUniformLocation(prog, "hover");
+        const uRot = gl.getUniformLocation(prog, "rot");
+
+        gl.uniform3f(uRes, canvas.width, canvas.height, 1.0);
+
+        let rot = 0;
+        function render(time) {
+          const t = (time || 0) * 0.001;
+          rot += isSpeakingOrListening ? 0.025 : 0.008;
+          gl.uniform1f(uTime, t);
+          gl.uniform1f(uRot, rot);
+          gl.uniform1f(uHover, isSpeakingOrListening ? 0.9 : 0.1);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          orbAnimFrame = requestAnimationFrame(render);
+        }
+        orbAnimFrame = requestAnimationFrame(render);
+      }
 
       function resetLiveCallDisplay() {
         currentIncidentId = null;
@@ -647,6 +792,8 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
         resetLiveCallDisplay();
+        initVoiceOrbCanvas();
+        isSpeakingOrListening = true;
         
         const badge = document.getElementById("callStatusBadge");
         const transcriptBox = document.getElementById("liveTranscriptBox");
@@ -714,10 +861,12 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
             onConnect: () => {
               badge.innerText = "🎙️ LISTENING";
               transcriptBox.innerHTML = '<div style="color:#38bdf8;font-weight:700;margin-bottom:0.25rem;">Raksha Assistant Connected</div>';
+              isSpeakingOrListening = true;
               startIncidentPoll();
             },
             onDisconnect: () => {
               badge.innerText = "CALL ENDED";
+              isSpeakingOrListening = false;
               stopIncidentPoll();
             },
             onError: (err) => {
@@ -727,9 +876,11 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
             onModeChange: ({ mode }) => {
               if (mode === "speaking") {
                 badge.innerText = "🔊 RAKSHA SPEAKING...";
+                isSpeakingOrListening = true;
                 waveform.classList.remove("listening");
               } else {
                 badge.innerText = "🎙️ LISTENING...";
+                isSpeakingOrListening = true;
                 waveform.classList.add("listening");
               }
             },
@@ -756,6 +907,7 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       }
 
       async function endLiveVoiceCall() {
+        isSpeakingOrListening = false;
         if (activeConversation) {
           try { await activeConversation.endSession(); } catch {}
           activeConversation = null;
