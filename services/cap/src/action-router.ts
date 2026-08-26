@@ -145,6 +145,24 @@ export class ActionRouter {
         timestamp: now,
       };
 
+      // Outbound Citizen Notification to WhatsApp
+      if (incident.reporter?.mobile) {
+        const whatsappUrl = process.env.WHATSAPP_URL || "http://localhost:3005";
+        fetch(`${whatsappUrl}/whatsapp/notify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mobile: incident.reporter.mobile,
+            incidentId: incident.id,
+            referenceNumber: externalRef,
+            amount: incident.transaction?.amount,
+            channel: incident.transaction?.channel,
+            bank: incident.transaction?.debitInstitution,
+            utr: incident.transaction?.transactionId,
+          }),
+        }).catch(() => {});
+      }
+
       if (idempotencyKey) {
         await this.actionRepo.record({
           id: generateEventId("ACT"),

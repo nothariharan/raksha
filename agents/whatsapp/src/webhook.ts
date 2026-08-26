@@ -74,6 +74,21 @@ export function createWhatsAppWebhookServer(service?: WhatsAppService) {
         return;
       }
 
+      if (pathname === "/whatsapp/notify" && method === "POST") {
+        const body = await parseJsonBody<{
+          mobile: string;
+          incidentId: string;
+          referenceNumber: string;
+          amount?: number;
+          channel?: string;
+          bank?: string;
+          utr?: string;
+        }>(req);
+        const result = await ws.notifyCitizenIncidentAccepted(body);
+        sendJson(res, 200, result);
+        return;
+      }
+
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
     } catch (err) {
       console.error("[WhatsAppWebhook Error]:", err);

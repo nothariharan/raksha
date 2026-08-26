@@ -50,6 +50,10 @@ export class PhoneSessionManager {
       }
     }
 
+    if (session && context.language) {
+      session.language = (context.language.slice(0, 2) as SupportedLanguage);
+    }
+
     return session;
   }
 

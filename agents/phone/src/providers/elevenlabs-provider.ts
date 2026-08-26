@@ -34,8 +34,8 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
   }> {
     const session = this.sessions.getOrCreateSession(context);
     const greetingSpeech = session.language === "hi"
-      ? "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। कृपया बताएं कि क्या हुआ?"
-      : "Hello, welcome to Raksha Emergency Cyber Fraud Helpline. Please tell me what happened.";
+      ? "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए, हम तुरंत आपकी सहायता करेंगे। कृपया बताइए कि क्या हुआ?"
+      : "Hello, welcome to Raksha Emergency Cyber Fraud Helpline. Please don't worry at all, we are here to assist you immediately. Please tell me what happened.";
 
     return {
       greetingSpeech,

@@ -16,11 +16,11 @@ export interface TranslationStrings {
 
 export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
   en: {
-    emergencyGreeting: "Raksha Emergency Response. Please stay calm, we are here to assist you immediately.",
-    askNarrative: "Please describe what happened in your own words.",
+    emergencyGreeting: "Raksha Emergency Response. Please don't worry at all, we are here to assist you immediately.",
+    askNarrative: "Please describe what happened in your own words — how did they contact you?",
     askTransactionDetails: "Please upload your payment screenshot or enter transaction details.",
     askMissingDate: "I found the amount and bank details. When did this transaction take place?",
-    askMissingUTR: "I only need one thing: please provide the 12-digit UTR or Reference Number.",
+    askMissingUTR: "I only need one thing: please provide the 12-digit UTR or Reference Number from your payment receipt or bank SMS.",
     askMissingAmount: "What was the exact amount debited from your account?",
     askConflictResolution: "I noticed a difference in the transaction amounts. Which amount is correct?",
     reportReady: "Your emergency fraud report is verified and ready for official handoff.",
@@ -29,11 +29,11 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     policeDisclaimer: "Official acknowledgement received. Next step: Follow up on the national cyber crime portal.",
   },
   hi: {
-    emergencyGreeting: "रक्षा आपातकालीन सेवा। कृपया शांत रहें, हम तुरंत आपकी सहायता कर रहे हैं।",
-    askNarrative: "कृपया अपने शब्दों में बताएं कि क्या हुआ।",
+    emergencyGreeting: "रक्षा आपातकालीन सेवा। आप बिल्कुल चिंता मत कीजिए, हम तुरंत आपकी सहायता कर रहे हैं।",
+    askNarrative: "कृपया अपने शब्दों में बताएं कि क्या हुआ — आपसे किसने और कैसे संपर्क किया?",
     askTransactionDetails: "कृपया अपने भुगतान का स्क्रीनशॉट अपलोड करें या विवरण दर्ज करें।",
     askMissingDate: "मुझे राशि और बैंक का विवरण मिल गया है। यह लेन-देन किस समय हुआ था?",
-    askMissingUTR: "मुझे बस एक जानकारी चाहिए: कृपया 12-अंकों का UTR या संदर्भ संख्या प्रदान करें।",
+    askMissingUTR: "मुझे बस एक जानकारी चाहिए: कृपया 12-अंकों का UTR या संदर्भ संख्या प्रदान करें जो PhonePe या बैंक SMS में आया हो।",
     askMissingAmount: "आपके खाते से कितनी राशि काटी गई थी?",
     askConflictResolution: "लेन-देन की राशि में अंतर है। कृपया सही राशि की पुष्टि करें।",
     reportReady: "आपकी आपातकालीन रिपोर्ट सत्यापित हो चुकी है और भेजने के लिए तैयार है।",

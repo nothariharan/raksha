@@ -6,6 +6,8 @@
 import { existsSync, unlinkSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { defaultDbClient, defaultIncidentRepository } from "@raksha/core";
+import { defaultConversationStore } from "@raksha/agent-whatsapp";
+import { defaultPhoneSessionManager } from "@raksha/agent-phone";
 import { resetCounters, globalEventBus } from "@raksha/shared";
 
 export async function runDemoReset(): Promise<void> {
@@ -37,8 +39,18 @@ export async function runDemoReset(): Promise<void> {
     seedIncident = JSON.parse(readFileSync(incidentPath, "utf-8"));
   }
 
+  defaultConversationStore.clear();
+  defaultPhoneSessionManager.clear();
+
   if (seedIncident) {
     await defaultIncidentRepository.create(seedIncident);
+    if (seedIncident.id !== "RKS-000001") {
+      await defaultIncidentRepository.create({
+        ...seedIncident,
+        id: "RKS-000001",
+      });
+    }
+    defaultConversationStore.bindIncident(persona.mobile, seedIncident.id, seedIncident.state);
     console.log(`  ✓ Seeded canonical incident: ${seedIncident.id} (Citizen: ${persona.name}, ₹${seedIncident.transaction.amount})`);
   }
 
