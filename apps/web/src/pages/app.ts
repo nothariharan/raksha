@@ -817,7 +817,15 @@ const bodyContent = `
           }
 
           // 2. Start ElevenLabs WebRTC session
-          const { Conversation } = await import("https://cdn.jsdelivr.net/npm/@elevenlabs/client@0.0.10/+esm");
+          let Conversation;
+          try {
+            const mod = await import("https://esm.sh/@11labs/client");
+            Conversation = mod.Conversation;
+          } catch (e1) {
+            console.warn("Retrying with jsdelivr...", e1);
+            const mod2 = await import("https://cdn.jsdelivr.net/npm/@11labs/client/+esm");
+            Conversation = mod2.Conversation;
+          }
           
           activeConversation = await Conversation.startSession({
             agentId: "agent_1201kxw5b2fvearadb4p3brmtya9",
