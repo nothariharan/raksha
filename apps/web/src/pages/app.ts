@@ -809,6 +809,14 @@ const bodyContent = `
         setOrbState("CONNECTING");
 
         try {
+          // 1. Explicitly request microphone stream upfront to unlock AudioContext
+          try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+          } catch (micErr) {
+            console.warn("Microphone access prompt:", micErr);
+          }
+
+          // 2. Start ElevenLabs WebRTC session
           const { Conversation } = await import("https://cdn.jsdelivr.net/npm/@elevenlabs/client@0.0.10/+esm");
           
           activeConversation = await Conversation.startSession({
@@ -865,10 +873,15 @@ const bodyContent = `
               }
             },
             onConnect: () => {
+              console.log("[ElevenLabs] Connected successfully to agent_1201kxw5b2fvearadb4p3brmtya9");
+              if (activeConversation && typeof activeConversation.setVolume === "function") {
+                try { activeConversation.setVolume({ volume: 1.0 }); } catch {}
+              }
               setOrbState("LISTENING");
               startIncidentPoll();
             },
             onDisconnect: () => {
+              console.log("[ElevenLabs] Disconnected");
               setOrbState("IDLE");
               stopIncidentPoll();
             },
@@ -898,7 +911,7 @@ const bodyContent = `
             }
           });
         } catch (err) {
-          console.warn("Direct WebRTC fallback:", err);
+          console.warn("Direct WebRTC initialization fallback:", err);
           setOrbState("LISTENING");
           startIncidentPoll();
         }
