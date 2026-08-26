@@ -616,38 +616,114 @@ const bodyContent = `
         
         const canvas = document.createElement("canvas");
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const size = container.clientWidth || 240;
-        canvas.width = size * dpr;
-        canvas.height = size * dpr;
+        const size = (container.clientWidth && container.clientWidth > 0) ? container.clientWidth : 240;
+        canvas.width = Math.round(size * dpr);
+        canvas.height = Math.round(size * dpr);
         canvas.style.width = "100%";
         canvas.style.height = "100%";
         canvas.style.borderRadius = "50%";
+        canvas.style.display = "block";
         container.appendChild(canvas);
 
-        const gl = canvas.getContext("webgl", { alpha: true, antialias: true });
-        if (!gl) return;
+        const gl = canvas.getContext("webgl", { alpha: true, antialias: true, premultipliedAlpha: false });
+        if (!gl) {
+          console.warn("WebGL not supported, using CSS fallback");
+          container.style.background = "radial-gradient(circle at 35% 35%, #ffffff 0%, #fed7aa 45%, #ea580c 100%)";
+          return;
+        }
 
-        const vs = "attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }";
-        const fs = "#ifdef GL_FRAGMENT_PRECISION_HIGH precision highp float; #else precision mediump float; #endif uniform vec2 u_resolution; uniform float u_time; uniform vec3 u_color; float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); } float noise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); } float fbm(vec2 p) { float v = 0.0; float a = 0.6; for (int i = 0; i < 3; i++) { v += a * noise(p); p *= 2.0; a *= 0.5; } return v; } void main() {   vec2 uv = gl_FragCoord.xy / u_resolution.xy;   float t = u_time * 0.22;   vec2 drift = vec2(sin(t) + 0.6 * sin(t * 1.7 + 1.3), cos(t * 0.8) + 0.6 * cos(t * 1.3 + 2.1));   vec2 p = vec2(uv.x * 1.8, uv.y * 1.0) + drift * 0.7;   vec2 q = vec2(fbm(p + drift), fbm(p + vec2(3.2, 1.5) - drift));   float f = fbm(p + 1.2 * q);   float g = clamp(1.0 - uv.y, 0.0, 1.0);   float anchor = smoothstep(0.0, 0.3, uv.y);   float shade = clamp(g + (f - 0.5) * 0.8 * anchor, 0.0, 1.0);   vec3 white = vec3(0.99, 1.0, 1.0);   vec3 light = mix(white, u_color, 0.45);   vec3 dark = u_color;   vec3 col = white;   col = mix(col, light, smoothstep(0.28, 0.52, shade));   col = mix(col, dark, smoothstep(0.58, 0.88, shade));   float edge = smoothstep(0.5, 0.49, distance(uv, vec2(0.5)));   gl_FragColor = vec4(col * edge, edge); }";
+        const vs = [
+          "attribute vec2 a_pos;",
+          "void main() {",
+          "  gl_Position = vec4(a_pos, 0.0, 1.0);",
+          "}"
+        ].join("\n");
+
+        const fs = [
+          "precision highp float;",
+          "uniform vec2 u_resolution;",
+          "uniform float u_time;",
+          "uniform vec3 u_color;",
+          "float hash(vec2 p) {",
+          "  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);",
+          "}",
+          "float noise(vec2 p) {",
+          "  vec2 i = floor(p);",
+          "  vec2 f = fract(p);",
+          "  vec2 u = f * f * (3.0 - 2.0 * f);",
+          "  return mix(",
+          "    mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),",
+          "    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),",
+          "    u.y",
+          "  );",
+          "}",
+          "float fbm(vec2 p) {",
+          "  float v = 0.0;",
+          "  float a = 0.6;",
+          "  for (int i = 0; i < 3; i++) {",
+          "    v += a * noise(p);",
+          "    p *= 2.0;",
+          "    a *= 0.5;",
+          "  }",
+          "  return v;",
+          "}",
+          "void main() {",
+          "  vec2 uv = gl_FragCoord.xy / u_resolution.xy;",
+          "  float t = u_time * 0.22;",
+          "  vec2 drift = vec2(sin(t) + 0.6 * sin(t * 1.7 + 1.3), cos(t * 0.8) + 0.6 * cos(t * 1.3 + 2.1));",
+          "  vec2 p = vec2(uv.x * 1.8, uv.y * 1.0) + drift * 0.7;",
+          "  vec2 q = vec2(fbm(p + drift), fbm(p + vec2(3.2, 1.5) - drift));",
+          "  float f = fbm(p + 1.2 * q);",
+          "  float g = clamp(1.0 - uv.y, 0.0, 1.0);",
+          "  float anchor = smoothstep(0.0, 0.3, uv.y);",
+          "  float shade = clamp(g + (f - 0.5) * 0.8 * anchor, 0.0, 1.0);",
+          "  vec3 white = vec3(0.99, 1.0, 1.0);",
+          "  vec3 light = mix(white, u_color, 0.5);",
+          "  vec3 dark = u_color;",
+          "  vec3 col = white;",
+          "  col = mix(col, light, smoothstep(0.28, 0.52, shade));",
+          "  col = mix(col, dark, smoothstep(0.58, 0.88, shade));",
+          "  float edge = smoothstep(0.5, 0.49, distance(uv, vec2(0.5)));",
+          "  gl_FragColor = vec4(col * edge, edge);",
+          "}"
+        ].join("\n");
 
         const compile = (type, src) => {
           const s = gl.createShader(type);
+          if (!s) return null;
           gl.shaderSource(s, src);
           gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+            console.error("Shader compile error:", gl.getShaderInfoLog(s));
+            gl.deleteShader(s);
+            return null;
+          }
           return s;
         };
 
         const prog = gl.createProgram();
         const vShader = compile(gl.VERTEX_SHADER, vs);
         const fShader = compile(gl.FRAGMENT_SHADER, fs);
+        if (!prog || !vShader || !fShader) {
+          console.error("Could not compile FluidOrb shaders");
+          return;
+        }
         gl.attachShader(prog, vShader);
         gl.attachShader(prog, fShader);
         gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+          console.error("Program link error:", gl.getProgramInfoLog(prog));
+          return;
+        }
         gl.useProgram(prog);
 
         const buf = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+          gl.STATIC_DRAW
+        );
 
         const aPos = gl.getAttribLocation(prog, "a_pos");
         gl.enableVertexAttribArray(aPos);
@@ -657,8 +733,8 @@ const bodyContent = `
         const uTime = gl.getUniformLocation(prog, "u_time");
         const uColor = gl.getUniformLocation(prog, "u_color");
 
-        // Warm Raksha Orange
-        gl.uniform3f(uColor, 0.976, 0.451, 0.086);
+        // Warm Raksha Orange RGB [0.918, 0.345, 0.047] (#ea580c)
+        gl.uniform3f(uColor, 0.918, 0.345, 0.047);
         gl.uniform2f(uRes, canvas.width, canvas.height);
         gl.viewport(0, 0, canvas.width, canvas.height);
 
