@@ -11,7 +11,7 @@ const authToken = getEnv("TWILIO_AUTH_TOKEN");
 const authHeader = "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64");
 
 async function sendWhatsApp(toNumber, text) {
-  console.log(`Sending WhatsApp message to ${toNumber}...`);
+  console.log(`Sending WhatsApp Confirmation Report to ${toNumber}...`);
   
   const from = "whatsapp:+14155238886";
   const body = new URLSearchParams({
@@ -31,14 +31,27 @@ async function sendWhatsApp(toNumber, text) {
 
   const data = await res.json();
   if (res.ok) {
-    console.log(`✅ WhatsApp message dispatched to ${toNumber}! SID: ${data.sid}`);
+    console.log(`✅ WhatsApp Report dispatched to ${toNumber}! SID: ${data.sid}`);
   } else {
     console.error(`❌ Twilio Error:`, data);
   }
   return data;
 }
 
-const msg = "🛡️ *रक्षा आपातकालीन साइबर हेल्पलाइन (Raksha Helpline)*\n\nनमस्ते रमेश जी, क्या आपके खाते से कोई अनधिकृत लेन-देन (Fraud) हुआ है?\n\nअपनी शिकायत दर्ज करने के लिए विवरण (राशि, बैंक, UTR नंबर) लिखें या लेन-देन का स्क्रीनशॉट यहाँ भेजें।";
+const confirmationReport = `🚨 *रक्षा आपातकालीन साइबर हेल्पलाइन — मामला सारांश*
+------------------------------------------------
+📌 *केस संदर्भ:* RKS-DEMO-001
+👤 *शिकायतकर्ता:* Ramesh Kumar
+💰 *धोखाधड़ी राशि:* ₹5,000
+📱 *माध्यम:* UPI (PhonePe)
+🏦 *डेबिट बैंक:* State Bank of India
+🔢 *12-अंकीय UTR:* 423456789012
+⚖️ *मामला:* बिजली बिल धोखाधड़ी (Electricity Bill Scam)
+------------------------------------------------
+⚡ *आपकी अनुमति आवश्यक है:*
+क्या आप इस रिपोर्ट को राष्ट्रीय साइबर हेल्पलाइन (*1930*) एवं *SBI बैंक नोडल अधिकारी* को तत्काल खाता-फ्रीज़ (Lien) हेतु अग्रेषित करने की अनुमति देते हैं?
+
+👉 सहमति देने के लिए केवल *'कन्फर्म'* (या *CONFIRM*) लिखकर भेजें।`;
 
 const target = process.argv[2] || "+918056135790";
-sendWhatsApp(target, msg);
+sendWhatsApp(target, confirmationReport);
