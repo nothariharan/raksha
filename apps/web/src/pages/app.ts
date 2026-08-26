@@ -147,263 +147,289 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
     }
     .btn-dispatch:hover { background: var(--orange-hover); }
 
-    /* ElevenLabs Live Voice Call Modal */
+    /* Raksha Minimal Live Voice Experience (FluidOrb) */
     .call-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(10, 12, 18, 0.85);
-      backdrop-filter: blur(14px);
+      background: radial-gradient(circle at 50% 30%, #151926 0%, #090b10 100%);
+      backdrop-filter: blur(28px);
       z-index: 9999;
       display: none;
       place-items: center;
       padding: 1.5rem;
-      animation: fadeIn 0.25s ease;
+      animation: fadeIn 0.3s ease;
+      color: #f8fafc;
     }
-    .call-modal-overlay.active { display: grid; }
+    .call-modal-overlay.active { display: flex; justify-content: center; align-items: center; }
 
-    .call-modal-box {
-      width: min(760px, 100%);
-      background: #11141d;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 28px;
-      padding: 2rem 2.2rem;
-      color: #ffffff;
-      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(249, 115, 22, 0.2);
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 1.8rem;
+    .call-space {
+      width: min(620px, 100%);
+      min-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 1.5rem;
       position: relative;
     }
-    @media (max-width: 680px) {
-      .call-modal-box { grid-template-columns: 1fr; }
+
+    .call-top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+    .call-back-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+    }
+    .call-back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+    }
+    .call-brand-mark {
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      text-transform: uppercase;
+    }
+    .call-lang-indicator {
+      font-size: 0.8rem;
+      color: #64748b;
+      font-weight: 500;
     }
 
-    .call-modal-left {
+    .call-center-stage {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-    }
-    .call-modal-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.35rem 0.85rem;
-      border-radius: 999px;
-      background: rgba(249, 115, 22, 0.15);
-      border: 1px solid rgba(249, 115, 22, 0.3);
-      color: #fb923c;
-      font-size: 0.76rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      margin-bottom: 1.25rem;
-    }
-    .call-modal-badge .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #f97316;
-      box-shadow: 0 0 8px #f97316;
-      animation: pulseDot 1.5s infinite;
-    }
-    @keyframes pulseDot {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.6; }
+      margin: auto 0;
     }
 
-    .call-orb-wrapper {
-      width: 130px;
-      height: 130px;
-      margin: 0.2rem auto 0.75rem auto;
+    .fluid-orb-container {
+      width: 240px;
+      height: 240px;
+      margin: 1.2rem auto 1.5rem auto;
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
-      background: transparent;
     }
-    .call-orb-canvas {
-      width: 130px;
-      height: 130px;
+    .fluid-orb-canvas {
+      width: 240px;
+      height: 240px;
       border-radius: 50%;
-      overflow: hidden;
       display: block;
+      box-shadow: 0 0 50px -10px rgba(249, 115, 22, 0.25);
+    }
+    @media (max-width: 500px) {
+      .fluid-orb-container, .fluid-orb-canvas {
+        width: 180px;
+        height: 180px;
+      }
     }
 
-    .call-caption-box {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 0.85rem 1rem;
-      margin: 0.65rem 0;
-      min-height: 90px;
-      max-height: 130px;
-      overflow-y: auto;
-      text-align: left;
-      font-size: 0.88rem;
-      line-height: 1.5;
-      color: #e2e8f0;
-    }
-
-    .modal-waveform {
-      display: flex;
+    .call-state-pill {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 3px;
-      height: 30px;
-      margin: 0.4rem 0;
-      width: 100%;
+      gap: 0.5rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(249, 115, 22, 0.1);
+      border: 1px solid rgba(249, 115, 22, 0.22);
+      color: #fb923c;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-bottom: 1.2rem;
+      transition: all 0.25s ease;
     }
-    .modal-waveform span {
-      width: 3.5px;
+    .call-state-pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       background: #f97316;
-      border-radius: 99px;
-      transition: height 0.15s ease;
-      animation: waveActive 1s ease-in-out infinite alternate;
-    }
-    @keyframes waveActive {
-      0% { height: 15%; opacity: 0.4; }
-      100% { height: 100%; opacity: 1; }
-    }
-    .modal-waveform.listening span {
-      background: #38bdf8;
-      animation-duration: 1.4s;
+      box-shadow: 0 0 8px #f97316;
+      animation: pulseDot 1.6s infinite;
     }
 
-    .call-modal-right {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 18px;
-      padding: 1.25rem;
+    .call-transcript-focus {
+      width: 100%;
+      max-width: 520px;
+      min-height: 90px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-    }
-    .sync-title {
-      font-size: 0.76rem;
-      text-transform: uppercase;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: #94a3b8;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .sync-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.45rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.85rem;
-    }
-    .sync-lbl { color: #94a3b8; }
-    .sync-val { font-weight: 700; color: #f8fafc; }
-    .sync-amount { color: #f97316; font-size: 1.15rem; }
-
-    .call-btn-row {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 0.85rem;
-      width: 100%;
-    }
-    .btn-end-call {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.2rem;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      flex: 1;
-      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      transition: background 0.2s;
+      gap: 0.65rem;
+      padding: 0 1rem;
+      margin-bottom: 1.2rem;
     }
-    .btn-end-call:hover { background: #dc2626; }
-  `;
+    .turn-prompt {
+      font-size: 1.12rem;
+      font-weight: 600;
+      color: #f8fafc;
+      line-height: 1.55;
+      letter-spacing: -0.01em;
+      transition: opacity 0.3s;
+    }
+    .turn-user {
+      font-size: 1.02rem;
+      color: #fdba74;
+      font-weight: 500;
+      line-height: 1.45;
+      font-style: italic;
+      transition: opacity 0.3s;
+    }
 
-  const bodyContent = `
+    .call-case-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-bottom: 1.4rem;
+      transition: all 0.3s ease;
+      animation: fadeIn 0.4s ease;
+    }
+    .capsule-id {
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .capsule-facts {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+    .capsule-state {
+      font-weight: 700;
+      color: #f59e0b;
+      margin-left: 0.25rem;
+    }
+
+    .call-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      width: 100%;
+    }
+    .btn-end-conversation {
+      background: rgba(249, 115, 22, 0.12);
+      color: #fed7aa;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      padding: 0.65rem 1.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn-end-conversation:hover {
+      background: rgba(249, 115, 22, 0.22);
+      border-color: rgba(249, 115, 22, 0.5);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+    .btn-end-conversation .end-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f97316;
+    }
+
+    .btn-view-technical {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 0.4rem 0.6rem;
+    }
+    .btn-view-technical:hover {
+      color: #94a3b8;
+    }
+  `;
+const bodyContent = `
     <!-- Custom ElevenLabs Real Voice Call Modal -->
     <div class="call-modal-overlay" id="rakshaCallModal">
-      <div class="call-modal-box">
+      <div class="call-space">
         
-        <!-- Left: Realtime Voice & Waveform -->
-        <div class="call-modal-left">
-          <div class="call-modal-badge" id="callStatusBadgeWrap">
-            <span class="dot"></span>
-            <span id="callStatusBadge">CONNECTING...</span>
-          </div>
-
-          <!-- Voice Powered WebGL Orb -->
-          <div class="call-orb-wrapper">
-            <div id="callOrbContainer" class="call-orb-canvas"></div>
-          </div>
-          <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;">Raksha Emergency Assistant</h3>
-          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">Empathetic First-Response Intake</p>
-
-          <!-- Waveform Visualizer -->
-          <div class="modal-waveform" id="modalWaveform">
-            ${Array.from({ length: 24 }).map((_, i) => `<span style="animation-delay: ${(i * 0.06).toFixed(2)}s; height: ${15 + (i % 5) * 8}%;"></span>`).join('')}
-          </div>
-
-          <!-- Live Dynamic Captions -->
-          <div class="call-caption-box" id="liveTranscriptBox">
-            <span style="color: #64748b; font-style: italic;">Connecting to live voice responder...</span>
-          </div>
-
-          <div class="call-btn-row">
-            <button class="btn-end-call" onclick="endLiveVoiceCall()">
-              <span>End Call</span>
-            </button>
-          </div>
+        <!-- Top Bar -->
+        <div class="call-top-bar">
+          <button class="call-back-btn" onclick="endLiveVoiceCall()">
+            <span>← Exit</span>
+          </button>
+          <div class="call-brand-mark">RAKSHA</div>
+          <div class="call-lang-indicator">English / हिंदी</div>
         </div>
 
-        <!-- Right: Real-time Incident Sync -->
-        <div class="call-modal-right">
-          <div>
-            <div class="sync-title">🛡️ LIVE CASE INSPECTOR</div>
-            <div class="sync-row">
-              <span class="sync-lbl">Case ID</span>
-              <span class="sync-val" id="syncCaseId">—</span>
-            </div>
-            <div class="sync-row">
-              <span class="sync-lbl">Amount</span>
-              <span class="sync-val sync-amount" id="syncAmount">—</span>
-            </div>
-            <div class="sync-row">
-              <span class="sync-lbl">Payment App</span>
-              <span class="sync-val" id="syncApp">—</span>
-            </div>
-            <div class="sync-row">
-              <span class="sync-lbl">Debit Bank</span>
-              <span class="sync-val" id="syncBank">—</span>
-            </div>
-            <div class="sync-row">
-              <span class="sync-lbl">UTR / Ref</span>
-              <span class="sync-val" id="syncUtr">—</span>
-            </div>
-            <div class="sync-row">
-              <span class="sync-lbl">Status</span>
-              <span class="sync-val" style="color: #38bdf8;" id="syncState">Listening for details</span>
-            </div>
-
-            <!-- Tiny Progressive Timeline -->
-            <div class="mini-timeline" id="miniTimeline" style="margin-top: 1.1rem; font-size: 0.76rem; color: #94a3b8; display: flex; flex-direction: column; gap: 0.4rem;">
-              <div id="tlStep1" style="color: #64748b;">○ Incident discovery</div>
-              <div id="tlStep2" style="color: #64748b;">○ Evidence & UTR extracted</div>
-              <div id="tlStep3" style="color: #64748b;">○ Citizen confirmed</div>
-              <div id="tlStep4" style="color: #64748b;">○ CAP freeze packet submitted</div>
-            </div>
+        <!-- Central Focused Living Experience -->
+        <div class="call-center-stage">
+          
+          <!-- 240px FluidOrb Canvas -->
+          <div class="fluid-orb-container">
+            <div id="callOrbContainer" class="fluid-orb-canvas"></div>
           </div>
 
-          <div id="syncFooterNote" style="font-size: 0.74rem; color: #64748b; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem;">
-            Raksha is preparing your report as you speak.
+          <!-- Realtime State Indicator -->
+          <div class="call-state-pill" id="callStatePillWrap" aria-live="polite">
+            <span class="dot"></span>
+            <span id="callStatusBadge">Connecting to Raksha…</span>
           </div>
+
+          <!-- Minimal Focused Conversation Turns -->
+          <div class="call-transcript-focus" id="liveTranscriptBox" aria-live="polite">
+            <div class="turn-prompt" id="agentTurnPrompt">“नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। बताइए क्या हुआ?”</div>
+            <div class="turn-user" id="userTurnSpeech"></div>
+          </div>
+
+          <!-- Dynamic Progressive Incident Capsule (Hidden until facts exist) -->
+          <div class="call-case-capsule" id="callCaseCapsule" style="display: none;">
+            <span class="capsule-id" id="capsuleCaseId">RKS-DEMO-001</span>
+            <span id="capsuleFacts" class="capsule-facts">Preparing report…</span>
+            <span id="capsuleState" class="capsule-state"></span>
+          </div>
+
+          <!-- Subtle Call Controls -->
+          <div class="call-controls">
+            <button class="btn-end-conversation" onclick="endLiveVoiceCall()">
+              <span class="end-dot"></span>
+              <span>End conversation</span>
+            </button>
+
+            <button class="btn-view-technical" onclick="toggleDevDrawer()">
+              View technical case details →
+            </button>
+          </div>
+
+        </div>
+
+        <div style="font-size: 0.72rem; color: #475569; text-align: center;">
+          Simulated demonstration · Powered by ElevenLabs Voice Agent & GPT-4o
         </div>
 
       </div>
@@ -536,10 +562,44 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       let isDevOpen = false;
       let activeConversation = null;
       let conversationPollInterval = null;
-      let isSpeakingOrListening = false;
+      let currentOrbState = "IDLE";
       let orbAnimFrame = null;
 
-      function initVoiceOrbCanvas() {
+      const speedFactors = {
+        CONNECTING: 0.20,
+        LISTENING: 0.50,
+        SPEAKING: 0.85,
+        PROCESSING: 0.35,
+        IDLE: 0.15
+      };
+
+      function setOrbState(state) {
+        currentOrbState = state;
+        const badge = document.getElementById("callStatusBadge");
+        if (!badge) return;
+
+        switch (state) {
+          case "CONNECTING":
+            badge.innerText = "Connecting to Raksha…";
+            break;
+          case "LISTENING":
+            badge.innerText = "Listening…";
+            break;
+          case "SPEAKING":
+            badge.innerText = "Raksha is speaking…";
+            break;
+          case "PROCESSING":
+            badge.innerText = "Understanding…";
+            break;
+          case "IDLE":
+            badge.innerText = "Call ended";
+            break;
+          default:
+            badge.innerText = "Raksha is active";
+        }
+      }
+
+      function initFluidOrbCanvas() {
         const container = document.getElementById("callOrbContainer");
         if (!container) return;
         if (orbAnimFrame) {
@@ -549,10 +609,12 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         container.innerHTML = "";
         
         const canvas = document.createElement("canvas");
-        canvas.width = 130;
-        canvas.height = 130;
-        canvas.style.width = "130px";
-        canvas.style.height = "130px";
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const size = container.clientWidth || 240;
+        canvas.width = size * dpr;
+        canvas.height = size * dpr;
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
         canvas.style.borderRadius = "50%";
         container.appendChild(canvas);
 
@@ -560,120 +622,112 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         if (!gl) return;
 
         const vs = [
-          "attribute vec2 position;",
-          "varying vec2 vUv;",
+          "attribute vec2 a_pos;",
           "void main() {",
-          "  vUv = (position + 1.0) * 0.5;",
-          "  gl_Position = vec4(position, 0.0, 1.0);",
+          "  gl_Position = vec4(a_pos, 0.0, 1.0);",
           "}"
-        ].join("\\n");
+        ].join("\n");
 
         const fs = [
+          "#ifdef GL_FRAGMENT_PRECISION_HIGH",
           "precision highp float;",
-          "uniform float iTime;",
-          "uniform vec3 iResolution;",
-          "uniform float hover;",
-          "uniform float rot;",
-          "varying vec2 vUv;",
-          "vec3 hash33(vec3 p3) {",
-          "  p3 = fract(p3 * vec3(0.1031, 0.11369, 0.13787));",
-          "  p3 += dot(p3, p3.yxz + 19.19);",
-          "  return -1.0 + 2.0 * fract(vec3(p3.x + p3.y, p3.x + p3.z, p3.y + p3.z) * p3.zyx);",
+          "#else",
+          "precision mediump float;",
+          "#endif",
+          "uniform vec2 u_resolution;",
+          "uniform float u_time;",
+          "uniform vec3 u_color;",
+          "float hash(vec2 p) {",
+          "  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);",
           "}",
-          "float snoise3(vec3 p) {",
-          "  const float K1 = 0.333333333;",
-          "  const float K2 = 0.166666667;",
-          "  vec3 i = floor(p + (p.x + p.y + p.z) * K1);",
-          "  vec3 d0 = p - (i - (i.x + i.y + i.z) * K2);",
-          "  vec3 e = step(vec3(0.0), d0 - d0.yzx);",
-          "  vec3 i1 = e * (1.0 - e.zxy);",
-          "  vec3 i2 = 1.0 - e.zxy * (1.0 - e);",
-          "  vec3 d1 = d0 - (i1 - K2);",
-          "  vec3 d2 = d0 - (i2 - K1);",
-          "  vec3 d3 = d0 - 0.5;",
-          "  vec4 h = max(0.6 - vec4(dot(d0, d0), dot(d1, d1), dot(d2, d2), dot(d3, d3)), 0.0);",
-          "  vec4 n = h * h * h * h * vec4(dot(d0, hash33(i)), dot(d1, hash33(i + i1)), dot(d2, hash33(i + i2)), dot(d3, hash33(i + 1.0)));",
-          "  return dot(vec4(31.316), n);",
+          "float noise(vec2 p) {",
+          "  vec2 i = floor(p);",
+          "  vec2 f = fract(p);",
+          "  vec2 u = f * f * (3.0 - 2.0 * f);",
+          "  return mix(",
+          "    mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),",
+          "    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),",
+          "    u.y",
+          "  );",
           "}",
-          "vec4 extractAlpha(vec3 colorIn) {",
-          "  float a = max(max(colorIn.r, colorIn.g), colorIn.b);",
-          "  return vec4(colorIn.rgb / (a + 1e-5), a);",
-          "}",
-          "const vec3 baseColor1 = vec3(0.98, 0.45, 0.15);",
-          "const vec3 baseColor2 = vec3(0.22, 0.68, 0.92);",
-          "const vec3 baseColor3 = vec3(0.08, 0.10, 0.16);",
-          "const float innerRadius = 0.58;",
-          "vec4 draw(vec2 uv) {",
-          "  float ang = atan(uv.y, uv.x);",
-          "  float len = length(uv);",
-          "  float invLen = len > 0.0 ? 1.0 / len : 0.0;",
-          "  float n0 = snoise3(vec3(uv * 0.75, iTime * 0.55)) * 0.5 + 0.5;",
-          "  float r0 = mix(0.55, 0.85, n0);",
-          "  float d0 = distance(uv, (r0 * invLen) * uv);",
-          "  float v0 = 1.0 / (1.0 + d0 * 12.0);",
-          "  v0 *= smoothstep(r0 * 1.05, r0, len);",
-          "  float cl = cos(ang + iTime * 2.0) * 0.5 + 0.5;",
-          "  float a = iTime * -1.2;",
-          "  vec2 pos = vec2(cos(a), sin(a)) * r0;",
-          "  float d = distance(uv, pos);",
-          "  float v1 = 1.5 / (1.0 + d * d * 6.0) * (1.0 / (1.0 + d0 * 45.0));",
-          "  float v2 = smoothstep(1.0, mix(innerRadius, 1.0, n0 * 0.5), len);",
-          "  float v3 = smoothstep(innerRadius, 0.95, len);",
-          "  vec3 col = mix(baseColor1, baseColor2, cl);",
-          "  col = mix(baseColor3, col, v0);",
-          "  col = (col + v1) * v2 * v3;",
-          "  col = clamp(col, 0.0, 1.0);",
-          "  return extractAlpha(col);",
+          "float fbm(vec2 p) {",
+          "  float v = 0.0;",
+          "  float a = 0.6;",
+          "  for (int i = 0; i < 3; i++) {",
+          "    v += a * noise(p);",
+          "    p *= 2.0;",
+          "    a *= 0.5;",
+          "  }",
+          "  return v;",
           "}",
           "void main() {",
-          "  vec2 center = iResolution.xy * 0.5;",
-          "  float size = min(iResolution.x, iResolution.y);",
-          "  vec2 uv = (gl_FragCoord.xy - center) / size * 2.0;",
-          "  float s = sin(rot);",
-          "  float c = cos(rot);",
-          "  uv = vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y);",
-          "  uv.x += hover * 0.08 * sin(uv.y * 10.0 + iTime);",
-          "  uv.y += hover * 0.08 * sin(uv.x * 10.0 + iTime);",
-          "  vec4 col = draw(uv);",
-          "  gl_FragColor = vec4(col.rgb * col.a, col.a);",
+          "  vec2 uv = gl_FragCoord.xy / u_resolution.xy;",
+          "  float t = u_time * 0.22;",
+          "  vec2 drift = vec2(sin(t) + 0.6 * sin(t * 1.7 + 1.3), cos(t * 0.8) + 0.6 * cos(t * 1.3 + 2.1));",
+          "  vec2 p = vec2(uv.x * 1.8, uv.y * 1.0) + drift * 0.7;",
+          "  vec2 q = vec2(fbm(p + drift), fbm(p + vec2(3.2, 1.5) - drift));",
+          "  float f = fbm(p + 1.2 * q);",
+          "  float g = clamp(1.0 - uv.y, 0.0, 1.0);",
+          "  float anchor = smoothstep(0.0, 0.3, uv.y);",
+          "  float shade = clamp(g + (f - 0.5) * 0.8 * anchor, 0.0, 1.0);",
+          "  vec3 white = vec3(0.99, 1.0, 1.0);",
+          "  vec3 light = mix(white, u_color, 0.45);",
+          "  vec3 dark = u_color;",
+          "  vec3 col = white;",
+          "  col = mix(col, light, smoothstep(0.28, 0.52, shade));",
+          "  col = mix(col, dark, smoothstep(0.58, 0.88, shade));",
+          "  float edge = smoothstep(0.5, 0.49, distance(uv, vec2(0.5)));",
+          "  gl_FragColor = vec4(col * edge, edge);",
           "}"
-        ].join("\\n");
+        ].join("\n");
 
-        const compileShader = (type, src) => {
+        const compile = (type, src) => {
           const s = gl.createShader(type);
           gl.shaderSource(s, src);
           gl.compileShader(s);
           return s;
         };
+
         const prog = gl.createProgram();
-        gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vs));
-        gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fs));
+        const vShader = compile(gl.VERTEX_SHADER, vs);
+        const fShader = compile(gl.FRAGMENT_SHADER, fs);
+        gl.attachShader(prog, vShader);
+        gl.attachShader(prog, fShader);
         gl.linkProgram(prog);
         gl.useProgram(prog);
 
         const buf = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
 
-        const posAttr = gl.getAttribLocation(prog, "position");
-        gl.enableVertexAttribArray(posAttr);
-        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+        const aPos = gl.getAttribLocation(prog, "a_pos");
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-        const uTime = gl.getUniformLocation(prog, "iTime");
-        const uRes = gl.getUniformLocation(prog, "iResolution");
-        const uHover = gl.getUniformLocation(prog, "hover");
-        const uRot = gl.getUniformLocation(prog, "rot");
+        const uRes = gl.getUniformLocation(prog, "u_resolution");
+        const uTime = gl.getUniformLocation(prog, "u_time");
+        const uColor = gl.getUniformLocation(prog, "u_color");
 
-        gl.uniform3f(uRes, canvas.width, canvas.height, 1.0);
+        // Warm Raksha Orange
+        gl.uniform3f(uColor, 0.976, 0.451, 0.086);
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.viewport(0, 0, canvas.width, canvas.height);
 
-        let rot = 0;
-        function render(time) {
-          const t = (time || 0) * 0.001;
-          rot += isSpeakingOrListening ? 0.025 : 0.008;
-          gl.uniform1f(uTime, t);
-          gl.uniform1f(uRot, rot);
-          gl.uniform1f(uHover, isSpeakingOrListening ? 0.9 : 0.1);
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        let accumulatedTime = 0;
+        let lastTime = performance.now();
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function render(now) {
+          const dt = (now - lastTime) * 0.001;
+          lastTime = now;
+
+          if (!reduceMotion) {
+            const factor = speedFactors[currentOrbState] || 0.5;
+            accumulatedTime += dt * factor;
+            gl.uniform1f(uTime, accumulatedTime);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+          }
+
           orbAnimFrame = requestAnimationFrame(render);
         }
         orbAnimFrame = requestAnimationFrame(render);
@@ -682,85 +736,72 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       function resetLiveCallDisplay() {
         currentIncidentId = null;
         currentIncident = null;
-        document.getElementById("syncCaseId").innerText = "—";
-        document.getElementById("syncAmount").innerText = "—";
-        document.getElementById("syncApp").innerText = "—";
-        document.getElementById("syncBank").innerText = "—";
-        document.getElementById("syncUtr").innerText = "—";
-        document.getElementById("syncState").innerText = "Listening for details";
-        document.getElementById("syncState").style.color = "#38bdf8";
         
-        document.getElementById("tlStep1").innerHTML = "○ Incident discovery";
-        document.getElementById("tlStep1").style.color = "#64748b";
-        document.getElementById("tlStep2").innerHTML = "○ Evidence & UTR extracted";
-        document.getElementById("tlStep2").style.color = "#64748b";
-        document.getElementById("tlStep3").innerHTML = "○ Citizen confirmed";
-        document.getElementById("tlStep3").style.color = "#64748b";
-        document.getElementById("tlStep4").innerHTML = "○ CAP freeze packet submitted";
-        document.getElementById("tlStep4").style.color = "#64748b";
+        const capsule = document.getElementById("callCaseCapsule");
+        if (capsule) capsule.style.display = "none";
+        
+        const facts = document.getElementById("capsuleFacts");
+        if (facts) facts.innerText = "";
+        
+        const stateEl = document.getElementById("capsuleState");
+        if (stateEl) stateEl.innerText = "";
 
-        document.getElementById("syncFooterNote").innerText = "Raksha is preparing your report as you speak.";
-        document.getElementById("liveTranscriptBox").innerHTML = '<span style="color:#64748b;font-style:italic;">Connecting to live voice responder...</span>';
-      }
+        const prompt = document.getElementById("agentTurnPrompt");
+        if (prompt) prompt.innerText = "“नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। बताइए क्या हुआ?”";
+        
+        const userSpeech = document.getElementById("userTurnSpeech");
+        if (userSpeech) userSpeech.innerText = "";
 
-      function mapStateToLabel(state) {
-        switch (state) {
-          case "INTAKE": return "Collecting details";
-          case "PROCESSING": return "Reconciling evidence...";
-          case "QUESTION_PENDING": return "Need one more detail";
-          case "USER_CONFIRMATION": return "Waiting for your approval";
-          case "READY": return "Ready for confirmation";
-          case "SUBMITTED": return "Submitted — simulated response";
-          case "ACKNOWLEDGED": return "Simulated lien acknowledged";
-          default: return "Listening for details";
-        }
+        setOrbState("CONNECTING");
       }
 
       function updateIncidentUI(inc, state, externalRef) {
         if (!inc && !currentIncidentId) return;
 
-        if (inc?.id || currentIncidentId) {
-          document.getElementById("syncCaseId").innerText = inc?.id || currentIncidentId;
-          document.getElementById("tlStep1").innerHTML = "● Incident created (" + (inc?.id || currentIncidentId) + ")";
-          document.getElementById("tlStep1").style.color = "#10b981";
+        const effectiveId = inc?.id || currentIncidentId;
+        const capsule = document.getElementById("callCaseCapsule");
+        const capsuleId = document.getElementById("capsuleCaseId");
+        const capsuleFacts = document.getElementById("capsuleFacts");
+        const capsuleState = document.getElementById("capsuleState");
+
+        if (effectiveId && capsule) {
+          capsule.style.display = "inline-flex";
+          if (capsuleId) capsuleId.innerText = effectiveId;
+
+          const facts = [];
+          if (inc?.transaction?.amount) {
+            facts.push("₹" + inc.transaction.amount.toLocaleString());
+          }
+          if (inc?.transaction?.application) {
+            facts.push(inc.transaction.application);
+          }
+          if (inc?.transaction?.debitInstitution) {
+            facts.push(inc.transaction.debitInstitution);
+          }
+          if (inc?.transaction?.transactionId) {
+            facts.push("UTR " + inc.transaction.transactionId);
+          }
+
+          if (capsuleFacts) {
+            capsuleFacts.innerText = facts.length > 0 ? facts.join(" · ") : "Preparing your report…";
+          }
+
+          const effectiveState = state || inc?.state || "INTAKE";
+          if (capsuleState) {
+            if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
+              capsuleState.innerHTML = " · <span style='color:#f59e0b;font-weight:700;'>Ready for confirmation</span>";
+            } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
+              const ref = externalRef || "1930-SYN-" + (effectiveId || "295411").replace("RKS-", "");
+              capsuleState.innerHTML = " · <span style='color:#10b981;font-weight:700;'>Submitted (" + ref + ")</span>";
+            } else {
+              capsuleState.innerText = "";
+            }
+          }
         }
 
-        if (inc?.transaction?.amount) {
-          document.getElementById("syncAmount").innerText = "₹" + inc.transaction.amount.toLocaleString();
-        }
-
-        if (inc?.transaction?.application) {
-          document.getElementById("syncApp").innerText = inc.transaction.application;
-        }
-
-        if (inc?.transaction?.debitInstitution) {
-          document.getElementById("syncBank").innerText = inc.transaction.debitInstitution;
-        }
-
-        if (inc?.transaction?.transactionId) {
-          document.getElementById("syncUtr").innerText = inc.transaction.transactionId;
-          document.getElementById("tlStep2").innerHTML = "● Evidence sealed & UTR verified";
-          document.getElementById("tlStep2").style.color = "#10b981";
-        }
-
-        const effectiveState = state || inc?.state || "INTAKE";
-        document.getElementById("syncState").innerText = mapStateToLabel(effectiveState);
-
-        if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
-          document.getElementById("syncState").style.color = "#f59e0b";
-          document.getElementById("tlStep2").innerHTML = "● Evidence sealed & UTR verified";
-          document.getElementById("tlStep2").style.color = "#10b981";
-        }
-
-        if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
-          document.getElementById("syncState").style.color = "#10b981";
-          document.getElementById("tlStep3").innerHTML = "● Citizen confirmed";
-          document.getElementById("tlStep3").style.color = "#10b981";
-          const ref = externalRef || "1930-SYN-" + (inc?.id || "295411").replace("RKS-", "");
-          document.getElementById("tlStep4").innerHTML = "● CAP executed (" + ref + ")";
-          document.getElementById("tlStep4").style.color = "#10b981";
-          document.getElementById("syncFooterNote").innerText = "Submitted to simulated 1930 / bank response layer.";
-        }
+        // Sync to Developer Drawer
+        const devIncId = document.getElementById("devIncId");
+        if (devIncId && effectiveId) devIncId.innerText = effectiveId;
       }
 
       async function sendVoiceTurnToBackend(speechText) {
@@ -792,15 +833,8 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
         resetLiveCallDisplay();
-        initVoiceOrbCanvas();
-        isSpeakingOrListening = true;
-        
-        const badge = document.getElementById("callStatusBadge");
-        const transcriptBox = document.getElementById("liveTranscriptBox");
-        const waveform = document.getElementById("modalWaveform");
-
-        badge.innerText = "CONNECTING...";
-        transcriptBox.innerHTML = '<span style="color:#64748b;font-style:italic;">Connecting to live voice responder...</span>';
+        initFluidOrbCanvas();
+        setOrbState("CONNECTING");
 
         try {
           const { Conversation } = await import("https://cdn.jsdelivr.net/npm/@elevenlabs/client@0.0.10/+esm");
@@ -859,55 +893,51 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
               }
             },
             onConnect: () => {
-              badge.innerText = "🎙️ LISTENING";
-              transcriptBox.innerHTML = '<div style="color:#38bdf8;font-weight:700;margin-bottom:0.25rem;">Raksha Assistant Connected</div>';
-              isSpeakingOrListening = true;
+              setOrbState("LISTENING");
               startIncidentPoll();
             },
             onDisconnect: () => {
-              badge.innerText = "CALL ENDED";
-              isSpeakingOrListening = false;
+              setOrbState("IDLE");
               stopIncidentPoll();
             },
             onError: (err) => {
               console.error("[ElevenLabs Error]:", err);
-              badge.innerText = "CALL ACTIVE";
+              setOrbState("LISTENING");
             },
             onModeChange: ({ mode }) => {
               if (mode === "speaking") {
-                badge.innerText = "🔊 RAKSHA SPEAKING...";
-                isSpeakingOrListening = true;
-                waveform.classList.remove("listening");
+                setOrbState("SPEAKING");
               } else {
-                badge.innerText = "🎙️ LISTENING...";
-                isSpeakingOrListening = true;
-                waveform.classList.add("listening");
+                setOrbState("LISTENING");
               }
             },
             onMessage: ({ message, source }) => {
-              const p = document.createElement("div");
-              p.style.marginTop = "0.35rem";
               if (source === "user") {
-                p.innerHTML = '<strong style="color:#fb923c;">You:</strong> ' + message;
+                const u = document.getElementById("userTurnSpeech");
+                if (u) u.innerText = "“" + message + "”";
+                setOrbState("PROCESSING");
                 sendVoiceTurnToBackend(message);
               } else {
-                p.innerHTML = '<strong style="color:#38bdf8;">Raksha:</strong> ' + message;
+                const a = document.getElementById("agentTurnPrompt");
+                if (a) a.innerText = "“" + message + "”";
+                setOrbState("SPEAKING");
               }
-              transcriptBox.appendChild(p);
-              transcriptBox.scrollTop = transcriptBox.scrollHeight;
               fetchLatestIncidentSync();
             }
           });
         } catch (err) {
           console.warn("Direct WebRTC fallback:", err);
-          badge.innerText = "SIMULATOR ACTIVE";
-          transcriptBox.innerHTML = '<div style="color:#fb923c;font-weight:700;margin-bottom:0.25rem;">Raksha Assistant Connected</div>';
+          setOrbState("LISTENING");
           startIncidentPoll();
         }
       }
 
       async function endLiveVoiceCall() {
-        isSpeakingOrListening = false;
+        setOrbState("IDLE");
+        if (orbAnimFrame) {
+          cancelAnimationFrame(orbAnimFrame);
+          orbAnimFrame = null;
+        }
         if (activeConversation) {
           try { await activeConversation.endSession(); } catch {}
           activeConversation = null;
@@ -933,34 +963,58 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         if (!currentIncidentId) return;
         try {
           const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId);
-          if (!res.ok) return;
-          const data = await res.json();
-          currentIncident = data;
-          updateIncidentUI(data, data.state);
-          document.getElementById("devIncId").innerText = data.id;
+          if (res.ok) {
+            const data = await res.json();
+            currentIncident = data;
+            updateIncidentUI(data, data.state);
+            fetchDevEvents();
+          }
         } catch {}
-      }
-
-      function toggleDevDrawer() {
-        isDevOpen = !isDevOpen;
-        document.getElementById("devDrawer").classList.toggle("open", isDevOpen);
       }
 
       function toggleTypeArea() {
         const area = document.getElementById("typeArea");
-        area.style.display = area.style.display === "none" ? "flex" : "none";
+        area.style.display = area.style.display === "none" ? "block" : "none";
       }
 
-      function showWsView(view) {
-        document.getElementById("wsIdle").style.display = view === "IDLE" ? "block" : "none";
-        document.getElementById("wsProcessing").style.display = view === "PROCESSING" ? "block" : "none";
-        document.getElementById("wsQuestion").style.display = view === "QUESTION" ? "block" : "none";
-        document.getElementById("wsConflict").style.display = view === "CONFLICT" ? "block" : "none";
-        document.getElementById("wsReady").style.display = view === "READY" ? "block" : "none";
-        document.getElementById("wsSubmitted").style.display = view === "SUBMITTED" ? "block" : "none";
+      async function handleImageAction(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = reader.result.split(",")[1];
+          showWsView("PROCESSING");
+
+          try {
+            const res = await fetch(CORE_URL + "/v1/process", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                incidentId: currentIncidentId || undefined,
+                source: "web",
+                modality: "image",
+                content: base64,
+                mimeType: file.type,
+                language: currentLanguage
+              })
+            });
+            const data = await res.json();
+            currentIncidentId = data.incidentId;
+            currentIncident = data.incident;
+            handleServerResponse(data);
+          } catch (err) {
+            alert("Error processing image: " + err.message);
+            showWsView("IDLE");
+          }
+        };
+        reader.readAsDataURL(file);
       }
 
-      async function processIntake(payload) {
+      async function submitTypedNarrative() {
+        const text = document.getElementById("narrativeText").value;
+        if (!text) return;
+
         showWsView("PROCESSING");
         try {
           const res = await fetch(CORE_URL + "/v1/process", {
@@ -969,119 +1023,157 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
             body: JSON.stringify({
               incidentId: currentIncidentId || undefined,
               source: "web",
-              language: currentLanguage,
-              ...payload
+              modality: "text",
+              content: text,
+              language: currentLanguage
             })
           });
-
-          if (!res.ok) throw new Error("Intake processing failed");
           const data = await res.json();
-          handleIntakeResult(data);
+          currentIncidentId = data.incidentId;
+          currentIncident = data.incident;
+          handleServerResponse(data);
         } catch (err) {
           alert("Error: " + err.message);
           showWsView("IDLE");
         }
       }
 
-      function handleIntakeResult(data) {
-        currentIncidentId = data.incidentId;
-        currentIncident = data.incident;
-        document.getElementById("devIncId").innerText = currentIncidentId;
-
-        if (data.state === "QUESTION_PENDING" || data.nextAction?.nextActionType === "ASK_USER") {
-          document.getElementById("qPromptText").innerText = data.nextAction.prompt || "Please provide the missing detail.";
-          showWsView("QUESTION");
-        } else if (data.state === "USER_CONFIRMATION" || data.nextAction?.nextActionType === "CONFIRM_CONFLICT") {
-          document.getElementById("conflictHead").innerText = data.nextAction.prompt || "Which detail is correct?";
-          const box = document.getElementById("conflictBtnBox");
-          box.innerHTML = "";
-          (data.nextAction.options || []).forEach(opt => {
-            const btn = document.createElement("button");
-            btn.className = "action-btn";
-            btn.style.padding = "0.85rem";
-            btn.innerText = opt.label;
-            btn.onclick = () => resolveConflict(data.nextAction.field, opt.value);
-            box.appendChild(btn);
-          });
-          showWsView("CONFLICT");
-        } else if (data.state === "READY") {
-          document.getElementById("repAmount").innerText = "₹" + (data.incident?.transaction?.amount || 5000).toLocaleString();
-          document.getElementById("repChannel").innerText = (data.incident?.transaction?.channel || "UPI") + (data.incident?.transaction?.application ? " (" + data.incident.transaction.application + ")" : "");
-          document.getElementById("repUtr").innerText = data.incident?.transaction?.transactionId || "423456789012";
-          document.getElementById("repBank").innerText = data.incident?.transaction?.debitInstitution || "State Bank of India";
-          showWsView("READY");
-        } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
-          showWsView("SUBMITTED");
-          fetchTimeline();
-        }
-
-        fetchDevEvents();
-      }
-
-      function handleVoiceAction() {
-        const narrative = currentLanguage === "hi" 
-          ? "बिजली विभाग के नाम से कॉल आया और मैंने फोनपे से पाँच हज़ार भेज दिए।" 
-          : "Someone called pretending to be from electricity desk and stole 5000 via PhonePe";
-        processIntake({ modality: "voice", content: narrative });
-      }
-
-      function handleImageAction(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const fakeOCR = "Google Pay Completed. Paid ₹5,000.00 to fraudster.merchant@ybl. UPI Ref: 423456789012. Debited: State Bank of India.";
-        processIntake({ modality: "image", content: fakeOCR });
-      }
-
-      function submitTypedNarrative() {
-        const txt = document.getElementById("narrativeText").value;
-        if (!txt) return;
-        processIntake({ modality: "text", content: txt });
-      }
-
-      function submitQuestionAnswer() {
+      async function submitQuestionAnswer() {
         const val = document.getElementById("qInputVal").value;
         if (!val) return;
-        processIntake({
-          modality: "text",
-          content: val,
-          userClarificationAnswer: { field: "transaction.transactionId", answerValue: val }
-        });
+
+        showWsView("PROCESSING");
+        try {
+          const res = await fetch(CORE_URL + "/v1/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              incidentId: currentIncidentId,
+              source: "web",
+              modality: "text",
+              content: val,
+              language: currentLanguage
+            })
+          });
+          const data = await res.json();
+          currentIncident = data.incident;
+          handleServerResponse(data);
+        } catch (err) {
+          alert("Error: " + err.message);
+          showWsView("IDLE");
+        }
       }
 
-      function resolveConflict(field, val) {
-        processIntake({
-          modality: "text",
-          content: "Resolved: " + val,
-          userClarificationAnswer: { field: field, answerValue: val }
-        });
+      async function resolveConflict(chosenValue) {
+        showWsView("PROCESSING");
+        try {
+          const res = await fetch(CORE_URL + "/v1/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              incidentId: currentIncidentId,
+              source: "web",
+              modality: "text",
+              content: "I confirm the amount is " + chosenValue,
+              language: currentLanguage
+            })
+          });
+          const data = await res.json();
+          currentIncident = data.incident;
+          handleServerResponse(data);
+        } catch (err) {
+          alert("Error: " + err.message);
+          showWsView("IDLE");
+        }
       }
 
       async function dispatchEmergencyReport() {
+        if (!currentIncidentId || !currentIncident) return;
         showWsView("PROCESSING");
+
         try {
-          const idempKey = "web-cap-" + currentIncidentId;
           const res = await fetch(CAP_URL + "/cap/actions/execute", {
             method: "POST",
-            headers: { 
+            headers: {
               "Content-Type": "application/json",
-              "Idempotency-Key": idempKey
+              "Idempotency-Key": "web-cap-" + currentIncidentId
             },
             body: JSON.stringify({
               action: "report_financial_fraud",
               payload: currentIncident,
-              idempotencyKey: idempKey
+              idempotencyKey: "web-cap-" + currentIncidentId
             })
           });
 
-          const capData = await res.json();
-          const refNum = capData.externalReference || ("1930-SYN-" + capData.caseId);
-          document.getElementById("repRefNum").innerText = refNum;
-          showWsView("SUBMITTED");
+          const data = await res.json();
+          const refNumber = data.externalReference || ("1930-SYN-" + (data.caseId || "295411"));
+          
+          document.getElementById("repRefNum").innerText = refNumber;
           fetchTimeline();
+          showWsView("SUBMITTED");
           fetchDevEvents();
         } catch (err) {
-          alert("CAP Dispatch failed: " + err.message);
+          alert("CAP Dispatch Error: " + err.message);
           showWsView("READY");
+        }
+      }
+
+      function handleServerResponse(data) {
+        fetchDevEvents();
+        const state = data.state;
+
+        if (state === "QUESTION_PENDING") {
+          document.getElementById("qPromptText").innerText = data.question || "Please provide the missing details:";
+          document.getElementById("qInputVal").value = "";
+          showWsView("QUESTION");
+        } else if (state === "CONFLICT_RESOLUTION") {
+          document.getElementById("conflictHead").innerText = data.question || "Discrepancy detected:";
+          const btnBox = document.getElementById("conflictBtnBox");
+          btnBox.innerHTML = "";
+          if (data.conflictOptions) {
+            data.conflictOptions.forEach(opt => {
+              const b = document.createElement("button");
+              b.className = "btn-secondary";
+              b.style.padding = "0.75rem";
+              b.innerText = opt.label || opt.value;
+              b.onclick = () => resolveConflict(opt.value);
+              btnBox.appendChild(b);
+            });
+          }
+          showWsView("CONFLICT");
+        } else if (state === "READY" || state === "USER_CONFIRMATION") {
+          const inc = data.incident;
+          if (inc && inc.transaction) {
+            document.getElementById("repAmount").innerText = "₹" + (inc.transaction.amount?.toLocaleString() || "—");
+            document.getElementById("repChannel").innerText = inc.transaction.application || "UPI";
+            document.getElementById("repUtr").innerText = inc.transaction.transactionId || "—";
+            document.getElementById("repBank").innerText = inc.transaction.debitInstitution || "—";
+          }
+          showWsView("READY");
+        } else if (state === "SUBMITTED" || state === "ACKNOWLEDGED") {
+          showWsView("SUBMITTED");
+        } else {
+          showWsView("IDLE");
+        }
+      }
+
+      function showWsView(state) {
+        const views = {
+          IDLE: "wsIdle",
+          PROCESSING: "wsProcessing",
+          QUESTION: "wsQuestion",
+          CONFLICT: "wsConflict",
+          READY: "wsReady",
+          SUBMITTED: "wsSubmitted"
+        };
+        Object.values(views).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = "none";
+        });
+        const active = views[state];
+        if (active) {
+          const el = document.getElementById(active);
+          if (el) el.style.display = "block";
         }
       }
 
@@ -1091,16 +1183,17 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
           const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
           const data = await res.json();
           const tl = document.getElementById("liveTimeline");
+          if (!tl) return;
           tl.innerHTML = "";
           (data.events || []).forEach(evt => {
             const div = document.createElement("div");
-            div.style.background = "#fafaf9";
-            div.style.border = "1px solid var(--border)";
+            div.style.background = "rgba(255,255,255,0.03)";
+            div.style.border = "1px solid rgba(255,255,255,0.06)";
             div.style.padding = "0.6rem 0.85rem";
             div.style.borderRadius = "8px";
             div.style.display = "flex";
             div.style.justifyContent = "space-between";
-            div.innerHTML = \`<span style="color:var(--green);font-weight:700;">✓ \${evt.type}</span><span style="font-family:var(--mono);font-size:0.75rem;color:var(--text-muted);">\${evt.timestamp.slice(11, 19)}</span>\`;
+            div.innerHTML = '<span style="color:var(--green);font-weight:700;">✓ ' + evt.type + '</span><span style="font-family:var(--mono);font-size:0.75rem;color:var(--text-muted);">' + evt.timestamp.slice(11, 19) + '</span>';
             tl.appendChild(div);
           });
         } catch {}
@@ -1111,7 +1204,8 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         try {
           const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
           const data = await res.json();
-          document.getElementById("devJsonDump").innerText = JSON.stringify(data.events || [], null, 2);
+          const dump = document.getElementById("devJsonDump");
+          if (dump) dump.innerText = JSON.stringify(data.events || [], null, 2);
         } catch {}
       }
 
@@ -1120,6 +1214,13 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
         currentIncident = null;
         document.getElementById("narrativeText").value = "";
         showWsView("IDLE");
+      }
+
+      function toggleDevDrawer() {
+        isDevOpen = !isDevOpen;
+        const drawer = document.getElementById("devDrawer");
+        if (drawer) drawer.classList.toggle("open", isDevOpen);
+        if (isDevOpen) fetchDevEvents();
       }
 
       window.switchLang = function(lang) {
