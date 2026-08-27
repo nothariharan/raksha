@@ -906,7 +906,7 @@ const bodyContent = `
               capsuleState.innerHTML = " · <span style='color:#d97706;font-weight:700;'>Ready for confirmation</span>";
               if (badge) badge.innerText = "Awaiting citizen confirmation";
             } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
-              const ref = externalRef || "1930-SYN-" + (effectiveId || "295411").replace("RKS-", "");
+              const ref = externalRef || (effectiveId ? "1930-SYN-" + effectiveId.replace("RKS-", "") : "Pending");
               capsuleState.innerHTML = " · <span style='color:#16a34a;font-weight:700;'>Submitted (" + ref + ")</span>";
               if (badge) badge.innerText = "✓ CAP action dispatched";
             } else if (effectiveState === "QUESTION_PENDING") {
