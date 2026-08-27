@@ -37,54 +37,9 @@ export class PortalAIntakeService {
         mode: process.env.CAP_MODE === "http" ? "http" : "in-memory",
         baseUrl: process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002",
       });
-
-    // Pre-seed Canonical Demo Incident (Ramesh Kumar, ₹5,000)
-    this.localCases.set("1930-SYN-295411", {
-      portalCaseId: "1930-SYN-295411",
-      capCaseId: "CAP-DEMO-001",
-      externalReference: "1930-SYN-295411",
-      status: "ACCEPTED",
-      lifecycle: "ACCEPTED",
-      incidentId: "RKS-DEMO-001",
-      incident: {
-        id: "RKS-DEMO-001",
-        protocolVersion: "raksha/0.1",
-        type: "FINANCIAL_CYBER_FRAUD",
-        narrative: {
-          text: "Paid ₹5,000 via PhonePe after a fraudulent electricity bill disconnection call.",
-          source: "phone",
-        },
-        reporter: {
-          name: "Ramesh Kumar",
-          mobile: "+919876543210",
-        },
-        transaction: {
-          amount: 5000,
-          currency: "INR",
-          transactionId: "423456789012",
-          timestamp: new Date().toISOString(),
-          debitInstitution: "State Bank of India",
-          beneficiaryIdentifier: "electricity-fraud@upi",
-          channel: "UPI",
-        },
-        evidence: ["EV-001-SCREENSHOT"],
-        state: "SUBMITTED",
-        validation: {
-          status: "READY",
-          missingFields: [],
-          conflicts: [],
-        },
-        handoff: {
-          target: "1930",
-          status: "ACCEPTED",
-          externalReference: "1930-SYN-295411",
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      receivedAt: new Date().toISOString(),
-      summary: "₹5,000 fake electricity bill scam via PhonePe with UTR 423456789012.",
-    });
+    // No pre-seeded demo data in constructor.
+    // Demo incidents are seeded exclusively via pnpm demo:reset (demo-data/incident.json).
+    // Live cases are created only through reportFraudIncident().
   }
 
   async reportFraudIncident(

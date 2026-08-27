@@ -33,16 +33,9 @@ export class PortalBResponseService {
       });
 
     this.initSubscription();
-
-    // Pre-seed Canonical Demo Alert (RKS-DEMO-001, ₹5,000 SBI Lien)
-    this.alerts.set("CAP-DEMO-001", {
-      caseId: "CAP-DEMO-001",
-      incidentId: "RKS-DEMO-001",
-      externalReference: "1930-SYN-295411",
-      receivedAt: new Date().toISOString(),
-      status: "LIEN_MARKED",
-      lifecycle: "ACKNOWLEDGED",
-    });
+    // No pre-seeded demo data in constructor.
+    // Alerts are populated exclusively via the CAP event bus (incident.accepted)
+    // or HTTP polling from /cap/events. Demo state is seeded via pnpm demo:reset.
   }
 
   private initSubscription(): void {

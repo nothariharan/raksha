@@ -1,6 +1,7 @@
 /**
  * Portal B — Financial Intermediary (Bank) Response Console
  * Clean, minimal Banking Blue design system.
+ * Table now dynamically renders from /portal-b/alerts API (no hardcoded demo rows).
  */
 
 export function renderPortalBHtml(): string {
@@ -9,7 +10,7 @@ export function renderPortalBHtml(): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SBI Fraud Risk Console — Portal B</title>
+  <title>Bank Fraud Risk Console — Portal B (Simulated)</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏦</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -209,6 +210,28 @@ export function renderPortalBHtml(): string {
       align-items: center;
       gap: 0.3rem;
     }
+
+    .badge-pending {
+      background: var(--amber-light);
+      color: var(--amber);
+      font-weight: 700;
+      font-size: 0.76rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+    }
+
+    .btn-lien {
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-lien:hover { background: var(--navy-light); }
     
     .footer {
       text-align: center;
@@ -219,16 +242,30 @@ export function renderPortalBHtml(): string {
       background: #ffffff;
       margin-top: auto;
     }
+
+    .sim-banner {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      font-size: 0.82rem;
+      color: #92400e;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
   </style>
 </head>
 <body>
 
   <header class="bank-header">
     <div class="bank-brand">
-      <div class="bank-emblem">SBI</div>
+      <div class="bank-emblem">🏦</div>
       <div class="bank-title">
-        <h1>State Bank of India · Cyber Fraud Nodal Console</h1>
-        <p>CAP Protocol v0.1 · Automated Beneficiary Lien & Freeze Desk</p>
+        <h1>Financial Institution CAP Node · Cyber Fraud Response Console</h1>
+        <p>CAP Protocol v0.1 · Automated Beneficiary Lien &amp; Freeze Desk · Portal B</p>
       </div>
     </div>
     <div class="bank-status-pill">
@@ -238,29 +275,33 @@ export function renderPortalBHtml(): string {
   </header>
 
   <main>
+    <div class="sim-banner">
+      ⚠️ SIMULATED DEMONSTRATION ENVIRONMENT — This portal does not connect to real banking systems or government infrastructure.
+    </div>
+
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-lbl">Active Fraud Alerts</div>
-        <div class="stat-val highlight">1</div>
+        <div class="stat-val highlight" id="statActiveAlerts">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Automated Lien Placed</div>
-        <div class="stat-val" style="color: var(--green);">₹5,000</div>
+        <div class="stat-lbl">Containment Actions</div>
+        <div class="stat-val" style="color: var(--green);" id="statLienCount">—</div>
       </div>
       <div class="stat-card">
         <div class="stat-lbl">Avg Containment Latency</div>
         <div class="stat-val">38 ms</div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Nodal Officer Action</div>
-        <div class="stat-val" style="font-size: 0.95rem; margin-top: 0.35rem; color: var(--green);">✓ AUTO-ACKNOWLEDGED</div>
+        <div class="stat-lbl">Nodal Officer Status</div>
+        <div class="stat-val" style="font-size: 0.9rem; margin-top: 0.35rem;" id="statNodal">Awaiting alerts</div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header">
         <h2>Live Financial Cyber-Fraud Ingest Queue</h2>
-        <span style="font-size: 0.82rem; color: var(--text-muted);">Real-time CAP event bus</span>
+        <span style="font-size: 0.82rem; color: var(--text-muted);">Real-time CAP event bus · auto-refreshes every 5s</span>
       </div>
 
       <div class="table-responsive">
@@ -269,23 +310,14 @@ export function renderPortalBHtml(): string {
             <tr>
               <th>Govt Reference (1930)</th>
               <th>Canonical Incident</th>
-              <th>Victim / Debit Account</th>
-              <th>Amount</th>
-              <th>12-Digit UTR</th>
-              <th>Beneficiary Action</th>
-              <th>Containment Status</th>
+              <th>Status</th>
+              <th>Lifecycle</th>
+              <th>Received</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody id="alertsTableBody">
-            <tr>
-              <td><span class="tag-case">1930-SYN-295411</span></td>
-              <td><strong>RKS-DEMO-001</strong></td>
-              <td>Ramesh Kumar (SBI Savings)</td>
-              <td><strong style="color: var(--navy);">₹5,000</strong></td>
-              <td><span class="tag-utr">423456789012</span></td>
-              <td><code>electricity-fraud@upi</code></td>
-              <td><span class="badge-lien">● LIEN PLACED (₹5,000 FROZEN)</span></td>
-            </tr>
+            <tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 2rem;">Loading alerts…</td></tr>
           </tbody>
         </table>
       </div>
@@ -297,8 +329,8 @@ export function renderPortalBHtml(): string {
         <div>
           <h3 style="font-size: 0.95rem; font-weight: 700; color: #166534; margin-bottom: 0.2rem;">Automated Golden Hour Intermediary Containment</h3>
           <p style="font-size: 0.84rem; color: #15803d; line-height: 1.45;">
-            Upon citizen confirmation, Raksha's CAP layer issued an idempotent <code>freeze_beneficiary_account</code> action. 
-            The destination beneficiary account was placed on administrative lien within <strong>38 milliseconds</strong> of report handoff.
+            Upon citizen confirmation, Raksha's CAP layer issues an idempotent <code>report_financial_fraud</code> action.
+            This portal subscribes to <code>incident.accepted</code> events and can mark administrative lien actions against the beneficiary account.
           </p>
         </div>
       </div>
@@ -306,8 +338,90 @@ export function renderPortalBHtml(): string {
   </main>
 
   <footer class="footer">
-    State Bank of India Cyber Cell & CAP Node · Simulated Demonstration Environment
+    Financial Institution CAP Node · Simulated Demonstration Environment · Not connected to real banking systems
   </footer>
+
+<script>
+  function formatTime(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch { return iso; }
+  }
+
+  async function loadAlerts() {
+    try {
+      const res = await fetch('/portal-b/alerts');
+      if (!res.ok) return;
+      const data = await res.json();
+      const alerts = data.alerts || [];
+
+      // Update stats
+      document.getElementById('statActiveAlerts').innerText = alerts.length || '0';
+      const actionCount = alerts.filter(a => a.status === 'LIEN_MARKED' || a.status === 'ACCOUNT_FROZEN').length;
+      document.getElementById('statLienCount').innerText = actionCount > 0 ? actionCount + ' action(s)' : '—';
+      const nodalEl = document.getElementById('statNodal');
+      if (actionCount > 0) {
+        nodalEl.innerText = '✓ AUTO-ACKNOWLEDGED';
+        nodalEl.style.color = 'var(--green)';
+      } else if (alerts.length > 0) {
+        nodalEl.innerText = 'Review required';
+        nodalEl.style.color = 'var(--amber)';
+      } else {
+        nodalEl.innerText = 'Awaiting alerts';
+        nodalEl.style.color = '';
+      }
+
+      // Render table
+      const tbody = document.getElementById('alertsTableBody');
+      if (alerts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #94a3b8; padding: 2rem;">No active alerts. Waiting for CAP incident.accepted events…</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = alerts.map(a => {
+        const isActioned = a.lifecycle === 'ACKNOWLEDGED' || a.status === 'LIEN_MARKED' || a.status === 'ACCOUNT_FROZEN';
+        return \`<tr>
+          <td><span class="tag-case">\${a.externalReference || '—'}</span></td>
+          <td><strong>\${a.incidentId || '—'}</strong></td>
+          <td>\${a.status || '—'}</td>
+          <td><strong>\${a.lifecycle || '—'}</strong></td>
+          <td>\${formatTime(a.receivedAt)}</td>
+          <td>
+            \${isActioned
+              ? '<span class="badge-lien">● LIEN / FREEZE ACTION TAKEN</span>'
+              : \`<button class="btn-lien" onclick="markLien('\${a.caseId}', '\${a.incidentId}')">Mark Lien</button>\`
+            }
+          </td>
+        </tr>\`;
+      }).join('');
+    } catch (e) {
+      console.warn('[Portal B] Could not load alerts:', e);
+      const tbody = document.getElementById('alertsTableBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #dc2626; padding: 1rem;">Could not reach CAP gateway. Retrying…</td></tr>';
+    }
+  }
+
+  async function markLien(caseId, incidentId) {
+    try {
+      await fetch('/portal-b/alerts/' + caseId + '/acknowledge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          responderInstitution: 'Financial Institution',
+          actionTaken: 'LIEN_MARKED',
+          idempotencyKey: 'lien-' + caseId
+        })
+      });
+      loadAlerts();
+    } catch (e) {
+      console.warn('[Portal B] Mark lien failed:', e);
+    }
+  }
+
+  loadAlerts();
+  setInterval(loadAlerts, 5000);
+</script>
 </body>
 </html>`;
 }
