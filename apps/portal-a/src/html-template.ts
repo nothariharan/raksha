@@ -175,31 +175,31 @@ export function renderPortalAHtml(): string {
           <p class="muted">Submitted through CAP action <code>report_financial_fraud</code> using canonical schema fields.</p>
           <form id="reportForm">
             <label>Incident narrative</label>
-            <textarea name="narrativeText" required>Paid money after a fake electricity department call.</textarea>
+            <textarea name="narrativeText" placeholder="Describe what happened in detail..." required></textarea>
             <div class="grid">
               <div>
                 <label>Amount (INR)</label>
-                <input name="amount" type="number" value="5000" required />
+                <input name="amount" type="number" placeholder="e.g. 5000" required />
               </div>
               <div>
-                <label>Transaction ID</label>
-                <input name="transactionId" value="423456789012" required />
+                <label>Transaction ID (UTR / Reference)</label>
+                <input name="transactionId" placeholder="12-digit UTR number" required />
               </div>
               <div>
                 <label>Timestamp</label>
-                <input name="timestamp" value="2026-08-24T18:42:00+05:30" />
+                <input name="timestamp" placeholder="e.g. 2026-08-25T18:42:00+05:30" />
               </div>
               <div>
                 <label>Debit institution</label>
-                <input name="debitInstitution" value="State Bank of India" />
+                <input name="debitInstitution" placeholder="e.g. State Bank of India" />
               </div>
               <div>
                 <label>Beneficiary identifier</label>
-                <input name="beneficiaryIdentifier" value="fraudster@upi" />
+                <input name="beneficiaryIdentifier" placeholder="e.g. fraudster@upi" />
               </div>
               <div>
                 <label>Evidence IDs (comma-separated)</label>
-                <input name="evidence" value="EV-001" />
+                <input name="evidence" placeholder="e.g. EV-001, EV-002" />
               </div>
             </div>
             <button type="submit">Submit via CAP</button>

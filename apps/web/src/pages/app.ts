@@ -476,8 +476,8 @@ const bodyContent = `
 
           <!-- Dynamic Progressive Incident Capsule (Hidden until facts exist) -->
           <div class="call-case-capsule" id="callCaseCapsule" style="display: none;">
-            <span class="capsule-id" id="capsuleCaseId">RKS-DEMO-001</span>
-            <span id="capsuleFacts" class="capsule-facts">Preparing report…</span>
+            <span class="capsule-id" id="capsuleCaseId">—</span>
+            <span id="capsuleFacts" class="capsule-facts">Gathering details…</span>
             <span id="capsuleState" class="capsule-state"></span>
           </div>
 
@@ -572,23 +572,34 @@ const bodyContent = `
           <div class="details-grid">
             <div>
               <div class="dt-lbl">Amount</div>
-              <div class="dt-val dt-amount" id="repAmount">₹5,000</div>
+              <div class="dt-val dt-amount" id="repAmount">—</div>
             </div>
             <div>
               <div class="dt-lbl">Channel</div>
-              <div class="dt-val" id="repChannel">UPI (PhonePe)</div>
+              <div class="dt-val" id="repChannel">—</div>
             </div>
             <div>
               <div class="dt-lbl">12-Digit UTR</div>
-              <div class="dt-val" id="repUtr">423456789012</div>
+              <div class="dt-val" id="repUtr">—</div>
             </div>
             <div>
               <div class="dt-lbl">Debit Bank</div>
-              <div class="dt-val" id="repBank">State Bank of India</div>
+              <div class="dt-val" id="repBank">—</div>
             </div>
           </div>
 
           <button class="btn-dispatch" onclick="dispatchEmergencyReport()">🚀 SEND EMERGENCY REPORT</button>
+        </div>
+
+        <!-- ERROR -->
+        <div id="wsError" style="display: none; text-align: center; padding: 1.5rem 0;">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
+          <h3 style="font-size: 1.2rem; font-weight: 700; color: #dc2626; margin-bottom: 0.5rem;" id="errorTitle">Something went wrong</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;" id="errorMessage">Your incident has not been lost.</p>
+          <div style="display: flex; gap: 0.75rem; justify-content: center;">
+            <button class="btn-submit-narrative" id="errorRetryBtn">Retry</button>
+            <button class="btn-link-type" onclick="resetToHome()">Start over</button>
+          </div>
         </div>
 
         <!-- SUBMITTED -->
@@ -597,7 +608,8 @@ const bodyContent = `
           <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--green); margin-bottom: 0.25rem;">Report Handed Off</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
             Report handed off to the simulated 1930 / bank response layer.<br>
-            Official Reference: <strong id="repRefNum" style="color: var(--text);">1930-SYN-XXXXXX</strong>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">SIMULATED DEMONSTRATION — not a real government filing</span>
+            Reference: <strong id="repRefNum" style="color: var(--text);">1930-SYN-XXXXXX</strong>
           </p>
           <div id="liveTimeline" style="text-align: left; display: flex; flex-direction: column; gap: 0.5rem;"></div>
           <button class="btn-link-type" style="margin-top: 1.5rem;" onclick="resetToHome()">File another report</button>
@@ -888,14 +900,21 @@ const bodyContent = `
           }
 
           const effectiveState = state || inc?.state || "INTAKE";
+          const badge = document.getElementById("callStatusBadge");
           if (capsuleState) {
             if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
               capsuleState.innerHTML = " · <span style='color:#d97706;font-weight:700;'>Ready for confirmation</span>";
+              if (badge) badge.innerText = "Awaiting citizen confirmation";
             } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
-              const ref = externalRef || "1930-SYN-" + (effectiveId || "295411").replace("RKS-", "");
+              const ref = externalRef || (effectiveId ? "1930-SYN-" + effectiveId.replace("RKS-", "") : "Pending");
               capsuleState.innerHTML = " · <span style='color:#16a34a;font-weight:700;'>Submitted (" + ref + ")</span>";
+              if (badge) badge.innerText = "✓ CAP action dispatched";
+            } else if (effectiveState === "QUESTION_PENDING") {
+              capsuleState.innerHTML = " · <span style='color:#3b82f6;font-weight:700;'>Gathering info</span>";
+              if (badge) badge.innerText = "Gathering missing information";
             } else {
               capsuleState.innerText = "";
+              if (badge) badge.innerText = "Listening for details…";
             }
           }
         }
@@ -930,17 +949,29 @@ const bodyContent = `
               if (prompt) prompt.innerText = "“" + data.question + "”";
               playRakshaSpeech(data.question);
             } else if (data.state === "READY" || data.state === "USER_CONFIRMATION") {
-              const reply = "मैंने विवरण दर्ज कर लिया है: ₹5,000 SBI UTR 423456789012। क्या मैं इसे 1930 और बैंक को भेज दूँ?";
+              const isHi = currentLanguage === "hi";
+              const amt = data.incident.transaction.amount || "—";
+              const bank = data.incident.transaction.debitInstitution || "—";
+              const utr = data.incident.transaction.transactionId || "—";
+              const reply = isHi
+                ? "मैंने विवरण दर्ज कर लिया है: ₹" + amt + " " + bank + " UTR " + utr + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
+                : "I have recorded the details: ₹" + amt + " " + bank + " UTR " + utr + ". Shall I dispatch this to 1930 and the bank?";
               if (prompt) prompt.innerText = "“" + reply + "”";
               playRakshaSpeech(reply);
             } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
-              const reply = "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है! ट्रैकिंग नंबर 1930-SYN-295411 है।";
+              const trackingRef = data.incident?.handoff?.externalReference || "";
+              const refDisplay = trackingRef ? trackingRef : "";
+              const reply = refDisplay
+                ? "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है! ट्रैकिंग नंबर " + refDisplay + " है।"
+                : "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है।";
               if (prompt) prompt.innerText = "“" + reply + "”";
               playRakshaSpeech(reply);
             }
           }
         } catch (e) {
-          console.warn("Backend process sync:", e);
+          console.warn("[Voice] Backend sync failed:", e);
+          const badge = document.getElementById("callStatusBadge");
+          if (badge) badge.innerText = "Connection issue — try again";
         }
       }
 
@@ -1130,13 +1161,25 @@ const bodyContent = `
                 language: currentLanguage
               })
             });
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              showError(
+                "Could not process that evidence",
+                errData.error || "Try another image or confirm the details manually.",
+                () => showWsView("IDLE")
+              );
+              return;
+            }
             const data = await res.json();
             currentIncidentId = data.incidentId;
             currentIncident = data.incident;
             handleServerResponse(data);
           } catch (err) {
-            alert("Error processing image: " + err.message);
-            showWsView("IDLE");
+            showError(
+              "Could not process that evidence",
+              "Try another image or confirm the details manually.",
+              () => showWsView("IDLE")
+            );
           }
         };
         reader.readAsDataURL(file);
@@ -1159,13 +1202,17 @@ const bodyContent = `
               language: currentLanguage
             })
           });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            showError("Could not process your description", errData.error || "Please try again.", () => showWsView("IDLE"));
+            return;
+          }
           const data = await res.json();
           currentIncidentId = data.incidentId;
           currentIncident = data.incident;
           handleServerResponse(data);
         } catch (err) {
-          alert("Error: " + err.message);
-          showWsView("IDLE");
+          showError("Connection error", "Could not reach the Raksha server. Please check your connection and try again.", () => showWsView("IDLE"));
         }
       }
 
@@ -1220,6 +1267,9 @@ const bodyContent = `
 
       async function dispatchEmergencyReport() {
         if (!currentIncidentId || !currentIncident) return;
+
+        // Prevent duplicate submissions — use deterministic idempotency key
+        const idemKey = "web-cap-" + currentIncidentId;
         showWsView("PROCESSING");
 
         try {
@@ -1227,25 +1277,38 @@ const bodyContent = `
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Idempotency-Key": "web-cap-" + currentIncidentId
+              "Idempotency-Key": idemKey
             },
             body: JSON.stringify({
               action: "report_financial_fraud",
               payload: currentIncident,
-              idempotencyKey: "web-cap-" + currentIncidentId
+              idempotencyKey: idemKey
             })
           });
 
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            showError(
+              "Report could not be dispatched",
+              errData.error || "The action could not be completed. Your incident has not been lost.",
+              () => showWsView("READY")
+            );
+            return;
+          }
+
           const data = await res.json();
-          const refNumber = data.externalReference || ("1930-SYN-" + (data.caseId || "295411"));
-          
+          // Only use actual reference from server — never guess a fallback
+          const refNumber = data.externalReference || data.data?.externalReference || "Pending";
           document.getElementById("repRefNum").innerText = refNumber;
           fetchTimeline();
           showWsView("SUBMITTED");
           fetchDevEvents();
         } catch (err) {
-          alert("CAP Dispatch Error: " + err.message);
-          showWsView("READY");
+          showError(
+            "Report could not be dispatched",
+            "The action could not be completed. Your incident has not been lost. Retry when ready.",
+            () => showWsView("READY")
+          );
         }
       }
 
@@ -1275,8 +1338,8 @@ const bodyContent = `
         } else if (state === "READY" || state === "USER_CONFIRMATION") {
           const inc = data.incident;
           if (inc && inc.transaction) {
-            document.getElementById("repAmount").innerText = "₹" + (inc.transaction.amount?.toLocaleString() || "—");
-            document.getElementById("repChannel").innerText = inc.transaction.application || "UPI";
+            document.getElementById("repAmount").innerText = inc.transaction.amount ? "₹" + inc.transaction.amount.toLocaleString() : "—";
+            document.getElementById("repChannel").innerText = inc.transaction.application || inc.transaction.channel || "—";
             document.getElementById("repUtr").innerText = inc.transaction.transactionId || "—";
             document.getElementById("repBank").innerText = inc.transaction.debitInstitution || "—";
           }
@@ -1288,6 +1351,19 @@ const bodyContent = `
         }
       }
 
+      function showError(title, message, retryFn) {
+        document.getElementById("errorTitle").innerText = title || "Something went wrong";
+        document.getElementById("errorMessage").innerText = message || "Your incident has not been lost.";
+        const retryBtn = document.getElementById("errorRetryBtn");
+        if (retryBtn && retryFn) {
+          retryBtn.onclick = retryFn;
+          retryBtn.style.display = "inline-block";
+        } else if (retryBtn) {
+          retryBtn.style.display = "none";
+        }
+        showWsView("ERROR");
+      }
+
       function showWsView(state) {
         const views = {
           IDLE: "wsIdle",
@@ -1295,6 +1371,7 @@ const bodyContent = `
           QUESTION: "wsQuestion",
           CONFLICT: "wsConflict",
           READY: "wsReady",
+          ERROR: "wsError",
           SUBMITTED: "wsSubmitted"
         };
         Object.values(views).forEach(id => {
@@ -1344,6 +1421,10 @@ const bodyContent = `
         currentIncidentId = null;
         currentIncident = null;
         document.getElementById("narrativeText").value = "";
+        document.getElementById("repAmount").innerText = "—";
+        document.getElementById("repChannel").innerText = "—";
+        document.getElementById("repUtr").innerText = "—";
+        document.getElementById("repBank").innerText = "—";
         showWsView("IDLE");
       }
 

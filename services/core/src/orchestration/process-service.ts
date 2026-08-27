@@ -54,10 +54,7 @@ export class ProcessService {
 
     // 1. Load or Create Incident
     if (input.incidentId) {
-      let existing = await this.incidentService.getIncident(input.incidentId);
-      if (!existing && (input.incidentId === "RKS-000001" || input.incidentId === "RKS-DEMO-001")) {
-        existing = (await this.incidentService.getIncident("RKS-DEMO-001")) || (await this.incidentService.getIncident("RKS-000001"));
-      }
+      const existing = await this.incidentService.getIncident(input.incidentId);
       if (!existing) {
         throw new Error(`Incident not found: ${input.incidentId}`);
       }
