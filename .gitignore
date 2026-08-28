@@ -16,10 +16,12 @@ out/
 
 # Environment variables
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.staging.env
 !.env.example
 
 # Logs
