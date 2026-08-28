@@ -38,105 +38,108 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown): void 
   res.end(JSON.stringify(data, null, 2));
 }
 
-export function createPhoneWebhookServer(service?: PhoneService) {
+export async function handlePhoneRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  service?: PhoneService
+): Promise<void> {
   const ps = service || defaultPhoneService;
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
+  const method = req.method || "GET";
 
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    });
+    res.end();
+    return;
+  }
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  try {
+    // 1. Health check
+    if (pathname === "/health" && method === "GET") {
+      sendJson(res, 200, {
+        status: "ok",
+        service: "raksha-agent-phone",
+        version: "0.1.0",
+        timestamp: new Date().toISOString(),
       });
-      res.end();
       return;
     }
 
-    try {
-      // 1. Health check
-      if (pathname === "/health" && method === "GET") {
-        sendJson(res, 200, {
-          status: "ok",
-          service: "raksha-agent-phone",
-          version: "0.1.0",
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
+    // 2. ElevenLabs Conversational Tool Webhook
+    if (pathname === "/phone/elevenlabs/tool" && method === "POST") {
+      const body = await parseJsonBody<{
+        tool_name: string;
+        tool_call_id: string;
+        parameters: Record<string, unknown>;
+        caller_id?: string;
+        conversation_id?: string;
+        language?: string;
+      }>(req);
 
-      // 2. ElevenLabs Conversational Tool Webhook
-      if (pathname === "/phone/elevenlabs/tool" && method === "POST") {
-        const body = await parseJsonBody<{
-          tool_name: string;
-          tool_call_id: string;
-          parameters: Record<string, unknown>;
-          caller_id?: string;
-          conversation_id?: string;
-          language?: string;
-        }>(req);
+      const context: TelephonyCallContext = {
+        callSid: body.conversation_id || `eleven-${Date.now()}`,
+        callerNumber: body.caller_id || "+919876543210",
+        provider: "elevenlabs",
+        language: body.language || "hi",
+        startTime: new Date().toISOString(),
+      };
 
-        const context: TelephonyCallContext = {
-          callSid: body.conversation_id || `eleven-${Date.now()}`,
-          callerNumber: body.caller_id || "+919876543210",
-          provider: "elevenlabs",
-          language: body.language || "hi",
-          startTime: new Date().toISOString(),
-        };
+      const toolCall: VoiceToolCall = {
+        toolName: body.tool_name,
+        toolCallId: body.tool_call_id,
+        parameters: body.parameters || {},
+      };
 
-        const toolCall: VoiceToolCall = {
-          toolName: body.tool_name,
-          toolCallId: body.tool_call_id,
-          parameters: body.parameters || {},
-        };
-
-        const result = await ps.handleToolCall(toolCall, context);
-        sendJson(res, 200, result);
-        return;
-      }
-
-      // 3. Twilio Inbound Voice Webhook
-      if (pathname === "/phone/twilio/voice" && method === "POST") {
-        const body = await parseJsonBody<{ CallSid?: string; From?: string; To?: string }>(req);
-        const context: TelephonyCallContext = {
-          callSid: body.CallSid || `tw-${Date.now()}`,
-          callerNumber: body.From || "+919876543210",
-          calledNumber: body.To,
-          provider: "twilio",
-          startTime: new Date().toISOString(),
-        };
-
-        const result = await ps.handleInboundCall(context);
-        res.writeHead(200, { "Content-Type": "text/xml" });
-        res.end(result.twimlOrResponse || "<Response><Say>Raksha Helpline</Say></Response>");
-        return;
-      }
-
-      // 4. Browser / Demo Phone Mode Simulator
-      if (pathname === "/phone/simulate" && method === "POST") {
-        const body = await parseJsonBody<{
-          callSid: string;
-          callerPhone: string;
-          action: "start" | "speech" | "submit";
-          speechText?: string;
-          isConfirmation?: boolean;
-          language?: string;
-        }>(req);
-
-        const result = await ps.simulatePhoneTurn(body);
-        sendJson(res, 200, result);
-        return;
-      }
-
-      sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[PhoneWebhook Error]:", err);
-      sendJson(res, 500, { error: (err as Error).message || "Internal Server Error" });
+      const result = await ps.handleToolCall(toolCall, context);
+      sendJson(res, 200, result);
+      return;
     }
-  });
 
-  return server;
+    // 3. Twilio Inbound Voice Webhook
+    if (pathname === "/phone/twilio/voice" && method === "POST") {
+      const body = await parseJsonBody<{ CallSid?: string; From?: string; To?: string }>(req);
+      const context: TelephonyCallContext = {
+        callSid: body.CallSid || `tw-${Date.now()}`,
+        callerNumber: body.From || "+919876543210",
+        calledNumber: body.To,
+        provider: "twilio",
+        startTime: new Date().toISOString(),
+      };
+
+      const result = await ps.handleInboundCall(context);
+      res.writeHead(200, { "Content-Type": "text/xml" });
+      res.end(result.twimlOrResponse || "<Response><Say>Raksha Helpline</Say></Response>");
+      return;
+    }
+
+    // 4. Browser / Demo Phone Mode Simulator
+    if (pathname === "/phone/simulate" && method === "POST") {
+      const body = await parseJsonBody<{
+        callSid: string;
+        callerPhone: string;
+        action: "start" | "speech" | "submit";
+        speechText?: string;
+        isConfirmation?: boolean;
+        language?: string;
+      }>(req);
+
+      const result = await ps.simulatePhoneTurn(body);
+      sendJson(res, 200, result);
+      return;
+    }
+
+    sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
+  } catch (err) {
+    console.error("[PhoneWebhook Error]:", err);
+    sendJson(res, 500, { error: (err as Error).message || "Internal Server Error" });
+  }
+}
+
+export function createPhoneWebhookServer(service?: PhoneService) {
+  return createServer((req, res) => handlePhoneRequest(req, res, service));
 }

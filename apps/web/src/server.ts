@@ -14,19 +14,22 @@ import {
   renderAppPageHtml,
 } from "./html-template.js";
 
-export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) {
-  const coreUrl = config?.coreUrl || process.env.CORE_BASE_URL || "http://localhost:3001";
-  const capUrl = config?.capUrl || process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002";
+export function handleWebRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  config?: { coreUrl?: string; capUrl?: string }
+): void {
+  const coreUrl = config?.coreUrl !== undefined ? config.coreUrl : (process.env.CORE_BASE_URL || "");
+  const capUrl = config?.capUrl !== undefined ? config.capUrl : (process.env.CAP_PUBLIC_BASE_URL || "");
 
-  const server = createServer((req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
 
-    if (pathname === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", service: "raksha-web", version: "0.7.0" }));
-      return;
-    }
+  if (pathname === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", service: "raksha-web", version: "0.7.0" }));
+    return;
+  }
 
     // Static Assets (/images/* or /public/*)
     if (pathname.startsWith("/images/") || pathname.startsWith("/public/")) {
@@ -93,7 +96,8 @@ export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) 
 
     res.writeHead(404, { "Content-Type": "text/plain" });
     res.end("Not Found");
-  });
+}
 
-  return server;
+export function createWebServer(config?: { coreUrl?: string; capUrl?: string }) {
+  return createServer((req, res) => handleWebRequest(req, res, config));
 }

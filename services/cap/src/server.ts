@@ -40,25 +40,27 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown): void 
   res.end(JSON.stringify(data, null, 2));
 }
 
-export function createCapServer() {
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
-    const idempotencyKey =
-      (req.headers["idempotency-key"] as string) || url.searchParams.get("idempotencyKey") || undefined;
+export async function handleCapRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  let pathname = url.pathname;
+  if (pathname.startsWith("/api/cap")) {
+    pathname = pathname.replace(/^\/api\/cap/, "/cap");
+  }
+  const method = req.method || "GET";
+  const idempotencyKey =
+    (req.headers["idempotency-key"] as string) || url.searchParams.get("idempotencyKey") || undefined;
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
-      });
-      res.end();
-      return;
-    }
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+    });
+    res.end();
+    return;
+  }
 
-    try {
+  try {
       // 1. Health check
       if (pathname === "/health" && method === "GET") {
         sendJson(res, 200, {
@@ -183,13 +185,14 @@ export function createCapServer() {
       }
 
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[CAP Server Error]:", err);
-      sendJson(res, 500, {
-        error: (err as Error).message || "Internal Server Error",
-      });
-    }
-  });
+  } catch (err) {
+    console.error("[CAP Server Error]:", err);
+    sendJson(res, 500, {
+      error: (err as Error).message || "Internal Server Error",
+    });
+  }
+}
 
-  return server;
+export function createCapServer() {
+  return createServer(handleCapRequest);
 }

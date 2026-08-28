@@ -38,63 +38,66 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown): void 
   res.end(JSON.stringify(data, null, 2));
 }
 
-export function createWhatsAppWebhookServer(service?: WhatsAppService) {
+export async function handleWhatsAppRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  service?: WhatsAppService
+): Promise<void> {
   const ws = service || defaultWhatsAppService;
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
+  const method = req.method || "GET";
 
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Twilio-Signature",
+    });
+    res.end();
+    return;
+  }
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Twilio-Signature",
+  try {
+    if (pathname === "/health" && method === "GET") {
+      sendJson(res, 200, {
+        status: "ok",
+        service: "raksha-agent-whatsapp",
+        version: "0.1.0",
+        timestamp: new Date().toISOString(),
       });
-      res.end();
       return;
     }
 
-    try {
-      if (pathname === "/health" && method === "GET") {
-        sendJson(res, 200, {
-          status: "ok",
-          service: "raksha-agent-whatsapp",
-          version: "0.1.0",
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
-
-      if (pathname === "/whatsapp/webhook" && method === "POST") {
-        const body = await parseJsonBody<RawWhatsAppPayload>(req);
-        const result = await ws.handleIncomingMessage(body);
-        sendJson(res, 200, result);
-        return;
-      }
-
-      if (pathname === "/whatsapp/notify" && method === "POST") {
-        const body = await parseJsonBody<{
-          mobile: string;
-          incidentId: string;
-          referenceNumber: string;
-          amount?: number;
-          channel?: string;
-          bank?: string;
-          utr?: string;
-        }>(req);
-        const result = await ws.notifyCitizenIncidentAccepted(body);
-        sendJson(res, 200, result);
-        return;
-      }
-
-      sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[WhatsAppWebhook Error]:", err);
-      sendJson(res, 500, { error: (err as Error).message || "Internal Error" });
+    if ((pathname === "/whatsapp/webhook" || pathname === "/webhook") && method === "POST") {
+      const body = await parseJsonBody<RawWhatsAppPayload>(req);
+      const result = await ws.handleIncomingMessage(body);
+      sendJson(res, 200, result);
+      return;
     }
-  });
 
-  return server;
+    if ((pathname === "/whatsapp/notify" || pathname === "/notify") && method === "POST") {
+      const body = await parseJsonBody<{
+        mobile: string;
+        incidentId: string;
+        referenceNumber: string;
+        amount?: number;
+        channel?: string;
+        bank?: string;
+        utr?: string;
+      }>(req);
+      const result = await ws.notifyCitizenIncidentAccepted(body);
+      sendJson(res, 200, result);
+      return;
+    }
+
+    sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
+  } catch (err) {
+    console.error("[WhatsAppWebhook Error]:", err);
+    sendJson(res, 500, { error: (err as Error).message || "Internal Error" });
+  }
+}
+
+export function createWhatsAppWebhookServer(service?: WhatsAppService) {
+  return createServer((req, res) => handleWhatsAppRequest(req, res, service));
 }

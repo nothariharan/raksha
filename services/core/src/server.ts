@@ -41,23 +41,22 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown): void 
   res.end(JSON.stringify(data, null, 2));
 }
 
-export function createCoreServer() {
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
+export async function handleCoreRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
+  const method = req.method || "GET";
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
-      });
-      res.end();
-      return;
-    }
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+    });
+    res.end();
+    return;
+  }
 
-    try {
+  try {
       // 1. Health checks
       if (pathname === "/health" && method === "GET") {
         sendJson(res, 200, {
@@ -285,13 +284,14 @@ export function createCoreServer() {
       }
 
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[CoreServer Error]:", err);
-      sendJson(res, 500, {
-        error: (err as Error).message || "Internal Server Error",
-      });
-    }
-  });
+  } catch (err) {
+    console.error("[CoreServer Error]:", err);
+    sendJson(res, 500, {
+      error: (err as Error).message || "Internal Server Error",
+    });
+  }
+}
 
-  return server;
+export function createCoreServer() {
+  return createServer(handleCoreRequest);
 }
