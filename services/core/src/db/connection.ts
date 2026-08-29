@@ -39,8 +39,9 @@ export class DatabaseClient {
 
   private initStorage(): void {
     const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL;
+    const forceFileDb = /^(1|true|yes)$/i.test(String(process.env.FORCE_FILE_DB ?? "").trim());
 
-    if (dbUrl && !dbUrl.includes("postgres:postgres@localhost") && !process.env.FORCE_FILE_DB) {
+    if (dbUrl && !dbUrl.includes("postgres:postgres@localhost") && !forceFileDb) {
       try {
         this.pool = new Pool({
           connectionString: dbUrl,
