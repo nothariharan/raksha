@@ -7,6 +7,7 @@
   "packageManager": "pnpm@10.32.1",
   "scripts": {
     "start": "tsx scripts/prod-server.ts",
+    "export:web": "tsx scripts/export-web.ts",
     "build": "pnpm --filter \"./packages/*\" build && pnpm --filter @raksha/core build && pnpm --filter @raksha/cap build && pnpm --filter \"./apps/*\" --filter \"./agents/*\" build",
     "typecheck": "pnpm -r run typecheck",
     "test": "tsx test/run-e2e.ts",

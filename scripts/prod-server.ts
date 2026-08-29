@@ -1,7 +1,7 @@
 /**
- * Raksha Unified Production Gateway Server
- * Single-origin HTTP router unifying Citizen Web UI, Core API, CAP Engine, Portals A & B,
- * WhatsApp Adapter, Voice Telephony, and MCP Server behind one public HTTPS domain.
+ * Raksha Protocol Host
+ * Long-running Node gateway for Core, CAP, portals, and channel webhooks.
+ * The citizen website is served from Vercel; this process keeps APIs and adapters.
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
@@ -16,26 +16,66 @@ import { handleMcpRequest } from "@raksha/agent-mcp";
 import { defaultDbClient } from "@raksha/core";
 
 const PORT = Number(process.env.PORT) || 3000;
+const PUBLIC_WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN || "").replace(/\/$/, "");
+const SAME_ORIGIN_WEB = { coreUrl: "", capUrl: "" };
+const WEB_PAGE_PATHS = new Set(["/", "/how", "/agents", "/cap", "/app", "/demo", "/index.html"]);
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+  "Access-Control-Max-Age": "86400",
+};
+
+function isApiPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/v1") ||
+    pathname.startsWith("/api/cap") ||
+    pathname.startsWith("/cap/") ||
+    pathname.startsWith("/portal-") ||
+    pathname.startsWith("/whatsapp") ||
+    pathname.startsWith("/phone") ||
+    pathname.startsWith("/mcp") ||
+    pathname === "/system/health" ||
+    pathname === "/health" ||
+    pathname === "/ready"
+  );
+}
+
+function redirectToWebsite(res: ServerResponse, destination: string): void {
+  res.writeHead(302, {
+    Location: destination,
+    "Cache-Control": "no-store",
+  });
+  res.end();
+}
 
 export function createUnifiedGatewayServer() {
   return createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const pathname = url.pathname;
+    const method = req.method || "GET";
 
-    // 1. Health & Readiness checks for Render / PaaS zero-downtime monitoring
+    if (method === "OPTIONS" && isApiPath(pathname)) {
+      res.writeHead(204, CORS_HEADERS);
+      res.end();
+      return;
+    }
+
     if (pathname === "/health") {
       res.writeHead(200, {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        ...CORS_HEADERS,
       });
       res.end(
         JSON.stringify(
           {
             status: "healthy",
-            service: "raksha-unified-gateway",
+            service: "raksha-protocol-host",
             version: "0.7.0",
             protocol: "cap/0.1",
             database: defaultDbClient.isPg() ? "postgresql" : "file",
+            website: PUBLIC_WEB_ORIGIN || null,
             timestamp: new Date().toISOString(),
           },
           null,
@@ -48,15 +88,25 @@ export function createUnifiedGatewayServer() {
     if (pathname === "/ready") {
       res.writeHead(200, {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        ...CORS_HEADERS,
       });
       res.end(JSON.stringify({ status: "ready" }));
       return;
     }
 
-    // 2. Route Separation: Human-facing /cap vs backend /api/cap/* & /cap/*
+    if (pathname === "/system/health") {
+      await handleCoreRequest(req, res);
+      return;
+    }
+
+    const normalizedPage = pathname === "/index.html" ? "/" : pathname.replace(/\/$/, "") || "/";
+    if (PUBLIC_WEB_ORIGIN && WEB_PAGE_PATHS.has(normalizedPage)) {
+      redirectToWebsite(res, `${PUBLIC_WEB_ORIGIN}${normalizedPage === "/" ? "/" : normalizedPage}${url.search}`);
+      return;
+    }
+
     if (pathname === "/cap" || pathname === "/cap/") {
-      handleWebRequest(req, res, { coreUrl: "", capUrl: "" });
+      handleWebRequest(req, res, SAME_ORIGIN_WEB);
       return;
     }
 
@@ -65,53 +115,45 @@ export function createUnifiedGatewayServer() {
       return;
     }
 
-    // 3. Core API Routes (/v1/*)
     if (pathname.startsWith("/v1/") || pathname === "/v1") {
       await handleCoreRequest(req, res);
       return;
     }
 
-    // 4. Portal A: 1930 Cybercrime Intake (/portal-a/*)
     if (pathname.startsWith("/portal-a")) {
       await handlePortalARequest(req, res);
       return;
     }
 
-    // 5. Portal B: Financial Intermediary Response (/portal-b/*)
     if (pathname.startsWith("/portal-b")) {
       await handlePortalBRequest(req, res);
       return;
     }
 
-    // 6. WhatsApp Webhook (/whatsapp/*)
     if (pathname.startsWith("/whatsapp")) {
       await handleWhatsAppRequest(req, res);
       return;
     }
 
-    // 7. Telephony / Voice Webhook (/phone/*)
     if (pathname.startsWith("/phone")) {
       await handlePhoneRequest(req, res);
       return;
     }
 
-    // 8. Model Context Protocol (/mcp/*)
     if (pathname.startsWith("/mcp")) {
       await handleMcpRequest(req, res);
       return;
     }
 
-    // 9. Citizen Web Application & Static Assets (/, /how, /agents, /app, /demo, /public/*, /images/*)
-    handleWebRequest(req, res, { coreUrl: "", capUrl: "" });
+    handleWebRequest(req, res, SAME_ORIGIN_WEB);
   });
 }
 
 export async function startProductionGateway(): Promise<void> {
   console.log("==========================================================");
-  console.log("  STARTING RAKSHA UNIFIED PRODUCTION GATEWAY");
+  console.log("  STARTING RAKSHA PROTOCOL HOST");
   console.log("==========================================================");
 
-  // Validate and ensure database tables if running against Postgres
   if (defaultDbClient.isPg()) {
     console.log("[Production] Initializing PostgreSQL schema verification...");
     await defaultDbClient.ensureSchema().catch((err) => {
@@ -123,18 +165,20 @@ export async function startProductionGateway(): Promise<void> {
 
   const server = createUnifiedGatewayServer();
   server.listen(PORT, () => {
-    console.log(`\n✓ Raksha Production Gateway listening on port ${PORT}`);
-    console.log(`  - Citizen Portal    : http://localhost:${PORT}/`);
-    console.log(`  - Citizen Intake    : http://localhost:${PORT}/app`);
-    console.log(`  - CAP Spec Page     : http://localhost:${PORT}/cap`);
-    console.log(`  - CAP Execution API : http://localhost:${PORT}/api/cap/actions/execute`);
-    console.log(`  - Core API Engine   : http://localhost:${PORT}/v1/process`);
-    console.log(`  - Portal A (1930)   : http://localhost:${PORT}/portal-a`);
-    console.log(`  - Portal B (Bank)   : http://localhost:${PORT}/portal-b`);
-    console.log(`  - WhatsApp Webhook  : http://localhost:${PORT}/whatsapp/webhook`);
-    console.log(`  - Phone Telephony   : http://localhost:${PORT}/phone/simulate`);
-    console.log(`  - MCP Agent Server  : http://localhost:${PORT}/mcp`);
-    console.log(`  - Health Endpoint   : http://localhost:${PORT}/health\n`);
+    console.log(`\n✓ Raksha protocol host listening on port ${PORT}`);
+    if (PUBLIC_WEB_ORIGIN) {
+      console.log(`  - Citizen website  : ${PUBLIC_WEB_ORIGIN}`);
+    } else {
+      console.log(`  - Citizen pages    : http://localhost:${PORT}/ (set PUBLIC_WEB_ORIGIN in production)`);
+    }
+    console.log(`  - Core API         : http://localhost:${PORT}/v1/process`);
+    console.log(`  - CAP API          : http://localhost:${PORT}/cap/actions/execute`);
+    console.log(`  - Portal A (1930)  : http://localhost:${PORT}/portal-a`);
+    console.log(`  - Portal B (Bank)  : http://localhost:${PORT}/portal-b`);
+    console.log(`  - WhatsApp webhook : http://localhost:${PORT}/whatsapp/webhook`);
+    console.log(`  - Phone telephony  : http://localhost:${PORT}/phone/simulate`);
+    console.log(`  - MCP agent server : http://localhost:${PORT}/mcp`);
+    console.log(`  - Health           : http://localhost:${PORT}/health\n`);
   });
 }
 

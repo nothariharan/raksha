@@ -310,6 +310,15 @@ export function renderPageLayout(options: {
   ${extraScripts}
   <script>
     (function () {
+      var protocolOrigin = "https://raksha-protocol.onrender.com";
+      var host = location.hostname;
+      if (host === "localhost" || host === "127.0.0.1") return;
+      try { if (new URL(protocolOrigin).host === location.host) return; } catch (e) {}
+      fetch(protocolOrigin + "/health", { mode: "cors", cache: "no-store", keepalive: true }).catch(function () {});
+    })();
+  </script>
+  <script>
+    (function () {
       var chrome = {
         en: { sim: "SIMULATED DEMONSTRATION · NO REAL BANK ACCESS", how: "How it Works", cap: "CAP Protocol", agents: "For AI Agents", demo: "Launch Demo" },
         hi: { sim: "अनुकरण प्रदर्शन · कोई वास्तविक बैंक पहुँच नहीं", how: "यह कैसे काम करता है", cap: "CAP प्रोटोकॉल", agents: "AI एजेंटों के लिए", demo: "डेमो शुरू करें" },

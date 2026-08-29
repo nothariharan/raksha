@@ -5,8 +5,8 @@
 import { renderPageLayout } from "./layout.js";
 
 export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }): string {
-  const coreUrl = config?.coreUrl || "http://localhost:3001";
-  const capUrl = config?.capUrl || "http://localhost:3002";
+  const coreUrl = config?.coreUrl ?? "http://localhost:3001";
+  const capUrl = config?.capUrl ?? "http://localhost:3002";
 
   const extraStyles = `
     .app-shell {
@@ -493,8 +493,50 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       overflow-y: auto;
       white-space: pre-wrap;
     }
+    .protocol-warming {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 12000;
+      align-items: center;
+      justify-content: center;
+      background: rgba(28, 25, 23, 0.28);
+      backdrop-filter: blur(6px);
+    }
+    .protocol-warming.active { display: flex; }
+    .protocol-warming-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--card-shadow-lg);
+      max-width: 22rem;
+      text-align: center;
+    }
+    .protocol-warming-copy {
+      margin: 0.75rem 0 0;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+    .protocol-warming-spinner {
+      width: 28px;
+      height: 28px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 2px solid var(--orange-border);
+      border-top-color: var(--orange);
+      animation: protocol-spin 0.8s linear infinite;
+    }
+    @keyframes protocol-spin { to { transform: rotate(360deg); } }
   `;
 const bodyContent = `
+    <div class="protocol-warming" id="protocolWarming" aria-live="polite">
+      <div class="protocol-warming-card">
+        <div class="protocol-warming-spinner" aria-hidden="true"></div>
+        <p class="protocol-warming-copy" id="protocolWarmingCopy">Starting the protocol…</p>
+      </div>
+    </div>
     <!-- Custom ElevenLabs Real Voice Call Modal -->
     <div class="call-modal-overlay" id="rakshaCallModal">
       <div class="call-space">
@@ -696,6 +738,26 @@ const bodyContent = `
       const CORE_URL = "${coreUrl}";
       const CAP_URL = "${capUrl}";
 
+      function showProtocolWarming(show, detail) {
+        var el = document.getElementById("protocolWarming");
+        var copy = document.getElementById("protocolWarmingCopy");
+        if (!el) return;
+        el.classList.toggle("active", !!show);
+        if (copy && detail) copy.textContent = detail;
+      }
+
+      async function protocolFetch(url, options) {
+        var slow = setTimeout(function () {
+          showProtocolWarming(true, "Starting the protocol… first request after idle can take a few seconds.");
+        }, 900);
+        try {
+          return await fetch(url, options);
+        } finally {
+          clearTimeout(slow);
+          showProtocolWarming(false);
+        }
+      }
+
       let currentIncidentId = null;
       let currentIncident = null;
       let currentLanguage = "en";
@@ -883,7 +945,7 @@ const bodyContent = `
         }
 
         try {
-          const res = await fetch(CORE_URL + "/v1/tts", {
+          const res = await protocolFetch(CORE_URL + "/v1/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
@@ -1013,7 +1075,7 @@ const bodyContent = `
 
       async function sendVoiceTurnToBackend(speechText) {
         try {
-          const res = await fetch(CORE_URL + "/v1/process", {
+          const res = await protocolFetch(CORE_URL + "/v1/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1212,7 +1274,7 @@ const bodyContent = `
       async function fetchLatestIncidentSync() {
         if (!currentIncidentId) return;
         try {
-          const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId);
+          const res = await protocolFetch(CORE_URL + "/v1/incidents/" + currentIncidentId);
           if (res.ok) {
             const data = await res.json();
             currentIncident = data;
@@ -1237,7 +1299,7 @@ const bodyContent = `
           showWsView("PROCESSING");
 
           try {
-            const res = await fetch(CORE_URL + "/v1/process", {
+            const res = await protocolFetch(CORE_URL + "/v1/process", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -1279,7 +1341,7 @@ const bodyContent = `
 
         showWsView("PROCESSING");
         try {
-          const res = await fetch(CORE_URL + "/v1/process", {
+          const res = await protocolFetch(CORE_URL + "/v1/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1310,7 +1372,7 @@ const bodyContent = `
 
         showWsView("PROCESSING");
         try {
-          const res = await fetch(CORE_URL + "/v1/process", {
+          const res = await protocolFetch(CORE_URL + "/v1/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1333,7 +1395,7 @@ const bodyContent = `
       async function resolveConflict(chosenValue) {
         showWsView("PROCESSING");
         try {
-          const res = await fetch(CORE_URL + "/v1/process", {
+          const res = await protocolFetch(CORE_URL + "/v1/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1361,7 +1423,7 @@ const bodyContent = `
         showWsView("PROCESSING");
 
         try {
-          const res = await fetch(CAP_URL + "/cap/actions/execute", {
+          const res = await protocolFetch(CAP_URL + "/cap/actions/execute", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1476,7 +1538,7 @@ const bodyContent = `
       async function fetchTimeline() {
         if (!currentIncidentId) return;
         try {
-          const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
+          const res = await protocolFetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
           const data = await res.json();
           const tl = document.getElementById("liveTimeline");
           if (!tl) return;
@@ -1498,7 +1560,7 @@ const bodyContent = `
       async function fetchDevEvents() {
         if (!currentIncidentId) return;
         try {
-          const res = await fetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
+          const res = await protocolFetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
           const data = await res.json();
           const dump = document.getElementById("devJsonDump");
           if (dump) dump.innerText = JSON.stringify(data.events || [], null, 2);
