@@ -383,9 +383,8 @@ export function renderCapPageHtml(): string {
       border: 1px solid #e2e8f0;
       padding: 0.16rem 0.45rem;
       border-radius: 5px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      overflow-wrap: anywhere;
       max-width: 100%;
     }
     .pipeline-step-pill.code-font {
