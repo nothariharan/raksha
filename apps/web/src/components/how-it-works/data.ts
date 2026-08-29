@@ -18,7 +18,7 @@ export const CASE_METADATA = {
   category: "Financial cyber fraud",
   tag: "Financial fraud",
   amount: "₹5,000",
-  method: "UPI • SBI",
+  method: "UPI — SBI",
   time: "Today, 10:30 AM",
 };
 
