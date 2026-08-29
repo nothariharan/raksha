@@ -9,10 +9,29 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
   const capUrl = config?.capUrl || "http://localhost:3002";
 
   const extraStyles = `
+    .app-shell {
+      position: relative;
+      min-height: calc(100dvh - 148px);
+      overflow: hidden;
+    }
+    .app-flow-story {
+      position: absolute;
+      left: 50%;
+      top: 74%;
+      transform: translate(-50%, -50%);
+      width: min(1520px, 118vw);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.68;
+      z-index: 0;
+    }
     .app-container {
       max-width: 800px;
       margin: 3rem auto;
       padding: 0 1.5rem;
+      position: relative;
+      z-index: 1;
     }
     .app-card {
       background: var(--bg-white);
@@ -28,9 +47,9 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       margin-bottom: 2rem;
     }
     .app-title {
-      font-size: 1.8rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
+      font-size: 1.7rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
       margin-bottom: 0.35rem;
     }
     .app-subtitle {
@@ -64,7 +83,19 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       transform: translateY(-2px);
     }
     .action-btn .btn-icon {
-      font-size: 1.8rem;
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+    }
+    .action-btn .btn-icon img,
+    .line-icon {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      user-select: none;
     }
     .action-btn .btn-label {
       font-weight: 700;
@@ -86,6 +117,14 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       margin: 0 auto;
     }
     .btn-link-type:hover { color: var(--text); }
+
+    @media (max-width: 900px) {
+      .app-flow-story {
+        width: 160vw;
+        top: 74%;
+        opacity: 0.22;
+      }
+    }
 
     .type-box {
       margin-top: 1.25rem;
@@ -223,26 +262,41 @@ export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }
       margin: auto 0;
     }
 
-    .fluid-orb-container {
+    .voice-fluid-orb {
       width: 240px;
       height: 240px;
-      margin: 1.5rem auto 1.6rem auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin: 0.85rem auto 1.2rem auto;
+      display: grid;
+      place-items: center;
       position: relative;
+      background: transparent;
     }
-    .fluid-orb-canvas {
-      width: 240px;
-      height: 240px;
-      border-radius: 50%;
+    .voice-fluid-orb canvas {
+      width: 100%;
+      height: 100%;
       display: block;
-      box-shadow: 0 16px 40px -10px rgba(234, 88, 12, 0.22), 0 0 0 1px rgba(234, 88, 12, 0.12);
     }
     @media (max-width: 500px) {
-      .fluid-orb-container, .fluid-orb-canvas {
-        width: 180px;
-        height: 180px;
+      .voice-fluid-orb {
+        width: 168px;
+        height: 168px;
+      }
+    }
+    .btn-start-speaking .speak-icon {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+    }
+    .btn-start-speaking .speak-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .voice-fluid-orb {
+        box-shadow: 0 10px 24px -10px rgba(234, 88, 12, 0.2);
       }
     }
 
@@ -457,9 +511,8 @@ const bodyContent = `
         <!-- Central Focused Living Experience -->
         <div class="call-center-stage">
           
-          <!-- 240px FluidOrb Canvas -->
-          <div class="fluid-orb-container">
-            <div id="callOrbContainer" class="fluid-orb-canvas"></div>
+          <div class="voice-fluid-orb" id="callDiyaOrb" data-state="IDLE">
+            <canvas id="callFluidOrb" aria-hidden="true"></canvas>
           </div>
 
           <!-- Realtime State Indicator -->
@@ -484,7 +537,7 @@ const bodyContent = `
           <!-- Call Controls -->
           <div class="call-controls">
             <button class="btn-start-speaking" id="btnStartSpeaking" onclick="connectAndStartSpeaking()">
-              <span style="font-size: 1.1rem;">🎙️</span>
+              <span class="speak-icon"><img src="/images/line/voice-shankha.png" alt="" draggable="false" /></span>
               <span id="lblStartBtn">Start speaking</span>
             </button>
 
@@ -507,6 +560,8 @@ const bodyContent = `
       </div>
     </div>
 
+    <div class="app-shell">
+    <img class="app-flow-story" src="/images/line/app-flow-story.png" alt="" aria-hidden="true" />
     <div class="app-container">
       <div class="app-card">
 
@@ -519,13 +574,13 @@ const bodyContent = `
 
           <div class="action-grid">
             <div class="action-btn" onclick="startLiveVoiceCall()">
-              <span class="btn-icon">🎙️</span>
+              <span class="btn-icon"><img class="line-icon" src="/images/line/voice-shankha.png" alt="" draggable="false" /></span>
               <span class="btn-label" id="lblVoice">Talk to Raksha (Live Voice)</span>
               <span class="btn-sub">ElevenLabs Agent in Hindi / English</span>
             </div>
 
             <label class="action-btn" style="cursor: pointer;">
-              <span class="btn-icon">📷</span>
+              <span class="btn-icon"><img class="line-icon" src="/images/line/intake-camera.png" alt="" draggable="false" /></span>
               <span class="btn-label" id="lblImage">Show Transaction</span>
               <span class="btn-sub">Upload UPI screenshot</span>
               <input type="file" accept="image/*" style="display: none;" onchange="handleImageAction(event)" />
@@ -633,6 +688,7 @@ const bodyContent = `
         <pre class="json-view" id="devJsonDump">[]</pre>
       </div>
     </div>
+    </div>
   `;
 
   const extraScripts = `
@@ -647,18 +703,149 @@ const bodyContent = `
       let activeConversation = null;
       let conversationPollInterval = null;
       let currentOrbState = "IDLE";
-      let orbAnimFrame = null;
+      let fluidOrbResize = null;
 
-      const speedFactors = {
-        CONNECTING: 0.20,
-        LISTENING: 0.50,
-        SPEAKING: 0.85,
-        PROCESSING: 0.35,
-        IDLE: 0.15
-      };
+      (function initFluidOrb() {
+        var canvas = document.getElementById("callFluidOrb");
+        var host = document.getElementById("callDiyaOrb");
+        if (!canvas || !host) return;
+        var gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
+        if (!gl) return;
+
+        var VERT = "attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0.0,1.0);}";
+        var FRAG = [
+          "precision highp float;",
+          "uniform vec2 u_resolution;",
+          "uniform float u_time;",
+          "uniform float u_hue;",
+          "uniform float u_hover;",
+          "uniform float u_rot;",
+          "uniform float u_hoverIntensity;",
+          "vec3 rgb2yiq(vec3 c){float y=dot(c,vec3(0.299,0.587,0.114));float i=dot(c,vec3(0.596,-0.274,-0.322));float q=dot(c,vec3(0.211,-0.523,0.312));return vec3(y,i,q);}",
+          "vec3 yiq2rgb(vec3 c){float r=c.x+0.956*c.y+0.621*c.z;float g=c.x-0.272*c.y-0.647*c.z;float b=c.x-1.106*c.y+1.703*c.z;return vec3(r,g,b);}",
+          "vec3 adjustHue(vec3 color,float hueDeg){float hueRad=hueDeg*3.14159265/180.0;vec3 yiq=rgb2yiq(color);float cosA=cos(hueRad);float sinA=sin(hueRad);float ii=yiq.y*cosA-yiq.z*sinA;float qq=yiq.y*sinA+yiq.z*cosA;yiq.y=ii;yiq.z=qq;return yiq2rgb(yiq);}",
+          "vec3 hash33(vec3 p3){p3=fract(p3*vec3(0.1031,0.11369,0.13787));p3+=dot(p3,p3.yxz+19.19);return -1.0+2.0*fract(vec3(p3.x+p3.y,p3.x+p3.z,p3.y+p3.z)*p3.zyx);}",
+          "float snoise3(vec3 p){const float K1=0.333333333;const float K2=0.166666667;vec3 i=floor(p+(p.x+p.y+p.z)*K1);vec3 d0=p-(i-(i.x+i.y+i.z)*K2);vec3 e=step(vec3(0.0),d0-d0.yzx);vec3 i1=e*(1.0-e.zxy);vec3 i2=1.0-e.zxy*(1.0-e);vec3 d1=d0-(i1-K2);vec3 d2=d0-(i2-K1);vec3 d3=d0-0.5;vec4 h=max(0.6-vec4(dot(d0,d0),dot(d1,d1),dot(d2,d2),dot(d3,d3)),0.0);vec4 n=h*h*h*h*vec4(dot(d0,hash33(i)),dot(d1,hash33(i+i1)),dot(d2,hash33(i+i2)),dot(d3,hash33(i+1.0)));return dot(vec4(31.316),n);}",
+          "vec4 extractAlpha(vec3 colorIn){float a=max(max(colorIn.r,colorIn.g),colorIn.b);return vec4(colorIn.rgb/(a+1e-5),a);}",
+          "float light1(float intensity,float attenuation,float dist){return intensity/(1.0+dist*attenuation);}",
+          "float light2(float intensity,float attenuation,float dist){return intensity/(1.0+dist*dist*attenuation);}",
+          "vec4 draw(vec2 uv){",
+          "vec3 color1=adjustHue(vec3(0.611765,0.262745,0.996078),u_hue);",
+          "vec3 color2=adjustHue(vec3(0.298039,0.760784,0.913725),u_hue);",
+          "vec3 color3=adjustHue(vec3(0.062745,0.078431,0.600000),u_hue);",
+          "float ang=atan(uv.y,uv.x);float len=length(uv);float invLen=len>0.0?1.0/len:0.0;",
+          "float n0=snoise3(vec3(uv*0.65,u_time*0.5))*0.5+0.5;",
+          "float r0=mix(mix(0.6,1.0,0.4),mix(0.6,1.0,0.6),n0);",
+          "float d0=distance(uv,(r0*invLen)*uv);",
+          "float v0=light1(1.0,10.0,d0);v0*=smoothstep(r0*1.05,r0,len);",
+          "float cl=cos(ang+u_time*2.0)*0.5+0.5;",
+          "float a=u_time*-1.0;vec2 pos=vec2(cos(a),sin(a))*r0;",
+          "float d=distance(uv,pos);float v1=light2(1.5,5.0,d);v1*=light1(1.0,50.0,d0);",
+          "float v2=smoothstep(1.0,mix(0.6,1.0,n0*0.5),len);",
+          "float v3=smoothstep(0.6,mix(0.6,1.0,0.5),len);",
+          "vec3 col=mix(color1,color2,cl);col=mix(color3,col,v0);col=(col+v1)*v2*v3;col=clamp(col,0.0,1.0);",
+          "return extractAlpha(col);}",
+          "void main(){",
+          "vec2 center=u_resolution*0.5;float size=min(u_resolution.x,u_resolution.y);",
+          "vec2 uv=(gl_FragCoord.xy-center)/size*2.0;",
+          "float s=sin(u_rot);float c=cos(u_rot);",
+          "uv=vec2(c*uv.x-s*uv.y,s*uv.x+c*uv.y);",
+          "uv.x+=u_hover*u_hoverIntensity*0.1*sin(uv.y*10.0+u_time);",
+          "uv.y+=u_hover*u_hoverIntensity*0.1*sin(uv.x*10.0+u_time);",
+          "vec4 col=draw(uv);",
+          "gl_FragColor=vec4(col.rgb*col.a,col.a);",
+          "}"
+        ].join("\\n");
+
+        function compile(type, src) {
+          var sh = gl.createShader(type);
+          gl.shaderSource(sh, src);
+          gl.compileShader(sh);
+          if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+            console.warn("[Orb] shader compile failed", gl.getShaderInfoLog(sh));
+            gl.deleteShader(sh);
+            return null;
+          }
+          return sh;
+        }
+
+        var program = gl.createProgram();
+        var vert = compile(gl.VERTEX_SHADER, VERT);
+        var frag = compile(gl.FRAGMENT_SHADER, FRAG);
+        if (!program || !vert || !frag) return;
+        gl.attachShader(program, vert);
+        gl.attachShader(program, frag);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+        gl.useProgram(program);
+
+        var buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+        var aPos = gl.getAttribLocation(program, "a_pos");
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+        gl.clearColor(0, 0, 0, 0);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        var locRes = gl.getUniformLocation(program, "u_resolution");
+        var locTime = gl.getUniformLocation(program, "u_time");
+        var locHue = gl.getUniformLocation(program, "u_hue");
+        var locHover = gl.getUniformLocation(program, "u_hover");
+        var locRot = gl.getUniformLocation(program, "u_rot");
+        var locHoverI = gl.getUniformLocation(program, "u_hoverIntensity");
+        gl.uniform1f(locHue, 0.0);
+
+        function updateSize() {
+          var dpr = Math.min(window.devicePixelRatio || 1, 2);
+          var target = host.clientWidth || 240;
+          var px = Math.round(target * dpr);
+          if (!px) return;
+          canvas.width = px;
+          canvas.height = px;
+          canvas.style.width = target + "px";
+          canvas.style.height = target + "px";
+          gl.viewport(0, 0, px, px);
+          gl.uniform2f(locRes, px, px);
+        }
+
+        updateSize();
+        fluidOrbResize = updateSize;
+        if (typeof ResizeObserver !== "undefined") {
+          new ResizeObserver(updateSize).observe(host);
+        }
+
+        var rotSpeeds = { IDLE: 0.18, CONNECTING: 0.35, LISTENING: 0.55, SPEAKING: 0.95, PROCESSING: 0.42 };
+        var hoverAmt = { IDLE: 0.12, CONNECTING: 0.28, LISTENING: 0.45, SPEAKING: 0.72, PROCESSING: 0.38 };
+        var currentRot = 0;
+        var last = performance.now();
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function render(now) {
+          var dt = (now - last) * 0.001;
+          last = now;
+          if (document.visibilityState === "visible" && canvas.width) {
+            var state = host.getAttribute("data-state") || "IDLE";
+            if (!reduce) currentRot += dt * (rotSpeeds[state] || 0.35);
+            var pulse = reduce ? 0.2 : 0.18 + Math.sin(now * 0.002) * 0.08;
+            var hover = Math.min(1, (hoverAmt[state] || 0.25) + pulse);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.uniform1f(locTime, now * 0.001);
+            gl.uniform1f(locHover, hover);
+            gl.uniform1f(locRot, currentRot);
+            gl.uniform1f(locHoverI, 0.55);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+          }
+          requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+      })();
 
       function setOrbState(state) {
         currentOrbState = state;
+        const orb = document.getElementById("callDiyaOrb");
+        if (orb) orb.setAttribute("data-state", state);
         const badge = document.getElementById("callStatusBadge");
         if (!badge) return;
 
@@ -681,106 +868,6 @@ const bodyContent = `
           default:
             badge.innerText = "Raksha is active";
         }
-      }
-
-      function initFluidOrbCanvas() {
-        const container = document.getElementById("callOrbContainer");
-        if (!container) return;
-        if (orbAnimFrame) {
-          cancelAnimationFrame(orbAnimFrame);
-          orbAnimFrame = null;
-        }
-        container.innerHTML = "";
-        
-        const canvas = document.createElement("canvas");
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const size = (container.clientWidth && container.clientWidth > 0) ? container.clientWidth : 240;
-        canvas.width = Math.round(size * dpr);
-        canvas.height = Math.round(size * dpr);
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.borderRadius = "50%";
-        canvas.style.display = "block";
-        container.appendChild(canvas);
-
-        const gl = canvas.getContext("webgl", { alpha: true, antialias: true, premultipliedAlpha: false });
-        if (!gl) {
-          console.warn("WebGL not supported, using CSS fallback");
-          container.style.background = "radial-gradient(circle at 35% 35%, #ffffff 0%, #fed7aa 50%, #ea580c 100%)";
-          return;
-        }
-
-        const vs = "attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }";
-        const fs = "precision highp float; uniform vec2 u_resolution; uniform float u_time; uniform vec3 u_color; float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); } float noise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); } float fbm(vec2 p) { float v = 0.0; float a = 0.6; for (int i = 0; i < 3; i++) { v += a * noise(p); p *= 2.0; a *= 0.5; } return v; } void main() { vec2 uv = gl_FragCoord.xy / u_resolution.xy; float t = u_time * 0.22; vec2 drift = vec2(sin(t) + 0.6 * sin(t * 1.7 + 1.3), cos(t * 0.8) + 0.6 * cos(t * 1.3 + 2.1)); vec2 p = vec2(uv.x * 1.8, uv.y * 1.0) + drift * 0.7; vec2 q = vec2(fbm(p + drift), fbm(p + vec2(3.2, 1.5) - drift)); float f = fbm(p + 1.2 * q); float g = clamp(1.0 - uv.y, 0.0, 1.0); float anchor = smoothstep(0.0, 0.3, uv.y); float shade = clamp(g + (f - 0.5) * 0.8 * anchor, 0.0, 1.0); vec3 white = vec3(0.99, 1.0, 1.0); vec3 light = mix(white, u_color, 0.5); vec3 dark = u_color; vec3 col = white; col = mix(col, light, smoothstep(0.28, 0.52, shade)); col = mix(col, dark, smoothstep(0.58, 0.88, shade)); float edge = smoothstep(0.5, 0.49, distance(uv, vec2(0.5))); gl_FragColor = vec4(col * edge, edge); }";
-
-        const compile = (type, src) => {
-          const s = gl.createShader(type);
-          if (!s) return null;
-          gl.shaderSource(s, src);
-          gl.compileShader(s);
-          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-            console.error("Shader compile error:", gl.getShaderInfoLog(s));
-            gl.deleteShader(s);
-            return null;
-          }
-          return s;
-        };
-
-        const prog = gl.createProgram();
-        const vShader = compile(gl.VERTEX_SHADER, vs);
-        const fShader = compile(gl.FRAGMENT_SHADER, fs);
-        if (!prog || !vShader || !fShader) {
-          console.error("Could not compile FluidOrb shaders");
-          return;
-        }
-        gl.attachShader(prog, vShader);
-        gl.attachShader(prog, fShader);
-        gl.linkProgram(prog);
-        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-          console.error("Program link error:", gl.getProgramInfoLog(prog));
-          return;
-        }
-        gl.useProgram(prog);
-
-        const buf = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
-          new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-          gl.STATIC_DRAW
-        );
-
-        const aPos = gl.getAttribLocation(prog, "a_pos");
-        gl.enableVertexAttribArray(aPos);
-        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-        const uRes = gl.getUniformLocation(prog, "u_resolution");
-        const uTime = gl.getUniformLocation(prog, "u_time");
-        const uColor = gl.getUniformLocation(prog, "u_color");
-
-        // Warm Raksha Orange RGB [0.918, 0.345, 0.047] (#ea580c)
-        gl.uniform3f(uColor, 0.918, 0.345, 0.047);
-        gl.uniform2f(uRes, canvas.width, canvas.height);
-        gl.viewport(0, 0, canvas.width, canvas.height);
-
-        let accumulatedTime = 0;
-        let lastTime = performance.now();
-        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-        function render(now) {
-          const dt = (now - lastTime) * 0.001;
-          lastTime = now;
-
-          if (!reduceMotion) {
-            const factor = speedFactors[currentOrbState] || 0.5;
-            accumulatedTime += dt * factor;
-            gl.uniform1f(uTime, accumulatedTime);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-          }
-
-          orbAnimFrame = requestAnimationFrame(render);
-        }
-        orbAnimFrame = requestAnimationFrame(render);
       }
 
       let currentAudio = null;
@@ -979,7 +1066,12 @@ const bodyContent = `
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
         resetLiveCallDisplay();
-        initFluidOrbCanvas();
+        setOrbState("CONNECTING");
+        if (typeof fluidOrbResize === "function") {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(fluidOrbResize);
+          });
+        }
       }
 
       async function connectAndStartSpeaking() {
@@ -1095,10 +1187,6 @@ const bodyContent = `
         if (speechRecognizer) {
           try { speechRecognizer.stop(); } catch {}
           speechRecognizer = null;
-        }
-        if (orbAnimFrame) {
-          cancelAnimationFrame(orbAnimFrame);
-          orbAnimFrame = null;
         }
         if (activeConversation) {
           try { await activeConversation.endSession(); } catch {}
@@ -1436,17 +1524,26 @@ const bodyContent = `
       }
 
       window.switchLang = function(lang) {
-        currentLanguage = lang;
-        if (lang === "hi") {
-          document.getElementById("wsHead").innerText = 'साइबर धोखाधड़ी की रिपोर्ट करें';
-          document.getElementById("wsSub").innerText = 'अपनी भाषा में बोलें या लेन-देन का स्क्रीनशॉट दिखाएं।';
-          document.getElementById("lblVoice").innerText = 'रक्षा से बोलें';
-          document.getElementById("lblImage").innerText = 'लेन-देन दिखाएं';
+        currentLanguage = lang === "hi" || lang === "ta" ? lang : "en";
+        const head = document.getElementById("wsHead");
+        const sub = document.getElementById("wsSub");
+        const voice = document.getElementById("lblVoice");
+        const image = document.getElementById("lblImage");
+        if (currentLanguage === "hi") {
+          if (head) head.innerText = "साइबर धोखाधड़ी की रिपोर्ट करें";
+          if (sub) sub.innerText = "अपनी भाषा में बोलें या लेन-देन का स्क्रीनशॉट दिखाएं।";
+          if (voice) voice.innerText = "रक्षा से बोलें";
+          if (image) image.innerText = "लेन-देन दिखाएं";
+        } else if (currentLanguage === "ta") {
+          if (head) head.innerText = "நிதி சைபர் மோசடியை புகாரளிக்கவும்";
+          if (sub) sub.innerText = "உங்கள் மொழியில் பேசுங்கள் அல்லது பரிவர்த்தனை திரைப்பிடிப்பைக் காட்டுங்கள்.";
+          if (voice) voice.innerText = "ரக்ஷாவிடம் சொல்லுங்கள்";
+          if (image) image.innerText = "பரிவர்த்தனையைக் காட்டு";
         } else {
-          document.getElementById("wsHead").innerText = 'Report Financial Cyber-Fraud';
-          document.getElementById("wsSub").innerText = 'Speak in your language, show your payment receipt, or describe what happened.';
-          document.getElementById("lblVoice").innerText = 'Tell Raksha';
-          document.getElementById("lblImage").innerText = 'Show Transaction';
+          if (head) head.innerText = "Report Financial Cyber-Fraud";
+          if (sub) sub.innerText = "Speak in your language, show your payment receipt, or describe what happened.";
+          if (voice) voice.innerText = "Tell Raksha";
+          if (image) image.innerText = "Show Transaction";
         }
       };
 
