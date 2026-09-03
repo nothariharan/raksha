@@ -85,11 +85,13 @@ async function runPhase7FinalSuite() {
   // -------------------------------------------------------------
   console.log("\n▶ [Scenario 2] Executing Deterministic Demo Reset (pnpm demo:reset)...");
   await runDemoReset();
-  const seededIncident = await defaultIncidentRepository.findById("RKS-DEMO-001");
+  const seededIncident = await defaultIncidentRepository.findById("RKS-000001");
   assert.ok(seededIncident);
+  assert.equal(seededIncident?.id, "RKS-000001");
   assert.equal(seededIncident?.transaction.amount, 5000);
   assert.equal(seededIncident?.reporter.name, "Ramesh Kumar");
-  console.log(`  ✓ Demo reset confirmed: Canonical persona Ramesh Kumar (₹5,000) seeded in clean state.`);
+  assert.equal(seededIncident?.reporter.mobile, "919876543210");
+  console.log(`  ✓ Demo reset confirmed: Canonical persona Ramesh Kumar (₹5,000) seeded as RKS-000001.`);
 
   // -------------------------------------------------------------
   // Test 3: QUAD-CHANNEL PARITY (Web, WhatsApp, Phone, MCP)
@@ -185,7 +187,7 @@ async function runPhase7FinalSuite() {
   // Hindi Journey
   const hiStart = await phoneService.simulatePhoneTurn({
     callSid: "CALL-HI-001",
-    callerPhone: "+919876543210",
+    callerPhone: "+919876540099",
     action: "start",
     speechText: "मुझसे बिजली बिल के नाम पर धोखाधड़ी हुई है",
     language: "hi",
@@ -203,6 +205,7 @@ async function runPhase7FinalSuite() {
       modality: "text",
       content: "மின்கட்டணம் செலுத்தவில்லை என்று கூறி என்னிடமிருந்து 5000 ரூபாய் திருடப்பட்டது",
       language: "ta",
+      reporter: { mobile: "+919811122233" },
     }),
   });
   const taData = await taRes.json();
