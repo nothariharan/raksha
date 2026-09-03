@@ -1,10 +1,8 @@
-/**
- * Phone & Voice AI Agent Tool Implementations
- * Functions exposed to ElevenLabs and conversational LLM voice agents.
- */
-
-import { CAPActionResponse, ProcessResponse } from "@raksha/schemas";
+import { CAPActionResponse, ProcessResponse, FraudIncident } from "@raksha/schemas";
 import { getTranslation } from "@raksha/i18n";
+import { processService, incidentService } from "@raksha/core";
+import { actionRouter } from "@raksha/cap";
+import { normalizeMobile } from "@raksha/shared";
 
 export interface PhoneToolsConfig {
   coreBaseUrl?: string;
@@ -32,23 +30,68 @@ export class PhoneToolsHandler {
     isReady: boolean;
   }> {
     const lang = params.language || "hi";
-    const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    let data: ProcessResponse;
+
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "phone",
+            modality: "voice",
+            content: params.narrative,
+            language: lang,
+            reporter: { mobile: params.callerPhone || "+919876543210" },
+          }),
+        });
+        if (res.ok) {
+          data = (await res.json()) as ProcessResponse;
+        } else {
+          const out = await processService.processInput({
+            source: "phone",
+            modality: "voice",
+            content: params.narrative,
+            language: lang,
+            reporter: { mobile: params.callerPhone || "+919876543210" },
+          });
+          data = {
+            incidentId: out.incidentId,
+            state: out.state,
+            nextAction: out.nextAction,
+            incident: out.incident,
+          };
+        }
+      } else {
+        const out = await processService.processInput({
+          source: "phone",
+          modality: "voice",
+          content: params.narrative,
+          language: lang,
+          reporter: { mobile: params.callerPhone || "+919876543210" },
+        });
+        data = {
+          incidentId: out.incidentId,
+          state: out.state,
+          nextAction: out.nextAction,
+          incident: out.incident,
+        };
+      }
+    } catch {
+      const out = await processService.processInput({
         source: "phone",
         modality: "voice",
         content: params.narrative,
         language: lang,
         reporter: { mobile: params.callerPhone || "+919876543210" },
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to start voice incident: ${res.statusText}`);
+      });
+      data = {
+        incidentId: out.incidentId,
+        state: out.state,
+        nextAction: out.nextAction,
+        incident: out.incident,
+      };
     }
-
-    const data = (await res.json()) as ProcessResponse;
     const isReady = data.state === "READY";
     let promptForCaller = data.nextAction.prompt || getTranslation(lang).askMissingUTR;
 
@@ -76,6 +119,7 @@ export class PhoneToolsHandler {
     confirmedField?: string;
     confirmedValue?: unknown;
     language?: string;
+    callerPhone?: string;
   }): Promise<{
     incidentId: string;
     state: string;
@@ -101,24 +145,77 @@ export class PhoneToolsHandler {
       }
     }
 
-    const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        incidentId: params.incidentId,
+    let data: ProcessResponse;
+    const normalizedCaller = params.callerPhone ? normalizeMobile(params.callerPhone) : undefined;
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            incidentId: params.incidentId || undefined,
+            source: "phone",
+            modality: "voice",
+            content: params.userSpeech,
+            language: lang,
+            reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
+            userClarificationAnswer,
+          }),
+        });
+        if (res.ok) {
+          data = (await res.json()) as ProcessResponse;
+        } else {
+          const out = await processService.processInput({
+            incidentId: params.incidentId || undefined,
+            source: "phone",
+            modality: "voice",
+            content: params.userSpeech,
+            language: lang,
+            reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
+            userClarificationAnswer,
+          });
+          data = {
+            incidentId: out.incidentId,
+            state: out.state,
+            nextAction: out.nextAction,
+            incident: out.incident,
+          };
+        }
+      } else {
+        const out = await processService.processInput({
+          incidentId: params.incidentId || undefined,
+          source: "phone",
+          modality: "voice",
+          content: params.userSpeech,
+          language: lang,
+          reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
+          userClarificationAnswer,
+        });
+        data = {
+          incidentId: out.incidentId,
+          state: out.state,
+          nextAction: out.nextAction,
+          incident: out.incident,
+        };
+      }
+    } catch {
+      const out = await processService.processInput({
+        incidentId: params.incidentId || undefined,
         source: "phone",
         modality: "voice",
         content: params.userSpeech,
         language: lang,
+        reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
         userClarificationAnswer,
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to process user speech: ${res.statusText}`);
+      });
+      data = {
+        incidentId: out.incidentId,
+        state: out.state,
+        nextAction: out.nextAction,
+        incident: out.incident,
+      };
     }
 
-    const data = (await res.json()) as ProcessResponse;
     const isReady = data.state === "READY";
     let promptForCaller = data.nextAction.prompt || getTranslation(lang).askMissingUTR;
 
@@ -146,25 +243,51 @@ export class PhoneToolsHandler {
     confirmationSpeech: string;
   }> {
     const lang = params.language || "hi";
-    const incRes = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
-    if (!incRes.ok) throw new Error(`Incident ${params.incidentId} not found`);
-    const incident = await incRes.json();
+    let incident: FraudIncident | null = null;
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const incRes = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
+        if (incRes.ok) {
+          const raw = (await incRes.json()) as any;
+          incident = (raw.incident || raw) as FraudIncident;
+        }
+      }
+    } catch {}
+
+    if (!incident) {
+      incident = (await incidentService.getIncident(params.incidentId)) as FraudIncident | null;
+    }
+    if (!incident) throw new Error(`Incident ${params.incidentId} not found`);
 
     const idempotencyKey = `phone-cap-${params.incidentId}`;
-    const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey,
-      },
-      body: JSON.stringify({
-        action: "report_financial_fraud",
-        payload: incident,
-        idempotencyKey,
-      }),
-    });
+    let capData: CAPActionResponse;
 
-    const capData = (await capRes.json()) as CAPActionResponse;
+    try {
+      if (this.capBaseUrl && !this.capBaseUrl.includes("localhost:3002")) {
+        const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+          body: JSON.stringify({
+            action: "report_financial_fraud",
+            payload: incident,
+            idempotencyKey,
+          }),
+        });
+        if (capRes.ok) {
+          capData = (await capRes.json()) as CAPActionResponse;
+        } else {
+          capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+        }
+      } else {
+        capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+      }
+    } catch {
+      capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+    }
+
     const refNum = capData.externalReference || `1930-SYN-${capData.caseId}`;
 
     const confirmationSpeech = lang === "hi"
@@ -180,9 +303,16 @@ export class PhoneToolsHandler {
   }
 
   async getIncidentStatus(params: { incidentId: string }) {
-    const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
-    if (!res.ok) return { error: "Incident not found" };
-    return res.json();
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
+        if (res.ok) return await res.json();
+      }
+    } catch {}
+
+    const incident = await incidentService.getIncident(params.incidentId);
+    if (!incident) return { error: "Incident not found" };
+    return { incident };
   }
 }
 

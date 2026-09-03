@@ -7,24 +7,19 @@ import { HOW_IT_WORKS_STEPS, CASE_METADATA } from "./data.js";
 import { renderStepArtifact } from "./artifacts.js";
 import { renderChannelContinuityHtml } from "./channels.js";
 
-// Step Icon Helpers
-function getStepIconSvg(stepKey: string): string {
-  switch (stepKey) {
-    case "tell":
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>`;
-    case "understand":
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
-    case "verify":
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`;
-    case "confirm":
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-    case "cap":
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
-    case "update":
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
-    default:
-      return "";
-  }
+const STEP_LINE_ICONS: Record<string, string> = {
+  tell: "voice-shankha",
+  understand: "intake-camera",
+  verify: "step-validate",
+  confirm: "step-confirm",
+  cap: "step-execute",
+  update: "step-track",
+};
+
+function getStepIcon(stepKey: string): string {
+  const file = STEP_LINE_ICONS[stepKey];
+  if (!file) return "";
+  return `<img class="journey-icon-img" src="/images/line/${file}.png" alt="" />`;
 }
 
 export function renderHowItWorksStyles(): string {
@@ -34,98 +29,143 @@ export function renderHowItWorksStyles(): string {
        ========================================================= */
     .how-section {
       position: relative;
-      background: #faf8f5;
+      background: #fff8f2;
       color: var(--text);
-      padding: clamp(4rem, 8vw, 7.5rem) 1.5rem 3rem;
-      border-top: 1px solid var(--border);
+      padding: clamp(2rem, 3.4vw, 2.75rem) 1.5rem 3.5rem;
+      border-top: 1px solid rgba(28, 25, 23, 0.06);
+      overflow: hidden;
+    }
+    .how-section.is-page {
+      padding-top: clamp(1.35rem, 2.4vw, 1.85rem);
+      border-top: 0;
+    }
+    .how-section-watermark {
+      position: absolute;
+      left: 50%;
+      bottom: -4%;
+      width: min(1180px, 118%);
+      max-width: none;
+      transform: translateX(-50%);
+      pointer-events: none;
+      opacity: 0.32;
+      filter: saturate(1.2) brightness(1.12);
+      z-index: 0;
     }
     .how-container {
-      max-width: 1280px;
+      max-width: 1240px;
       margin: 0 auto;
+      position: relative;
+      z-index: 1;
     }
 
-    /* 2-Column Desktop Grid with generous right stage column */
     .how-grid {
       display: grid;
-      grid-template-columns: 340px 1fr;
-      gap: clamp(2.5rem, 4.5vw, 5rem);
+      grid-template-columns: minmax(260px, 0.42fr) 1fr;
+      gap: clamp(2.5rem, 5vw, 6rem);
       align-items: start;
       position: relative;
     }
 
-    /* Left Editorial Intro (Sticky) */
     .how-intro {
       position: sticky;
-      top: 100px;
+      top: 0;
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1.15rem;
+      padding-bottom: 1.25rem;
+    }
+    .how-kicker-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .how-kicker-sun {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
     }
     .how-kicker {
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--orange);
+      color: #e8754f;
     }
     .how-title {
-      font-size: clamp(2.4rem, 4.2vw, 3.6rem);
-      line-height: 1.05;
-      font-weight: 800;
-      letter-spacing: -0.055em;
-      color: #0f172a;
+      font-size: clamp(2.6rem, 3.8vw, 3.55rem);
+      max-width: 11ch;
+      color: #1a1f2c;
       margin: 0;
+    }
+    html[lang="hi"] .how-title,
+    html[lang="ta"] .how-title {
+      max-width: none;
+      font-size: clamp(1.85rem, 2.6vw, 2.45rem);
+      line-height: 1.12;
+      overflow-wrap: anywhere;
     }
     .how-title .hl-motion {
-      color: var(--orange);
-      position: relative;
-      display: inline-block;
+      color: #e8754f;
     }
     .how-desc {
-      font-size: 1.02rem;
-      line-height: 1.62;
-      color: #475569;
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: #78716c;
       margin: 0;
+      max-width: 32ch;
     }
-
-    /* Watch Journey CTA */
     .how-watch-wrap {
-      margin-top: 0.75rem;
+      margin-top: 0.35rem;
       display: flex;
       flex-direction: column;
-      gap: 0.65rem;
+      gap: 0.4rem;
       align-items: flex-start;
     }
     .how-watch-btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.65rem;
-      background: #ffffff;
-      color: #0f172a;
-      border: 1px solid #cbd5e1;
-      border-radius: 999px;
-      padding: 0.72rem 1.35rem 0.72rem 1.1rem;
-      font-size: 0.88rem;
-      font-weight: 700;
+      gap: 0.55rem;
+      background: none;
+      color: #e8754f;
+      border: 0;
+      padding: 0;
+      font-size: 0.92rem;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: none;
+      transition: opacity 0.2s ease;
     }
     .how-watch-btn:hover {
-      background: #0f172a;
-      color: #ffffff;
-      border-color: #0f172a;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      background: none;
+      color: #c2410c;
+      border: 0;
+      transform: none;
+      box-shadow: none;
+      opacity: 0.82;
     }
-    .how-watch-btn svg {
-      width: 14px;
-      height: 14px;
+    .how-watch-play {
+      width: 22px;
+      height: 22px;
+      border: 1.4px solid #e8754f;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+    }
+    .how-watch-btn.is-playing .how-watch-play {
+      animation: watchPlayPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes watchPlayPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232, 117, 79, 0.28); }
+      50% { box-shadow: 0 0 0 6px rgba(232, 117, 79, 0); }
+    }
+    .how-watch-play svg {
+      width: 8px;
+      height: 8px;
       fill: currentColor;
+      margin-left: 1px;
     }
     .how-watch-sub {
-      font-size: 0.76rem;
-      color: #64748b;
+      display: none;
     }
 
     /* Right Journey Stage Area */
@@ -140,10 +180,10 @@ export function renderHowItWorksStyles(): string {
     /* Persistent Case Header Card */
     .case-header-card {
       background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.07);
-      border-radius: 20px;
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(28, 25, 23, 0.06);
+      border-radius: 18px;
+      padding: 1.05rem 1.35rem;
+      box-shadow: 0 10px 24px -8px rgba(28, 25, 23, 0.06);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -156,11 +196,12 @@ export function renderHowItWorksStyles(): string {
       gap: 0.3rem;
     }
     .case-meta-label {
-      font-size: 0.65rem;
-      font-weight: 800;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      font-weight: 500;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #94a3b8;
+      color: #a8a29e;
     }
     .case-meta-id-row {
       display: flex;
@@ -168,9 +209,10 @@ export function renderHowItWorksStyles(): string {
       gap: 0.65rem;
     }
     .case-id-text {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: #0f172a;
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #1a1f2c;
       letter-spacing: -0.02em;
     }
     .case-fraud-tag {
@@ -178,14 +220,14 @@ export function renderHowItWorksStyles(): string {
       color: #c2410c;
       border: 1px solid #ffedd5;
       font-size: 0.68rem;
-      font-weight: 700;
+      font-weight: 500;
       padding: 0.18rem 0.55rem;
       border-radius: 6px;
     }
     .case-amount-text {
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #0f172a;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #1a1f2c;
       letter-spacing: -0.03em;
     }
     .case-sub-method {
@@ -213,84 +255,161 @@ export function renderHowItWorksStyles(): string {
     .journey-stage-container {
       display: flex;
       flex-direction: column;
-      gap: 1.6rem;
+      gap: 0.55rem;
       position: relative;
+    }
+    .journey-rail {
+      position: absolute;
+      left: 25px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .journey-rail-track {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 26px;
+      bottom: 26px;
+      background: #f3e6a8;
+      border-radius: 99px;
+      transform: scaleY(0);
+      transform-origin: top center;
+    }
+    .journey-stage-container.is-inview .journey-rail-track {
+      transform: scaleY(1);
+      transition: transform 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .journey-rail-progress {
+      position: absolute;
+      left: 0;
+      width: 2px;
+      top: 26px;
+      height: 0;
+      background: linear-gradient(180deg, #f8e38a 0%, #e4b008 100%);
+      border-radius: 99px;
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.35);
+      transition: height 0.7s cubic-bezier(0.22, 1, 0.36, 1), top 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .journey-rail-head {
+      position: absolute;
+      left: 50%;
+      top: 26px;
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
+      margin-top: -4px;
+      border-radius: 50%;
+      background: #f5d76e;
+      box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.22), 0 0 16px rgba(234, 179, 8, 0.45);
+      opacity: 0;
+      transition: top 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+    }
+    .journey-stage-container.is-inview .journey-rail-head {
+      opacity: 1;
     }
 
     /* Step Item Card (Non-overflowing Responsive Grid) */
     .journey-step-row {
       display: grid;
-      grid-template-columns: 80px minmax(200px, 1fr) minmax(310px, 1.3fr);
-      gap: 1.35rem;
+      grid-template-columns: 56px minmax(180px, 1fr) minmax(280px, 1.25fr);
+      gap: 1.1rem;
       align-items: center;
-      padding: 1.35rem 1.6rem;
-      background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 22px;
-      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.04);
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 1.05rem 0.35rem 1.05rem 0;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      transition: opacity 0.45s ease;
       position: relative;
+      z-index: 1;
       cursor: pointer;
       min-width: 0;
     }
     .journey-step-row:hover {
-      border-color: rgba(234, 88, 12, 0.25);
-      transform: translateY(-2px);
-      box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.08);
+      border: 0;
+      transform: none;
+      box-shadow: none;
+      opacity: 1;
     }
     .journey-step-row.is-active {
-      border-color: var(--orange);
-      background: #ffffff;
-      box-shadow: 0 16px 36px -6px rgba(234, 88, 12, 0.12), 0 0 0 1.5px var(--orange);
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      opacity: 1;
+    }
+    .journey-step-row.is-passed {
+      opacity: 0.88;
+    }
+    .journey-step-row:not(.is-active):not(.is-passed) {
+      opacity: 0.42;
     }
 
-    /* Left Group: Number Dot + Icon Badge */
     .journey-step-lead {
       display: flex;
       align-items: center;
-      gap: 0.55rem;
+      justify-content: center;
       flex-shrink: 0;
     }
-    .journey-num-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #f8fafc;
-      border: 1.5px solid #e2e8f0;
-      color: #64748b;
-      font-size: 0.8rem;
-      font-weight: 800;
-      display: grid;
-      place-items: center;
-      transition: all 0.25s ease;
-      flex-shrink: 0;
-    }
-    .journey-step-row.is-active .journey-num-badge {
-      background: var(--orange);
-      border-color: var(--orange);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
-    }
-
     .journey-icon-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
       display: grid;
       place-items: center;
       flex-shrink: 0;
-      transition: all 0.25s ease;
+      position: relative;
+      z-index: 1;
+      background: #fcf9f6;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, background 0.35s ease, border-color 0.35s ease;
     }
-    .journey-icon-badge svg {
-      width: 18px;
-      height: 18px;
+    .journey-step-row:hover .journey-icon-badge {
+      transform: scale(1.06);
     }
-    .badge-step-tell { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
-    .badge-step-understand { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
-    .badge-step-verify { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-    .badge-step-confirm { background: #faf5ff; color: #8b5cf6; border: 1px solid #e9d5ff; }
-    .badge-step-cap { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
-    .badge-step-update { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .journey-step-row.is-active .journey-icon-badge {
+      transform: scale(1.08);
+    }
+    .journey-icon-badge::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(234, 179, 8, 0.42);
+      opacity: 0;
+      transform: scale(0.82);
+      pointer-events: none;
+    }
+    .journey-step-row.is-active .journey-icon-badge::after {
+      animation: journeyIconRing 1.9s ease-out infinite;
+    }
+    @keyframes journeyIconRing {
+      0% { opacity: 0.55; transform: scale(0.86); }
+      100% { opacity: 0; transform: scale(1.22); }
+    }
+    .journey-icon-badge svg,
+    .journey-icon-img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .journey-step-row.is-active .journey-icon-img {
+      transform: scale(1.06);
+    }
+    .badge-step-tell { background: #fff4e5; color: #ea580c; border: 1px solid #fdba74; }
+    .badge-step-understand { background: #fff8dc; color: #d97706; border: 1px solid #fcd34d; }
+    .badge-step-verify { background: #ecfdf3; color: #16a34a; border: 1px solid #86efac; }
+    .badge-step-confirm { background: #f5f0ff; color: #8b5cf6; border: 1px solid #d8b4fe; }
+    .badge-step-cap { background: #eef6ff; color: #2563eb; border: 1px solid #93c5fd; }
+    .badge-step-update { background: #ecfdf5; color: #059669; border: 1px solid #6ee7b7; }
+    .journey-step-row.is-active .badge-step-tell { box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.22), 0 8px 18px rgba(234, 88, 12, 0.16); }
+    .journey-step-row.is-active .badge-step-understand { box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.2), 0 8px 18px rgba(217, 119, 6, 0.14); }
+    .journey-step-row.is-active .badge-step-verify { box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.2), 0 8px 18px rgba(22, 163, 74, 0.14); }
+    .journey-step-row.is-active .badge-step-confirm { box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.18), 0 8px 18px rgba(139, 92, 246, 0.14); }
+    .journey-step-row.is-active .badge-step-cap { box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.18), 0 8px 18px rgba(37, 99, 235, 0.14); }
+    .journey-step-row.is-active .badge-step-update { box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.18), 0 8px 18px rgba(5, 150, 105, 0.14); }
 
     /* Middle Step Description */
     .journey-step-text {
@@ -300,12 +419,16 @@ export function renderHowItWorksStyles(): string {
       min-width: 0;
     }
     .journey-step-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #0f172a;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #1a1f2c;
       letter-spacing: -0.02em;
       margin: 0;
       white-space: nowrap;
+      transition: color 0.35s ease;
+    }
+    .journey-step-row.is-active .journey-step-title {
+      color: #111827;
     }
     .journey-step-desc {
       font-size: 0.85rem;
@@ -325,13 +448,26 @@ export function renderHowItWorksStyles(): string {
     /* Artifact Card Components */
     .artifact-card {
       width: 100%;
-      background: #f8fafc;
-      border: 1px solid #f1f5f9;
+      background: #ffffff;
+      border: 1px solid rgba(28, 25, 23, 0.06);
       border-radius: 16px;
       padding: 0.85rem 1.1rem;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+      box-shadow: 0 8px 20px -10px rgba(28, 25, 23, 0.08);
       min-width: 0;
       overflow: hidden;
+      opacity: 0.62;
+      transform: translateY(6px);
+      transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.35s ease;
+    }
+    .journey-step-row.is-passed .artifact-card {
+      opacity: 0.82;
+      transform: translateY(0);
+    }
+    .journey-step-row.is-active .artifact-card {
+      opacity: 1;
+      transform: translateY(0);
+      border-color: rgba(234, 179, 8, 0.32);
+      box-shadow: 0 14px 30px -12px rgba(202, 138, 4, 0.22);
     }
 
     /* 1. Voice Artifact */
@@ -376,6 +512,10 @@ export function renderHowItWorksStyles(): string {
       border-radius: 99px;
       transform-origin: center;
       animation: wavePulse 1.2s ease-in-out infinite alternate;
+      animation-play-state: paused;
+    }
+    .journey-step-row.is-active .artifact-waveform span {
+      animation-play-state: running;
     }
     @keyframes wavePulse {
       0% { transform: scaleY(0.25); }
@@ -478,6 +618,17 @@ export function renderHowItWorksStyles(): string {
       color: #16a34a;
       font-weight: 800;
       font-size: 0.85rem;
+      transform: scale(0.85);
+      opacity: 0.4;
+    }
+    .journey-step-row.is-active .artifact-check-row:nth-child(1) .artifact-check-icon { animation: checkPop 0.35s ease forwards 0.05s; }
+    .journey-step-row.is-active .artifact-check-row:nth-child(2) .artifact-check-icon { animation: checkPop 0.35s ease forwards 0.14s; }
+    .journey-step-row.is-active .artifact-check-row:nth-child(3) .artifact-check-icon { animation: checkPop 0.35s ease forwards 0.23s; }
+    .journey-step-row.is-active .artifact-check-row:nth-child(4) .artifact-check-icon { animation: checkPop 0.35s ease forwards 0.32s; }
+    @keyframes checkPop {
+      0% { opacity: 0.3; transform: scale(0.7); }
+      60% { opacity: 1; transform: scale(1.18); }
+      100% { opacity: 1; transform: scale(1); }
     }
     .artifact-verified-badge {
       display: flex;
@@ -534,8 +685,11 @@ export function renderHowItWorksStyles(): string {
       font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.35s ease;
       flex-shrink: 0;
+    }
+    .journey-step-row.is-active .artifact-confirm-btn {
+      transform: translateX(2px);
     }
     .artifact-confirm-btn:hover {
       background: var(--orange);
@@ -582,10 +736,11 @@ export function renderHowItWorksStyles(): string {
       letter-spacing: 0.04em;
     }
     .artifact-cap-val {
-      font-weight: 700;
+      font-weight: 600;
       color: #2563eb;
-      font-size: 0.65rem;
-      white-space: nowrap;
+      font-size: 0.6rem;
+      white-space: normal;
+      line-height: 1.2;
     }
     .artifact-cap-icon {
       width: 15px;
@@ -655,6 +810,17 @@ export function renderHowItWorksStyles(): string {
     .artifact-step-dot.active .artifact-dot-circle {
       box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
     }
+    .journey-step-row.is-active .artifact-step-dot .artifact-dot-circle {
+      animation: timelineDot 0.45s ease both;
+    }
+    .journey-step-row.is-active .artifact-step-dot:nth-child(1) .artifact-dot-circle { animation-delay: 0.05s; }
+    .journey-step-row.is-active .artifact-step-dot:nth-child(3) .artifact-dot-circle { animation-delay: 0.16s; }
+    .journey-step-row.is-active .artifact-step-dot:nth-child(5) .artifact-dot-circle { animation-delay: 0.27s; }
+    .journey-step-row.is-active .artifact-step-dot:nth-child(7) .artifact-dot-circle { animation-delay: 0.38s; }
+    @keyframes timelineDot {
+      0% { transform: scale(0.4); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 1; }
+    }
     .artifact-dot-time {
       font-size: 0.58rem;
       color: #94a3b8;
@@ -705,9 +871,32 @@ export function renderHowItWorksStyles(): string {
        CHANNELS CONTINUITY SECTION ("ONE CASE. EVERY CHANNEL.")
        ========================================================= */
     .channels-section {
-      background: #ffffff;
-      padding: clamp(4rem, 7vw, 6.5rem) 1.5rem 4rem;
+      position: relative;
+      background: #fffaf4;
+      padding: clamp(4rem, 7vw, 6.5rem) clamp(1.5rem, 7vw, 6.5rem) clamp(7rem, 14vw, 11rem);
       border-top: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .channels-section .side-rail {
+      top: clamp(14.75rem, 18vw, 16.5rem);
+      max-height: 46%;
+    }
+    .channels-section .side-rail-left {
+      transform: translateY(-50%);
+    }
+    .channels-section .side-rail-right {
+      transform: translateY(-50%) scaleX(-1);
+    }
+    .channels-section-watermark {
+      position: absolute;
+      left: 50%;
+      bottom: -8%;
+      width: min(980px, 108%);
+      transform: translateX(-50%);
+      pointer-events: none;
+      opacity: 0.4;
+      filter: saturate(1.22) brightness(1.12);
+      z-index: 0;
     }
     .channels-container {
       max-width: 1280px;
@@ -715,6 +904,8 @@ export function renderHowItWorksStyles(): string {
       display: flex;
       flex-direction: column;
       gap: 3rem;
+      position: relative;
+      z-index: 1;
     }
     .channels-header {
       text-align: center;
@@ -725,23 +916,26 @@ export function renderHowItWorksStyles(): string {
       gap: 0.65rem;
     }
     .channels-kicker {
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--orange);
+      color: #e8754f;
     }
     .channels-title {
-      font-size: clamp(2rem, 3.8vw, 3rem);
-      font-weight: 800;
-      letter-spacing: -0.05em;
-      color: #0f172a;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-style: normal;
+      letter-spacing: -0.035em;
+      line-height: 0.96;
+      font-size: clamp(2.4rem, 4vw, 3.4rem);
+      color: #1a1f2c;
       margin: 0;
     }
     .channels-sub {
-      font-size: 0.96rem;
-      line-height: 1.55;
-      color: #64748b;
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: #78716c;
       margin: 0;
     }
 
@@ -1063,51 +1257,6 @@ export function renderHowItWorksStyles(): string {
       margin: 0;
     }
 
-    /* Bottom Trust Props Bar */
-    .trust-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1.5rem;
-      padding-top: 2.5rem;
-      border-top: 1px solid var(--border);
-    }
-    .trust-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.85rem;
-    }
-    .trust-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-    }
-    .trust-icon svg {
-      width: 18px;
-      height: 18px;
-    }
-    .icon-check { color: #ea580c; background: #fff7ed; border-color: #ffedd5; }
-    .icon-lock { color: #d97706; background: #fffbeb; border-color: #fef3c7; }
-    .icon-sparkle { color: #8b5cf6; background: #f5f3ff; border-color: #ede9fe; }
-    .icon-people { color: #2563eb; background: #eff6ff; border-color: #dbeafe; }
-
-    .trust-text h4 {
-      font-size: 0.88rem;
-      font-weight: 800;
-      color: #0f172a;
-      margin: 0 0 0.2rem;
-    }
-    .trust-text p {
-      font-size: 0.78rem;
-      line-height: 1.4;
-      color: #64748b;
-      margin: 0;
-    }
-
     /* Responsive Breakpoints */
     @media (max-width: 1080px) {
       .how-grid {
@@ -1115,7 +1264,14 @@ export function renderHowItWorksStyles(): string {
         gap: 3rem;
       }
       .how-intro {
-        position: static;
+        position: relative;
+        top: auto;
+        min-height: 0;
+        padding-bottom: 1.5rem;
+      }
+      .how-section-watermark {
+        width: 140%;
+        opacity: 0.26;
       }
       .channels-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1123,14 +1279,20 @@ export function renderHowItWorksStyles(): string {
       .channels-connectors {
         display: none;
       }
-      .trust-bar {
-        grid-template-columns: repeat(2, 1fr);
-      }
     }
 
     @media (max-width: 900px) {
+      .how-section {
+        padding: 1.6rem 1rem 2.4rem;
+      }
+      .how-section.is-page {
+        padding-top: 1.15rem;
+      }
+      .how-title {
+        font-size: clamp(2.15rem, 9vw, 2.8rem);
+      }
       .journey-step-row {
-        grid-template-columns: 80px 1fr;
+        grid-template-columns: 56px 1fr;
         gap: 1rem;
       }
       .journey-step-artifact {
@@ -1146,10 +1308,15 @@ export function renderHowItWorksStyles(): string {
         align-items: flex-start;
         gap: 1rem;
       }
-      .channels-grid {
-        grid-template-columns: 1fr;
+      .channels-title {
+        font-size: clamp(2rem, 8vw, 2.6rem);
       }
-      .trust-bar {
+      .channels-section-watermark {
+        width: 130%;
+        bottom: -4%;
+        opacity: 0.36;
+      }
+      .channels-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -1163,18 +1330,17 @@ export function renderHowItWorksStyles(): string {
   `;
 }
 
-export function renderHowItWorksHtml(): string {
+export function renderHowItWorksHtml(options?: { page?: boolean }): string {
   const stepsRowsHtml = HOW_IT_WORKS_STEPS.map((s, idx) => `
     <div class="journey-step-row ${idx === 0 ? "is-active" : ""}" data-step-id="${s.id}" data-step-key="${s.key}" id="step-${s.key}">
       <div class="journey-step-lead">
-        <div class="journey-num-badge">${s.num}</div>
         <div class="journey-icon-badge badge-step-${s.key}">
-          ${getStepIconSvg(s.key)}
+          ${getStepIcon(s.key)}
         </div>
       </div>
       <div class="journey-step-text">
-        <h3 class="journey-step-title">${s.title}</h3>
-        <p class="journey-step-desc">${s.description}</p>
+        <h3 class="journey-step-title" data-i18n="step.${s.key}.title">${s.title}</h3>
+        <p class="journey-step-desc" data-i18n="step.${s.key}.desc">${s.description}</p>
       </div>
       <div class="journey-step-artifact">
         ${renderStepArtifact(s.key)}
@@ -1183,22 +1349,26 @@ export function renderHowItWorksHtml(): string {
   `).join("");
 
   return `
-    <section class="how-section" id="how-it-works">
+    <section class="how-section${options?.page ? " is-page" : ""}" id="how-it-works">
+      <img class="how-section-watermark" src="/images/line/how-temple-watermark.png" alt="" aria-hidden="true" />
       <div class="how-container">
         <div class="how-grid">
           <!-- Left Editorial Intro -->
           <div class="how-intro">
-            <span class="how-kicker">HOW RAKSHA WORKS</span>
-            <h2 class="how-title">You bring the story.<br>We figure out the <span class="hl-motion">rest.</span></h2>
-            <p class="how-desc">
-              Raksha turns whatever you can share into a verified report and gets it to the right authorities. You stay in control at every step.
+            <div class="how-kicker-row">
+              <img class="how-kicker-sun" src="/images/line/how-kicker-sun.png" alt="" />
+              <span class="how-kicker" id="howKicker">HOW RAKSHA WORKS</span>
+            </div>
+            <h2 class="how-title" id="howTitle">You bring <br>the story.<br>We handle <br>the <span class="hl-motion">rest.</span></h2>
+            <p class="how-desc" id="howDesc">
+              Raksha turns what you share into a verified report and gets it to the right authorities. You stay in control at every step.
             </p>
             <div class="how-watch-wrap">
               <button class="how-watch-btn" id="watchJourneyBtn" type="button">
-                <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                <span>Watch the journey</span>
+                <span class="how-watch-play" aria-hidden="true"><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></span>
+                <span id="howWatch">Watch the journey</span>
               </button>
-              <span class="how-watch-sub">See how a report moves through Raksha</span>
+              <span class="how-watch-sub" id="howWatchSub">See how a report moves through Raksha</span>
             </div>
           </div>
 
@@ -1207,7 +1377,7 @@ export function renderHowItWorksHtml(): string {
             <!-- Persistent Case Header -->
             <div class="case-header-card">
               <div class="case-col-meta">
-                <span class="case-meta-label">CASE</span>
+                <span class="case-meta-label">CASE ID</span>
                 <div class="case-meta-id-row">
                   <span class="case-id-text">${CASE_METADATA.caseId}</span>
                   <span class="case-fraud-tag">${CASE_METADATA.tag}</span>
@@ -1229,6 +1399,11 @@ export function renderHowItWorksHtml(): string {
 
             <!-- 6-Step Journey Stage -->
             <div class="journey-stage-container" id="journeyStage">
+              <div class="journey-rail" aria-hidden="true">
+                <span class="journey-rail-track"></span>
+                <span class="journey-rail-progress" id="journeyRailProgress"></span>
+                <span class="journey-rail-head" id="journeyRailHead"></span>
+              </div>
               ${stepsRowsHtml}
             </div>
           </div>
@@ -1245,43 +1420,160 @@ export function renderHowItWorksScripts(): string {
   return `
     <script>
       (function() {
+        var HOW_I18N = {
+          en: {
+            "step.tell.title": "You tell us", "step.tell.desc": "Call, send a voice note, message, or upload a screenshot.",
+            "step.understand.title": "We understand", "step.understand.desc": "Raksha extracts the important details and organizes them clearly.",
+            "step.verify.title": "We verify", "step.verify.desc": "We cross-check information and evidence across multiple sources.",
+            "step.confirm.title": "You confirm", "step.confirm.desc": "You review the details and confirm before we submit anything.",
+            "step.cap.title": "CAP takes over", "step.cap.desc": "Raksha uses the Civic Action Protocol to file the right report with the right service.",
+            "step.update.title": "You stay updated", "step.update.desc": "Track the status. Get notified. Respond when it matters.",
+            "ch.kicker": "ONE CASE. EVERY CHANNEL.", "ch.title": "Start anywhere. Same case, always.", "ch.sub": "Begin on one channel, continue on another. Your case stays intact.",
+            "ch.call.title": "Call Raksha", "ch.call.p": "Speak to us in your language.",
+            "ch.wa.title": "WhatsApp Raksha", "ch.wa.p": "Send voice notes, photos or messages.",
+            "ch.web.title": "Raksha on the Web", "ch.web.p": "Upload receipts, add details and review.",
+            "ch.ai.title": "AI Agents", "ch.ai.p": "Let AI agents assist and continue for you.",
+            "tr.secure.t": "Secure & Private", "tr.secure.p": "Your data is protected end to end.",
+            "tr.verified.t": "Verified & Trusted", "tr.verified.p": "Government-grade security and process.",
+            "tr.with.t": "Always with You", "tr.with.p": "One case. Any channel. Real human support.",
+            "tr.all.t": "For Everyone", "tr.all.p": "Built for India. Built for every person."
+          },
+          hi: {
+            "step.tell.title": "आप हमें बताते हैं", "step.tell.desc": "कॉल करें, वॉइस नोट, संदेश या स्क्रीनशॉट भेजें।",
+            "step.understand.title": "हम समझते हैं", "step.understand.desc": "रक्षा ज़रूरी विवरण निकालकर उन्हें साफ़ तरीके से जमा करती है।",
+            "step.verify.title": "हम सत्यापित करते हैं", "step.verify.desc": "हम जानकारी और सबूत कई स्रोतों से मिलाते हैं।",
+            "step.confirm.title": "आप पुष्टि करते हैं", "step.confirm.desc": "भेजने से पहले आप विवरण देखकर पुष्टि करते हैं।",
+            "step.cap.title": "CAP आगे बढ़ता है", "step.cap.desc": "रक्षा Civic Action Protocol से सही सेवा पर सही रिपोर्ट दाखिल करती है।",
+            "step.update.title": "आप अपडेट रहते हैं", "step.update.desc": "स्थिति देखें। सूचना पाएँ। जब ज़रूरत हो जवाब दें।",
+            "ch.kicker": "एक केस। हर माध्यम।", "ch.title": "कहीं से शुरू करें। केस वही रहता है।", "ch.sub": "एक माध्यम से शुरू करें, दूसरे पर जारी रखें। आपका केस जुड़ा रहता है।",
+            "ch.call.title": "रक्षा को कॉल करें", "ch.call.p": "अपनी भाषा में बात करें।",
+            "ch.wa.title": "व्हाट्सऐप रक्षा", "ch.wa.p": "वॉइस नोट, फ़ोटो या संदेश भेजें।",
+            "ch.web.title": "वेब पर रक्षा", "ch.web.p": "रसीद अपलोड करें, विवरण जोड़ें और समीक्षा करें।",
+            "ch.ai.title": "AI एजेंट", "ch.ai.p": "AI एजेंट मदद करें और केस आगे बढ़ाएँ।",
+            "tr.secure.t": "सुरक्षित और निजी", "tr.secure.p": "आपका डेटा शुरू से अंत तक सुरक्षित है।",
+            "tr.verified.t": "सत्यापित और विश्वसनीय", "tr.verified.p": "सरकारी स्तर की सुरक्षा और प्रक्रिया।",
+            "tr.with.t": "हमेशा आपके साथ", "tr.with.p": "एक केस। कोई भी माध्यम। असली सहायता।",
+            "tr.all.t": "सबके लिए", "tr.all.p": "भारत के लिए। हर व्यक्ति के लिए।"
+          },
+          ta: {
+            "step.tell.title": "நீங்கள் சொல்கிறீர்கள்", "step.tell.desc": "அழைக்கவும், குரல் குறிப்பு, செய்தி அல்லது திரைப்பிடிப்பு அனுப்பவும்.",
+            "step.understand.title": "நாங்கள் புரிந்துகொள்கிறோம்", "step.understand.desc": "ரக்ஷா முக்கிய விவரங்களை எடுத்து தெளிவாக அமைக்கிறது.",
+            "step.verify.title": "நாங்கள் சரிபார்க்கிறோம்", "step.verify.desc": "தகவலையும் ஆதாரத்தையும் பல மூலங்களில் சரிபார்க்கிறோம்.",
+            "step.confirm.title": "நீங்கள் உறுதிசெய்கிறீர்கள்", "step.confirm.desc": "அனுப்பும் முன் விவரங்களைப் பார்த்து உறுதிசெய்கிறீர்கள்.",
+            "step.cap.title": "CAP தொடர்கிறது", "step.cap.desc": "ரக்ஷா Civic Action Protocol மூலம் சரியான சேவைக்கு சரியான புகாரை தாக்கல் செய்கிறது.",
+            "step.update.title": "நீங்கள் அறிந்துகொள்கிறீர்கள்", "step.update.desc": "நிலையைப் பாருங்கள். அறிவிப்பு பெறுங்கள். தேவைப்படும்போது பதிலளியுங்கள்.",
+            "ch.kicker": "ஒரே வழக்கு. அனைத்து வழிகளும்.", "ch.title": "எங்கிருந்தும் தொடங்குங்கள். வழக்கு ஒன்றே.", "ch.sub": "ஒரு வழியில் தொடங்கி மற்றொன்றில் தொடருங்கள். உங்கள் வழக்கு அப்படியே இருக்கும்.",
+            "ch.call.title": "ரக்ஷாவை அழை", "ch.call.p": "உங்கள் மொழியில் பேசுங்கள்.",
+            "ch.wa.title": "வாட்ஸ்அப் ரக்ஷா", "ch.wa.p": "குரல் குறிப்பு, புகைப்படம் அல்லது செய்தி அனுப்புங்கள்.",
+            "ch.web.title": "இணையத்தில் ரக்ஷா", "ch.web.p": "ரசீதை பதிவேற்றி விவரம் சேர்த்து சரிபாருங்கள்.",
+            "ch.ai.title": "AI முகவர்கள்", "ch.ai.p": "AI முகவர்கள் உதவி செய்து வழக்கைத் தொடரட்டும்.",
+            "tr.secure.t": "பாதுகாப்பும் தனிமையும்", "tr.secure.p": "உங்கள் தரவு முதல் முதல் இறுதி வரை பாதுகாக்கப்படும்.",
+            "tr.verified.t": "சரிபார்க்கப்பட்டது", "tr.verified.p": "அரசு தர பாதுகாப்பும் செயல்முறையும்.",
+            "tr.with.t": "எப்போதும் உங்களுடன்", "tr.with.p": "ஒரே வழக்கு. எந்த வழியும். உண்மையான உதவி.",
+            "tr.all.t": "அனைவருக்கும்", "tr.all.p": "இந்தியாவுக்காக. ஒவ்வொருவருக்கும்."
+          }
+        };
+        window.applyHowLang = function(lang) {
+          var pack = HOW_I18N[lang] || HOW_I18N.en;
+          document.querySelectorAll("[data-i18n]").forEach(function(el) {
+            var key = el.getAttribute("data-i18n");
+            if (key && pack[key]) el.textContent = pack[key];
+          });
+        };
+
         const stepRows = document.querySelectorAll('.journey-step-row');
         const watchBtn = document.getElementById('watchJourneyBtn');
+        const journeyStage = document.getElementById('journeyStage');
+        const railProgress = document.getElementById('journeyRailProgress');
+        const railHead = document.getElementById('journeyRailHead');
         let autoPlayTimer = null;
         let activeIdx = 0;
 
+        function updateRail(idx) {
+          if (!journeyStage || !railProgress || !railHead || !stepRows.length) return;
+          var icons = journeyStage.querySelectorAll('.journey-icon-badge');
+          if (!icons.length) return;
+          var stageRect = journeyStage.getBoundingClientRect();
+          var first = icons[0].getBoundingClientRect();
+          var last = icons[icons.length - 1].getBoundingClientRect();
+          var active = icons[idx].getBoundingClientRect();
+          var start = first.top + first.height / 2 - stageRect.top;
+          var end = last.top + last.height / 2 - stageRect.top;
+          var current = active.top + active.height / 2 - stageRect.top;
+          railProgress.style.top = start + 'px';
+          railProgress.style.height = Math.max(0, current - start) + 'px';
+          railHead.style.top = current + 'px';
+        }
+
         function setActiveStep(idx) {
-          activeIdx = idx % stepRows.length;
+          activeIdx = ((idx % stepRows.length) + stepRows.length) % stepRows.length;
           stepRows.forEach((row, i) => {
-            if (i === activeIdx) {
-              row.classList.add('is-active');
-            } else {
-              row.classList.remove('is-active');
-            }
+            row.classList.toggle('is-active', i === activeIdx);
+            row.classList.toggle('is-passed', i < activeIdx);
           });
+          updateRail(activeIdx);
         }
 
         stepRows.forEach((row, idx) => {
           row.addEventListener('click', () => {
-            if (autoPlayTimer) clearInterval(autoPlayTimer);
+            if (autoPlayTimer) {
+              clearInterval(autoPlayTimer);
+              autoPlayTimer = null;
+              if (watchBtn) watchBtn.classList.remove('is-playing');
+              var watchLabel = document.getElementById('howWatch');
+              if (watchLabel) watchLabel.textContent = watchLabel.getAttribute('data-idle') || 'Watch the journey';
+            }
             setActiveStep(idx);
           });
         });
 
         if (watchBtn) {
+          var watchLabel = document.getElementById('howWatch');
           watchBtn.addEventListener('click', () => {
             if (autoPlayTimer) {
               clearInterval(autoPlayTimer);
               autoPlayTimer = null;
-              watchBtn.querySelector('span').textContent = 'Watch the journey';
+              watchBtn.classList.remove('is-playing');
+              if (watchLabel) watchLabel.textContent = watchLabel.getAttribute('data-idle') || 'Watch the journey';
               return;
             }
-            watchBtn.querySelector('span').textContent = 'Pause journey';
+            if (watchLabel) {
+              watchLabel.setAttribute('data-idle', watchLabel.textContent || 'Watch the journey');
+              watchLabel.textContent = 'Pause journey';
+            }
+            watchBtn.classList.add('is-playing');
+            setActiveStep(0);
             autoPlayTimer = setInterval(() => {
+              if (activeIdx >= stepRows.length - 1) {
+                setActiveStep(0);
+                return;
+              }
               setActiveStep(activeIdx + 1);
-            }, 2400);
+            }, 2200);
           });
         }
+
+        if (journeyStage && 'IntersectionObserver' in window) {
+          var seen = false;
+          var io = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (!entry.isIntersecting) return;
+              journeyStage.classList.add('is-inview');
+              if (!seen) {
+                seen = true;
+                requestAnimationFrame(function() { setActiveStep(activeIdx); });
+              }
+            });
+          }, { threshold: 0.18 });
+          io.observe(journeyStage);
+        } else {
+          if (journeyStage) journeyStage.classList.add('is-inview');
+          setActiveStep(0);
+        }
+
+        window.addEventListener('resize', function() {
+          updateRail(activeIdx);
+        });
       })();
     </script>
   `;

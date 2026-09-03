@@ -9,6 +9,9 @@ import {
   NormalizedInputEvent,
   ProcessResponse,
 } from "@raksha/schemas";
+import { processService, incidentService } from "@raksha/core";
+import { normalizeMobile } from "@raksha/shared";
+import { actionRouter } from "@raksha/cap";
 import {
   RawWhatsAppPayload,
   WhatsAppMessageNormalizer,
@@ -46,7 +49,7 @@ export class WhatsAppService {
 
   async handleIncomingMessage(rawPayload: RawWhatsAppPayload): Promise<WhatsAppProcessResult> {
     const inputEvent: NormalizedInputEvent = WhatsAppMessageNormalizer.normalize(rawPayload);
-    const senderPhone = inputEvent.senderPhone || "+919876543210";
+    const senderPhone = normalizeMobile(inputEvent.senderPhone || "+919876543210");
     const messageId = inputEvent.messageId || `msg-${Date.now()}`;
 
     // 1. Idempotency Check
@@ -99,20 +102,29 @@ export class WhatsAppService {
       content = inputEvent.text;
 
       // Handle direct STATUS / CASE query
-      if (/^\s*(status|check status|case|track)\s*$/i.test(content) && activeIncidentId) {
-        const existingInc = await this.getIncidentStatus(activeIncidentId);
-        if (existingInc) {
-          const amt = (existingInc.transaction?.amount || 0).toLocaleString();
-          const channel = existingInc.transaction?.channel || "UPI";
-          const bank = existingInc.transaction?.debitInstitution || "State Bank of India";
-          const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*\n\nYour emergency fraud report is active in the Civic Action Protocol.`;
-          return {
-            success: true,
-            replyText,
-            incidentId: activeIncidentId,
-            state: existingInc.state,
-            fromCache: false,
-          };
+      if (/^\s*(status|check status|case|track)\s*$/i.test(content)) {
+        // Prefer session-cached incidentId; fall back to Core mobile lookup
+        let lookupId = activeIncidentId;
+        if (!lookupId) {
+          const normPhone = normalizeMobile(senderPhone);
+          const openInc = await incidentService.findOpenByMobile(normPhone);
+          lookupId = openInc?.id ?? null;
+        }
+        if (lookupId) {
+          const existingInc = await this.getIncidentStatus(lookupId);
+          if (existingInc) {
+            const amt = (existingInc.transaction?.amount || 0).toLocaleString();
+            const channel = existingInc.transaction?.channel || "UPI";
+            const bank = existingInc.transaction?.debitInstitution || "State Bank of India";
+            const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*\n\nYour emergency fraud report is active in the Civic Action Protocol.`;
+            return {
+              success: true,
+              replyText,
+              incidentId: lookupId,
+              state: existingInc.state,
+              fromCache: false,
+            };
+          }
         }
       }
 
@@ -125,11 +137,61 @@ export class WhatsAppService {
       }
     }
 
-    // 4. Call /v1/process on Raksha Core
-    const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // 4. Process incident via Raksha Core (in-memory or HTTP)
+    let processData: ProcessResponse;
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            incidentId: activeIncidentId || undefined,
+            source: "whatsapp",
+            modality,
+            content,
+            language: session.language,
+            reporter: { mobile: senderPhone },
+            userClarificationAnswer,
+          }),
+        });
+        if (res.ok) {
+          processData = (await res.json()) as ProcessResponse;
+        } else {
+          const out = await processService.processInput({
+            incidentId: activeIncidentId || undefined,
+            source: "whatsapp",
+            modality,
+            content,
+            language: session.language,
+            reporter: { mobile: senderPhone },
+            userClarificationAnswer,
+          });
+          processData = {
+            incidentId: out.incidentId,
+            state: out.state,
+            nextAction: out.nextAction,
+            incident: out.incident,
+          };
+        }
+      } else {
+        const out = await processService.processInput({
+          incidentId: activeIncidentId || undefined,
+          source: "whatsapp",
+          modality,
+          content,
+          language: session.language,
+          reporter: { mobile: senderPhone },
+          userClarificationAnswer,
+        });
+        processData = {
+          incidentId: out.incidentId,
+          state: out.state,
+          nextAction: out.nextAction,
+          incident: out.incident,
+        };
+      }
+    } catch {
+      const out = await processService.processInput({
         incidentId: activeIncidentId || undefined,
         source: "whatsapp",
         modality,
@@ -137,15 +199,15 @@ export class WhatsAppService {
         language: session.language,
         reporter: { mobile: senderPhone },
         userClarificationAnswer,
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Core /v1/process failed with status ${res.status}: ${errText}`);
+      });
+      processData = {
+        incidentId: out.incidentId,
+        state: out.state,
+        nextAction: out.nextAction,
+        incident: out.incident,
+      };
     }
 
-    const processData = (await res.json()) as ProcessResponse;
     activeIncidentId = processData.incidentId;
     this.store.bindIncident(senderPhone, activeIncidentId, processData.state);
 
@@ -188,25 +250,51 @@ export class WhatsAppService {
     senderPhone: string,
     messageId: string
   ): Promise<WhatsAppProcessResult> {
-    const incRes = await fetch(`${this.coreBaseUrl}/v1/incidents/${incidentId}`);
-    if (!incRes.ok) throw new Error(`Failed to fetch incident ${incidentId}`);
-    const incident = await incRes.json();
+    let incident: FraudIncident | null = null;
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const incRes = await fetch(`${this.coreBaseUrl}/v1/incidents/${incidentId}`);
+        if (incRes.ok) {
+          const raw = (await incRes.json()) as any;
+          incident = (raw.incident || raw) as FraudIncident;
+        }
+      }
+    } catch {}
+
+    if (!incident) {
+      incident = (await incidentService.getIncident(incidentId)) as FraudIncident | null;
+    }
+    if (!incident) throw new Error(`Failed to fetch incident ${incidentId}`);
 
     const idempotencyKey = `whatsapp-cap-${incidentId}`;
-    const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey,
-      },
-      body: JSON.stringify({
-        action: "report_financial_fraud",
-        payload: incident,
-        idempotencyKey,
-      }),
-    });
+    let capData: CAPActionResponse;
 
-    const capData = (await capRes.json()) as CAPActionResponse;
+    try {
+      if (this.capBaseUrl && !this.capBaseUrl.includes("localhost:3002")) {
+        const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+          body: JSON.stringify({
+            action: "report_financial_fraud",
+            payload: incident,
+            idempotencyKey,
+          }),
+        });
+        if (capRes.ok) {
+          capData = (await capRes.json()) as CAPActionResponse;
+        } else {
+          capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+        }
+      } else {
+        capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+      }
+    } catch {
+      capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+    }
+
     const refNumber = capData.externalReference || `1930-SYN-${capData.caseId}`;
 
     this.store.bindIncident(senderPhone, incidentId, "SUBMITTED");
@@ -287,9 +375,17 @@ export class WhatsAppService {
   }
 
   async getIncidentStatus(incidentId: string): Promise<FraudIncident | null> {
-    const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${incidentId}`);
-    if (!res.ok) return null;
-    return (await res.json()) as FraudIncident;
+    try {
+      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+        const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${incidentId}`);
+        if (res.ok) {
+          return (await res.json()) as FraudIncident;
+        }
+      }
+    } catch {}
+
+    const inc = await incidentService.getIncident(incidentId);
+    return inc || null;
   }
 }
 

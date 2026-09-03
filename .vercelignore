@@ -1,0 +1,8 @@
+.data
+coverage
+docs
+test
+demo-data
+.git
+*.md
+!README.md

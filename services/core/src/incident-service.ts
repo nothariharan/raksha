@@ -9,7 +9,8 @@ import {
   IncidentValidation,
   PROTOCOL_VERSION,
 } from "@raksha/schemas";
-import { generateIncidentId, globalEventBus } from "@raksha/shared";
+import { globalEventBus } from "@raksha/shared";
+import { normalizeMobile } from "@raksha/shared";
 import { ValidationEngine } from "./validation-engine.js";
 import {
   IIncidentRepository,
@@ -19,24 +20,28 @@ import {
   IEvidenceRepository,
   defaultEvidenceRepository,
 } from "./repositories/index.js";
+import { IdentityAllocator, defaultIdentityAllocator } from "./db/identity-allocator.js";
 
 export class IncidentService {
   private incidentRepo: IIncidentRepository;
   private eventRepo: IEventRepository;
   private evidenceRepo: IEvidenceRepository;
+  private ids: IdentityAllocator;
 
   constructor(
     incidentRepo?: IIncidentRepository,
     eventRepo?: IEventRepository,
-    evidenceRepo?: IEvidenceRepository
+    evidenceRepo?: IEvidenceRepository,
+    ids?: IdentityAllocator
   ) {
     this.incidentRepo = incidentRepo || defaultIncidentRepository;
     this.eventRepo = eventRepo || defaultEventRepository;
     this.evidenceRepo = evidenceRepo || defaultEvidenceRepository;
+    this.ids = ids || defaultIdentityAllocator;
   }
 
   async createIncident(input: CreateIncidentInput): Promise<FraudIncident> {
-    const id = generateIncidentId("RKS");
+    const id = await this.ids.allocateIncidentId("RKS");
     const now = new Date().toISOString();
 
     const incident: FraudIncident = {
@@ -118,6 +123,17 @@ export class IncidentService {
     }
 
     return incident;
+  }
+
+  /**
+   * Find the most-recent open incident for a citizen mobile number.
+   * Normalizes the mobile before lookup so "+91...", "91...", "0..." all resolve to the same key.
+   * Returns null when no open case exists (caller should create one).
+   */
+  async findOpenByMobile(mobile: string): Promise<FraudIncident | null> {
+    const normalized = normalizeMobile(mobile);
+    if (!normalized) return null;
+    return this.incidentRepo.findOpenByMobile(normalized);
   }
 
   async getIncident(id: string): Promise<FraudIncident | null> {

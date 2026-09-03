@@ -9,6 +9,7 @@ import { evidenceService } from "./evidence-service.js";
 import { defaultEventRepository } from "./repositories/index.js";
 import { MultimodalExtractor } from "./extraction/extractor.js";
 import { ProcessInput, processService } from "./orchestration/process-service.js";
+import { wirePersistentIdentity } from "./db/wire-identity.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -41,23 +42,22 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown): void 
   res.end(JSON.stringify(data, null, 2));
 }
 
-export function createCoreServer() {
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
+export async function handleCoreRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
+  const method = req.method || "GET";
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
-      });
-      res.end();
-      return;
-    }
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+    });
+    res.end();
+    return;
+  }
 
-    try {
+  try {
       // 1. Health checks
       if (pathname === "/health" && method === "GET") {
         sendJson(res, 200, {
@@ -70,20 +70,44 @@ export function createCoreServer() {
       }
 
       if (pathname === "/system/health" && method === "GET") {
+        const unified = process.env.RAKSHA_GATEWAY_MODE === "unified";
+        const gatewayPort = Number(process.env.PORT) || 3000;
+        if (unified) {
+          sendJson(res, 200, {
+            status: "HEALTHY",
+            mode: "unified",
+            version: "0.7.0",
+            protocol: "cap/0.1",
+            timestamp: new Date().toISOString(),
+            services: {
+              gateway: { status: "UP", port: gatewayPort },
+              core: { status: "UP", mount: "/v1" },
+              cap: { status: "UP", mount: "/api/cap" },
+              portalA: { status: "UP", mount: "/portal-a" },
+              portalB: { status: "UP", mount: "/portal-b" },
+              whatsapp: { status: "UP", mount: "/whatsapp" },
+              phone: { status: "UP", mount: "/phone" },
+              mcp: { status: "UP", mount: "/mcp" },
+            },
+          });
+          return;
+        }
+
         sendJson(res, 200, {
           status: "HEALTHY",
+          mode: "multi-process",
           version: "0.7.0",
           protocol: "cap/0.1",
           timestamp: new Date().toISOString(),
           services: {
-            core: { status: "UP", port: 3001 },
-            cap: { status: "UP", port: 3002 },
-            portalA: { status: "UP", port: 3003 },
-            portalB: { status: "UP", port: 3004 },
-            web: { status: "UP", port: 3000 },
-            whatsapp: { status: "UP", port: 3005 },
-            phone: { status: "UP", port: 3006 },
-            mcp: { status: "UP", port: 3007 },
+            core: { status: "UP", port: Number(process.env.PORT_CORE) || 3001 },
+            cap: { status: "UP", port: Number(process.env.PORT_CAP) || 3002 },
+            portalA: { status: "UP", port: Number(process.env.PORT_PORTAL_A) || 3003 },
+            portalB: { status: "UP", port: Number(process.env.PORT_PORTAL_B) || 3004 },
+            web: { status: "UP", port: Number(process.env.PORT_WEB) || 3000 },
+            whatsapp: { status: "UP", port: Number(process.env.PORT_WHATSAPP) || 3005 },
+            phone: { status: "UP", port: Number(process.env.PORT_PHONE) || 3006 },
+            mcp: { status: "UP", port: Number(process.env.PORT_MCP) || 3007 },
           },
         });
         return;
@@ -140,6 +164,11 @@ export function createCoreServer() {
         const body = await parseJsonBody<ProcessInput>(req);
         if (!body.content && !body.userClarificationAnswer) {
           sendJson(res, 400, { error: "Missing content or userClarificationAnswer in body" });
+          return;
+        }
+        // Identity guard: every request must supply reporter.mobile or an incidentId
+        if (!body.incidentId && !body.reporter?.mobile) {
+          sendJson(res, 400, { error: "REPORTER_MOBILE_REQUIRED" });
           return;
         }
         const result = await processService.processInput(body);
@@ -216,6 +245,18 @@ export function createCoreServer() {
         return;
       }
 
+      // GET /v1/incidents/open?mobile=... — preflight lookup for cross-channel session recovery
+      if (pathname === "/v1/incidents/open" && method === "GET") {
+        const mobile = url.searchParams.get("mobile");
+        if (!mobile) {
+          sendJson(res, 400, { error: "MOBILE_REQUIRED" });
+          return;
+        }
+        const open = await incidentService.findOpenByMobile(mobile);
+        sendJson(res, 200, { found: !!open, incident: open ?? null });
+        return;
+      }
+
       // Regex for /v1/incidents/:id and sub-routes
       const incidentMatch = pathname.match(/^\/v1\/incidents\/([a-zA-Z0-9_-]+)(?:\/([a-zA-Z0-9_-]+))?$/);
       if (incidentMatch) {
@@ -285,13 +326,18 @@ export function createCoreServer() {
       }
 
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[CoreServer Error]:", err);
-      sendJson(res, 500, {
-        error: (err as Error).message || "Internal Server Error",
-      });
-    }
-  });
+  } catch (err) {
+    console.error("[CoreServer Error]:", err);
+    sendJson(res, 500, {
+      error: (err as Error).message || "Internal Server Error",
+    });
+  }
+}
 
-  return server;
+export function createCoreServer() {
+  // Best-effort: sync file sequences + wire event ids (prod path awaits wirePersistentIdentity).
+  void wirePersistentIdentity().catch((err) => {
+    console.warn("[CoreServer] identity wire notice:", (err as Error).message);
+  });
+  return createServer(handleCoreRequest);
 }

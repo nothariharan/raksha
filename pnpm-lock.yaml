@@ -79,9 +79,15 @@ importers:
 
   agents/phone:
     dependencies:
+      '@raksha/cap':
+        specifier: workspace:*
+        version: link:../../services/cap
       '@raksha/cap-sdk':
         specifier: workspace:*
         version: link:../../packages/cap-sdk
+      '@raksha/core':
+        specifier: workspace:*
+        version: link:../../services/core
       '@raksha/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -101,9 +107,15 @@ importers:
 
   agents/whatsapp:
     dependencies:
+      '@raksha/cap':
+        specifier: workspace:*
+        version: link:../../services/cap
       '@raksha/cap-sdk':
         specifier: workspace:*
         version: link:../../packages/cap-sdk
+      '@raksha/core':
+        specifier: workspace:*
+        version: link:../../services/core
       '@raksha/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n

@@ -51,7 +51,12 @@ function isUiRoute(pathname: string): boolean {
     pathname === "/report" ||
     pathname === "/review" ||
     pathname === "/index.html" ||
-    /^\/case\/[^/]+$/.test(pathname)
+    pathname === "/portal-a" ||
+    pathname === "/portal-a/" ||
+    pathname === "/portal-a/report" ||
+    pathname === "/portal-a/review" ||
+    /^\/case\/[^/]+$/.test(pathname) ||
+    /^\/portal-a\/case\/[^/]+$/.test(pathname)
   );
 }
 
@@ -81,23 +86,22 @@ function incidentFromBody(body: Record<string, unknown>): FraudIncident | null {
   return null;
 }
 
-export function createPortalAServer() {
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
+export async function handlePortalARequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
+  const method = req.method || "GET";
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
-      });
-      res.end();
-      return;
-    }
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+    });
+    res.end();
+    return;
+  }
 
-    try {
+  try {
       if (pathname === "/health" && method === "GET") {
         sendJson(res, 200, {
           status: "ok",
@@ -174,11 +178,12 @@ export function createPortalAServer() {
       }
 
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[Portal A Error]:", err);
-      sendJson(res, 500, { error: (err as Error).message || "Internal Server Error" });
-    }
-  });
+  } catch (err) {
+    console.error("[Portal A Error]:", err);
+    sendJson(res, 500, { error: (err as Error).message || "Internal Server Error" });
+  }
+}
 
-  return server;
+export function createPortalAServer() {
+  return createServer(handlePortalARequest);
 }

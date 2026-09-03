@@ -2,6 +2,8 @@ import { fileURLToPath } from "node:url";
 import { createCoreServer } from "./server.js";
 
 export * from "./db/connection.js";
+export * from "./db/identity-allocator.js";
+export * from "./db/wire-identity.js";
 export * from "./repositories/index.js";
 export * from "./incident-service.js";
 export * from "./evidence-service.js";

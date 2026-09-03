@@ -5,6 +5,7 @@
 
 import { IncidentState } from "@raksha/schemas";
 import { SupportedLanguage } from "@raksha/i18n";
+import { normalizeMobile } from "@raksha/shared";
 
 export interface WhatsAppSession {
   phoneNumber: string;
@@ -27,7 +28,7 @@ export class WhatsAppConversationStore {
   private processedMessages: Map<string, CachedMessageReply> = new Map();
 
   getSession(phoneNumber: string): WhatsAppSession {
-    const cleanPhone = phoneNumber.replace(/whatsapp:/i, "").trim();
+    const cleanPhone = normalizeMobile(phoneNumber);
     let session = this.sessions.get(cleanPhone);
     if (!session) {
       session = {

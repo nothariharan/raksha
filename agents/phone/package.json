@@ -17,7 +17,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@raksha/cap": "workspace:*",
     "@raksha/cap-sdk": "workspace:*",
+    "@raksha/core": "workspace:*",
     "@raksha/i18n": "workspace:*",
     "@raksha/schemas": "workspace:*",
     "@raksha/shared": "workspace:*"

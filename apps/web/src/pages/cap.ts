@@ -1,15 +1,21 @@
 /**
  * /cap — Civic Action Protocol (CAP v0.1) Visual Protocol Page
- * Re-engineered to match the exact 1:1 editorial specification & indigenous design system.
+ * Trust-first public-sector explainer: editorial type, hollow line-art, restrained motion.
  */
 
 import { renderPageLayout } from "./layout.js";
+import { renderSideRailsHtml } from "../components/side-rails.js";
 
 export function renderCapPageHtml(): string {
   const extraStyles = `
-    /* =========================================================
-       CAP PROTOCOL SPECIFICATION & ARCHITECTURE DESIGN SYSTEM
-       ========================================================= */
+    html { scroll-behavior: smooth; }
+    #pipeline { scroll-margin-top: 96px; }
+
+    .cap-shell {
+      position: relative;
+      background: #fff8f2;
+      overflow: hidden;
+    }
     .cap-page {
       max-width: 1240px;
       margin: 0 auto;
@@ -17,9 +23,31 @@ export function renderCapPageHtml(): string {
       display: flex;
       flex-direction: column;
       gap: clamp(3.5rem, 6vw, 5.5rem);
+      position: relative;
+      z-index: 1;
     }
 
-    /* Section Kickers */
+    .line-icon {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .js-reveal {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    .js-reveal.is-inview {
+      opacity: 1;
+      transform: none;
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     .cap-section-kicker {
       font-size: 0.76rem;
       font-weight: 800;
@@ -30,19 +58,36 @@ export function renderCapPageHtml(): string {
       display: block;
     }
 
-    /* =========================================================
-       1. HERO SECTION & CONVERGENT ARCHITECTURE DIAGRAM
-       ========================================================= */
+    .cap-hero-section {
+      position: relative;
+    }
+    .cap-hero-illus {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: min(460px, 38vw);
+      height: auto;
+      object-fit: contain;
+      object-position: left top;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.88;
+      z-index: 0;
+    }
     .cap-hero-grid {
       display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.28fr);
+      grid-template-columns: minmax(340px, 1.05fr) minmax(400px, 1.15fr);
       gap: clamp(2rem, 4.5vw, 4.5rem);
       align-items: center;
+      position: relative;
+      z-index: 1;
     }
 
     .cap-hero-copy {
+      position: relative;
       display: flex;
       flex-direction: column;
+      justify-content: center;
       gap: 0.6rem;
     }
     .cap-hero-badge {
@@ -53,20 +98,20 @@ export function renderCapPageHtml(): string {
       color: var(--orange);
     }
     .cap-hero-title {
-      font-size: clamp(2.8rem, 4.5vw, 4.2rem);
-      font-weight: 800;
-      line-height: 1.04;
-      letter-spacing: -0.055em;
-      color: #0f172a;
+      font-size: clamp(3.5rem, 6vw, 5.5rem);
+      max-width: 650px;
+      color: #1c1917;
       margin: 0;
     }
     .cap-hero-tagline {
-      font-size: clamp(1.45rem, 2.2vw, 1.95rem);
-      font-weight: 700;
-      line-height: 1.25;
-      letter-spacing: -0.035em;
-      color: #334155;
-      margin: 0.6rem 0 0.4rem;
+      font-family: var(--font);
+      font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.35;
+      letter-spacing: -0.015em;
+      color: #57534e;
+      margin: 0.75rem 0 0.4rem;
     }
     .cap-hero-desc {
       font-size: 1.02rem;
@@ -91,7 +136,7 @@ export function renderCapPageHtml(): string {
       font-weight: 700;
       text-decoration: none;
       box-shadow: 0 6px 18px rgba(234, 88, 12, 0.22);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, box-shadow 0.2s ease;
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
@@ -114,7 +159,7 @@ export function renderCapPageHtml(): string {
       align-items: center;
       gap: 0.55rem;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .btn-cap-secondary:hover {
       border-color: #94a3b8;
@@ -127,7 +172,6 @@ export function renderCapPageHtml(): string {
       fill: currentColor;
     }
 
-    /* Architecture Diagram Stage */
     .cap-arch-stage {
       background: #ffffff;
       border: 1px solid rgba(0, 0, 0, 0.07);
@@ -140,7 +184,6 @@ export function renderCapPageHtml(): string {
       position: relative;
     }
 
-    /* Top Channels */
     .arch-channels-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -173,7 +216,6 @@ export function renderCapPageHtml(): string {
       white-space: nowrap;
     }
 
-    /* Curved Convergence Connectors */
     .arch-connectors-svg-wrap {
       width: 100%;
       height: 52px;
@@ -185,8 +227,11 @@ export function renderCapPageHtml(): string {
       width: 100%;
       height: 100%;
     }
+    .arch-connectors-svg path {
+      stroke-dasharray: 4 6;
+      animation: capDashFlow 1.35s linear infinite;
+    }
 
-    /* Center CAP Mandala Hub */
     .arch-cap-hub {
       display: flex;
       flex-direction: column;
@@ -201,15 +246,15 @@ export function renderCapPageHtml(): string {
       height: 84px;
       display: grid;
       place-items: center;
-      filter: drop-shadow(0 6px 18px rgba(234, 88, 12, 0.25));
-      transition: transform 0.3s ease;
+      filter: drop-shadow(0 6px 18px rgba(234, 88, 12, 0.18));
+      animation: capHubBreathe 3.6s ease-in-out infinite;
     }
     .arch-cap-hub:hover .arch-mandala-emblem {
       transform: scale(1.05) rotate(4deg);
     }
     .arch-cap-title {
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: -0.02em;
       color: #0f172a;
       margin-top: 0.2rem;
@@ -220,7 +265,6 @@ export function renderCapPageHtml(): string {
       color: #64748b;
     }
 
-    /* Downward Vertical Connector */
     .arch-down-connector {
       display: flex;
       flex-direction: column;
@@ -231,7 +275,13 @@ export function renderCapPageHtml(): string {
     .arch-down-line {
       width: 2px;
       height: 24px;
-      border-left: 2px dashed #cbd5e1;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        #cbd5e1 0 3px,
+        transparent 3px 8px
+      );
+      background-size: 2px 11px;
+      animation: capDashFlowY 1.2s linear infinite;
     }
     .arch-services-tag {
       font-size: 0.68rem;
@@ -241,7 +291,6 @@ export function renderCapPageHtml(): string {
       margin-top: 0.35rem;
     }
 
-    /* Bottom Target Services */
     .arch-services-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -260,7 +309,7 @@ export function renderCapPageHtml(): string {
       align-items: center;
       text-align: center;
       gap: 0.45rem;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
     }
     .arch-service-card:hover {
       background: #ffffff;
@@ -277,7 +326,7 @@ export function renderCapPageHtml(): string {
     }
     .arch-service-title {
       font-size: 0.84rem;
-      font-weight: 800;
+      font-weight: 600;
       color: #0f172a;
       line-height: 1.25;
     }
@@ -287,9 +336,16 @@ export function renderCapPageHtml(): string {
       line-height: 1.3;
     }
 
-    /* =========================================================
-       2. ONE ACTION. END TO END. (5-STEP PIPELINE + LIVE CASE)
-       ========================================================= */
+    .cap-mid {
+      display: flex;
+      flex-direction: column;
+      gap: inherit;
+    }
+    .cap-mid > .cap-pipeline-section,
+    .cap-mid > .cap-rules-section {
+      position: relative;
+      z-index: 1;
+    }
     .cap-pipeline-section {
       display: flex;
       flex-direction: column;
@@ -301,7 +357,6 @@ export function renderCapPageHtml(): string {
       align-items: stretch;
     }
 
-    /* 5-Step Pipeline Card Stage */
     .pipeline-flow-card {
       background: #ffffff;
       border: 1px solid rgba(0, 0, 0, 0.07);
@@ -321,29 +376,26 @@ export function renderCapPageHtml(): string {
       gap: 0.55rem;
       flex: 1;
       min-width: 0;
+      opacity: 1;
     }
-    .pipeline-step-num {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: var(--orange);
-      color: #ffffff;
-      font-size: 0.72rem;
-      font-weight: 800;
-      display: grid;
-      place-items: center;
-      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+    .pipeline-flow-card.is-inview .pipeline-step-node {
+      animation: capStepLift 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
+    .pipeline-flow-card.is-inview .pipeline-step-node:nth-child(1) { animation-delay: 0.04s; }
+    .pipeline-flow-card.is-inview .pipeline-step-node:nth-child(3) { animation-delay: 0.12s; }
+    .pipeline-flow-card.is-inview .pipeline-step-node:nth-child(5) { animation-delay: 0.2s; }
+    .pipeline-flow-card.is-inview .pipeline-step-node:nth-child(7) { animation-delay: 0.28s; }
+    .pipeline-flow-card.is-inview .pipeline-step-node:nth-child(9) { animation-delay: 0.36s; }
     .pipeline-step-icon-box {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       display: grid;
       place-items: center;
       margin: 0.15rem 0;
     }
     .pipeline-step-title {
       font-size: 0.96rem;
-      font-weight: 800;
+      font-weight: 600;
       color: #0f172a;
       letter-spacing: -0.01em;
       margin: 0;
@@ -356,9 +408,8 @@ export function renderCapPageHtml(): string {
       border: 1px solid #e2e8f0;
       padding: 0.16rem 0.45rem;
       border-radius: 5px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      overflow-wrap: anywhere;
       max-width: 100%;
     }
     .pipeline-step-pill.code-font {
@@ -375,14 +426,17 @@ export function renderCapPageHtml(): string {
 
     .pipeline-arrow-divider {
       color: #cbd5e1;
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-top: 3.2rem;
+      margin-top: 1.35rem;
       user-select: none;
       flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+    .pipeline-arrow-dash path.flow {
+      stroke-dasharray: 3 5;
+      animation: capDashFlow 1.2s linear infinite;
     }
 
-    /* Live Case Card */
     .pipeline-case-card {
       display: flex;
       flex-direction: column;
@@ -404,10 +458,15 @@ export function renderCapPageHtml(): string {
       justify-content: space-between;
       flex: 1;
       gap: 0.5rem;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+    }
+    .pipeline-case-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.08);
     }
     .case-id-strong {
       font-size: 1.18rem;
-      font-weight: 800;
+      font-weight: 600;
       color: #0f172a;
       letter-spacing: -0.02em;
     }
@@ -426,6 +485,7 @@ export function renderCapPageHtml(): string {
       border-radius: 999px;
       align-self: flex-start;
       margin-top: 0.35rem;
+      animation: capChipPulse 2.2s ease-out infinite;
     }
     .case-view-link {
       color: var(--orange);
@@ -442,9 +502,6 @@ export function renderCapPageHtml(): string {
       transform: translateX(3px);
     }
 
-    /* =========================================================
-       3. RULES CAP WON'T BREAK. (4 INDIGENOUS MANDALA CARDS)
-       ========================================================= */
     .cap-rules-section {
       display: flex;
       flex-direction: column;
@@ -464,7 +521,7 @@ export function renderCapPageHtml(): string {
       flex-direction: column;
       align-items: flex-start;
       gap: 0.65rem;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
     }
     .rule-card:hover {
       transform: translateY(-3px);
@@ -480,7 +537,7 @@ export function renderCapPageHtml(): string {
     }
     .rule-title {
       font-size: 1.15rem;
-      font-weight: 800;
+      font-weight: 600;
       color: #0f172a;
       letter-spacing: -0.02em;
       margin: 0;
@@ -503,9 +560,6 @@ export function renderCapPageHtml(): string {
       margin-top: 0.75rem;
     }
 
-    /* =========================================================
-       4. TYPED ACTIONS, NOT PORTAL CLICKS.
-       ========================================================= */
     .cap-actions-section {
       display: flex;
       flex-direction: column;
@@ -557,7 +611,7 @@ export function renderCapPageHtml(): string {
       gap: 1.25rem;
       align-items: center;
       text-decoration: none;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
     }
     .action-row-card:hover {
       border-color: rgba(234, 88, 12, 0.3);
@@ -631,7 +685,7 @@ export function renderCapPageHtml(): string {
     }
     .target-value {
       font-size: 0.88rem;
-      font-weight: 800;
+      font-weight: 600;
       color: #0f172a;
       white-space: nowrap;
     }
@@ -639,35 +693,27 @@ export function renderCapPageHtml(): string {
       color: #94a3b8;
       font-size: 1.2rem;
       padding-left: 0.4rem;
-      transition: transform 0.15s ease;
+      transition: transform 0.15s ease, color 0.15s ease;
     }
     .action-row-card:hover .action-row-arrow {
       transform: translateX(3px);
       color: var(--orange);
     }
 
-    /* =========================================================
-       5. WARM INDIAN CIVIC ARCHITECTURE BANNER CALLOUT
-       ========================================================= */
     .cap-banner-card {
-      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-      border: 1.5px solid #fed7aa;
+      background:
+        radial-gradient(120% 90% at 8% 0%, #fff4ea 0%, transparent 55%),
+        linear-gradient(160deg, #fff4ea 0%, #ffe8d6 46%, #ffd9be 100%);
+      border: 1px solid rgba(234, 88, 12, 0.16);
       border-radius: 24px;
       padding: 2.2rem 2.4rem;
-      display: grid;
-      grid-template-columns: auto 1fr auto auto;
-      gap: 1.8rem;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 1.8rem;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 12px 32px -8px rgba(234, 88, 12, 0.12);
-    }
-    .banner-cap-emblem {
-      width: 58px;
-      height: 58px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
+      box-shadow: 0 12px 32px -8px rgba(234, 88, 12, 0.1);
     }
     .banner-text-col {
       display: flex;
@@ -675,16 +721,16 @@ export function renderCapPageHtml(): string {
       gap: 0.35rem;
       position: relative;
       z-index: 2;
+      max-width: 640px;
     }
     .banner-heading {
-      font-size: clamp(1.4rem, 2.2vw, 1.85rem);
-      font-weight: 800;
-      color: #0f172a;
-      letter-spacing: -0.03em;
+      font-size: clamp(1.55rem, 2.4vw, 2.05rem);
+      color: #1c1917;
       margin: 0;
-      line-height: 1.2;
+      line-height: 1.05;
     }
     .banner-sub {
+      font-family: var(--font);
       font-size: 0.94rem;
       color: #64748b;
       margin: 0;
@@ -699,44 +745,29 @@ export function renderCapPageHtml(): string {
       text-decoration: none;
       white-space: nowrap;
       box-shadow: 0 6px 18px rgba(234, 88, 12, 0.25);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, box-shadow 0.2s ease;
       position: relative;
       z-index: 2;
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
+      flex-shrink: 0;
     }
     .btn-banner-agent:hover {
       background: var(--orange-hover);
       transform: translateY(-2px);
       box-shadow: 0 10px 24px rgba(234, 88, 12, 0.32);
     }
-    .banner-monument-img {
-      height: 110px;
-      width: auto;
-      max-width: 240px;
-      object-fit: contain;
-      opacity: 0.92;
-      filter: drop-shadow(0 4px 12px rgba(234, 88, 12, 0.15));
-      position: relative;
-      z-index: 1;
-      pointer-events: none;
-    }
 
-    /* =========================================================
-       6. INDIGENOUS VALUE PROPS STRIP
-       ========================================================= */
-    .cap-props-strip {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
+    .cap-props-strip { display: none; }
     .prop-item {
       display: flex;
       align-items: center;
       gap: 0.85rem;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .prop-item:hover {
+      transform: translateY(-3px);
     }
     .prop-icon-box {
       width: 44px;
@@ -752,7 +783,7 @@ export function renderCapPageHtml(): string {
     }
     .prop-title {
       font-size: 0.94rem;
-      font-weight: 800;
+      font-weight: 600;
       color: #0f172a;
       margin: 0;
     }
@@ -763,12 +794,31 @@ export function renderCapPageHtml(): string {
       margin: 0;
     }
 
-    /* =========================================================
-       RESPONSIVE BREAKPOINTS
-       ========================================================= */
+    @keyframes capDashFlow {
+      to { stroke-dashoffset: -18; }
+    }
+    @keyframes capDashFlowY {
+      to { background-position: 0 11px; }
+    }
+    @keyframes capHubBreathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.045); }
+    }
+    @keyframes capChipPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.32); }
+      70% { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+    }
+    @keyframes capStepLift {
+      from { transform: translateY(8px); }
+      to { transform: none; }
+    }
+
     @media (max-width: 1080px) {
       .cap-hero-grid {
         grid-template-columns: 1fr;
+      }
+      .cap-hero-illus {
+        display: none;
       }
       .pipeline-stage-grid {
         grid-template-columns: 1fr;
@@ -778,15 +828,6 @@ export function renderCapPageHtml(): string {
       }
       .actions-split-grid {
         grid-template-columns: 1fr;
-      }
-      .cap-banner-card {
-        grid-template-columns: auto 1fr auto;
-      }
-      .banner-monument-img {
-        display: none;
-      }
-      .cap-props-strip {
-        grid-template-columns: repeat(2, 1fr);
       }
     }
 
@@ -822,78 +863,71 @@ export function renderCapPageHtml(): string {
         padding-top: 0.65rem;
       }
       .cap-banner-card {
-        grid-template-columns: 1fr;
-        text-align: center;
-        justify-items: center;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
       }
-      .cap-props-strip {
-        grid-template-columns: 1fr;
+      .cap-hero-illus {
+        display: none;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
+      .arch-connectors-svg path,
+      .arch-down-line,
+      .pipeline-arrow-dash path.flow,
+      .arch-mandala-emblem,
+      .case-status-chip,
+      .pipeline-flow-card.is-inview .pipeline-step-node {
+        animation: none;
       }
     }
   `;
 
-  // ==========================================
-  // BESPOKE INDIGENOUS & ARCHITECTURAL SVGS
-  // ==========================================
   const githubSvg = `<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>`;
 
-  // 1. Architecture Channel Nodes
-  const webChannelSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="38" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/><path d="M8 22H56" stroke="#e2e8f0" stroke-width="2"/><circle cx="15" cy="17" r="2.5" fill="#ea580c"/><circle cx="22" cy="17" r="2.5" fill="#cbd5e1"/><circle cx="29" cy="17" r="2.5" fill="#cbd5e1"/><rect x="14" y="28" width="22" height="4" rx="2" fill="#e2e8f0"/><rect x="14" y="36" width="36" height="3" rx="1.5" fill="#f1f5f9"/><rect x="14" y="42" width="26" height="3" rx="1.5" fill="#f1f5f9"/><rect x="42" y="28" width="8" height="8" rx="3" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/></svg>`;
-  const waChannelSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="24" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="2"/><path d="M32 16C23.16 16 16 23.16 16 32c0 3.08.87 5.96 2.38 8.42L16 48l7.82-2.31A15.9 15.9 0 0032 48c8.84 0 16-7.16 16-16s-7.16-16-16-16z" fill="#22c55e"/><circle cx="26" cy="32" r="2.2" fill="#ffffff"/><circle cx="32" cy="32" r="2.2" fill="#ffffff"/><circle cx="38" cy="32" r="2.2" fill="#ffffff"/></svg>`;
-  const phoneChannelSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="24" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/><path d="M22 24c0 7.73 6.27 14 14 14l3.5-3.5c.44-.44 1.08-.58 1.66-.36 1.82.68 3.8.96 5.84.96.83 0 1.5.67 1.5 1.5V42c0 .83-.67 1.5-1.5 1.5C31.5 43.5 20.5 32.5 20.5 17.5c0-.83.67-1.5 1.5-1.5H27c.83 0 1.5.67 1.5 1.5 0 2.04.28 4.02.96 5.84.22.58.08 1.22-.36 1.66L22 24z" fill="#ea580c"/><path d="M41 23c1.5 2 2.5 4.5 2.5 7s-1 5-2.5 7" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round"/><path d="M46 18c2.8 3.5 4.5 7.8 4.5 12s-1.7 8.5-4.5 12" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 3"/></svg>`;
-  const mcpChannelSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="24" fill="#eff6ff" stroke="#bfdbfe" stroke-width="2"/><circle cx="32" cy="32" r="6" fill="#ea580c"/><circle cx="20" cy="22" r="4" fill="#3b82f6"/><circle cx="44" cy="22" r="4" fill="#3b82f6"/><circle cx="20" cy="42" r="4" fill="#3b82f6"/><circle cx="44" cy="42" r="4" fill="#3b82f6"/><line x1="32" y1="32" x2="20" y2="22" stroke="#93c5fd" stroke-width="2"/><line x1="32" y1="32" x2="44" y2="22" stroke="#93c5fd" stroke-width="2"/><line x1="32" y1="32" x2="20" y2="42" stroke="#93c5fd" stroke-width="2"/><line x1="32" y1="32" x2="44" y2="42" stroke="#93c5fd" stroke-width="2"/></svg>`;
+  const lineArt = (alt: string, color: string, inner: string) =>
+    `<svg class="line-icon" viewBox="0 0 64 64" fill="none" role="img" aria-label="${alt}" stroke="${color}" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
 
-  // 2. Central Hub Mandala Emblem
-  const capMandalaSvg = `<svg width="84" height="84" viewBox="0 0 100 100" fill="none"><g stroke="#ea580c" stroke-width="1.2"><ellipse cx="50" cy="22" rx="6" ry="12" fill="#fff7ed"/><ellipse cx="50" cy="78" rx="6" ry="12" fill="#fff7ed"/><ellipse cx="22" cy="50" rx="12" ry="6" fill="#fff7ed"/><ellipse cx="78" cy="50" rx="12" ry="6" fill="#fff7ed"/><ellipse cx="30" cy="30" rx="7" ry="12" transform="rotate(-45 30 30)" fill="#fff7ed"/><ellipse cx="70" cy="30" rx="7" ry="12" transform="rotate(45 70 30)" fill="#fff7ed"/><ellipse cx="30" cy="70" rx="7" ry="12" transform="rotate(45 30 70)" fill="#fff7ed"/><ellipse cx="70" cy="70" rx="7" ry="12" transform="rotate(-45 70 70)" fill="#fff7ed"/></g><circle cx="50" cy="50" r="28" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="2 3" fill="#ffffff"/><polygon points="50,32 64,40 64,60 50,68 36,60 36,40" fill="#ea580c"/><polygon points="50,36 60,42 60,58 50,64 40,58 40,42" fill="#ffffff"/><polygon points="50,40 56,44 56,56 50,60 44,56 44,44" fill="#ea580c"/></svg>`;
-
-  // 3. Bottom Destination Services Icons
-  const cybercrimeSvg = `<svg width="42" height="42" viewBox="0 0 64 64" fill="none"><path d="M32 10L12 22H52L32 10Z" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.2" stroke-linejoin="round"/><rect x="15" y="22" width="34" height="4" fill="#0284c7"/><rect x="18" y="26" width="4" height="20" fill="#0284c7"/><rect x="26" y="26" width="4" height="20" fill="#0284c7"/><rect x="34" y="26" width="4" height="20" fill="#0284c7"/><rect x="42" y="26" width="4" height="20" fill="#0284c7"/><rect x="12" y="46" width="40" height="6" rx="2" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/></svg>`;
-  const bankFiuSvg = `<svg width="42" height="42" viewBox="0 0 64 64" fill="none"><path d="M32 8C27 8 26 14 26 14H38C38 14 37 8 32 8Z" fill="#16a34a"/><path d="M32 14L14 24H50L32 14Z" fill="#dcfce7" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/><rect x="16" y="24" width="32" height="3" fill="#16a34a"/><rect x="19" y="27" width="4" height="18" fill="#16a34a"/><rect x="27" y="27" width="4" height="18" fill="#16a34a"/><rect x="35" y="27" width="4" height="18" fill="#16a34a"/><rect x="43" y="27" width="4" height="18" fill="#16a34a"/><rect x="13" y="45" width="38" height="5" rx="1.5" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/></svg>`;
-  const peacockFeatherSvg = `<svg width="42" height="42" viewBox="0 0 64 64" fill="none"><path d="M22 56Q32 40 44 14" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/><path d="M32 38C36 34 44 32 48 30" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><path d="M28 44C32 40 40 38 44 36" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><path d="M24 50C28 46 36 44 40 42" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><path d="M34 32C30 30 24 28 20 28" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><path d="M38 26C34 24 28 22 24 22" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="44" cy="18" rx="12" ry="16" transform="rotate(30 44 18)" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/><ellipse cx="44" cy="18" rx="8" ry="11" transform="rotate(30 44 18)" fill="#06b6d4"/><ellipse cx="44" cy="18" rx="5" ry="7" transform="rotate(30 44 18)" fill="#3b0764"/><circle cx="43" cy="17" r="2.5" fill="#f59e0b"/></svg>`;
-
-  // 4. Five Pipeline Steps SVGs
-  const stepDocStampSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><rect x="16" y="10" width="32" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/><line x1="22" y1="18" x2="36" y2="18" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/><line x1="22" y1="24" x2="42" y2="24" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/><line x1="22" y1="30" x2="40" y2="30" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/><line x1="22" y1="36" x2="32" y2="36" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/><circle cx="42" cy="42" r="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/><circle cx="42" cy="42" r="6" stroke="#ea580c" stroke-width="1" stroke-dasharray="1.5 1.5"/><circle cx="42" cy="42" r="2.5" fill="#ea580c"/></svg>`;
-  const stepShieldValidateSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="22" stroke="#bfdbfe" stroke-width="1.5" stroke-dasharray="3 3" fill="#f8fafc"/><path d="M32 16L18 22V32C18 41 24 48 32 50C40 48 46 41 46 32V22L32 16Z" fill="#eff6ff" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/><path d="M26 32L30 36L38 27" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const stepBiometricFingerprintSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><g stroke="#16a34a" stroke-width="1.8" stroke-linecap="round"><path d="M32 20C27 20 23 24 23 29C23 37 28 43 32 46"/><path d="M27 28C27 25 29 23 32 23C35 23 37 25 37 28C37 33 34 38 31 42"/><path d="M32 16C24 16 19 22 19 29C19 39 26 47 32 50"/><path d="M37 20C40 22 41 25 41 29C41 35 38 41 35 45"/><path d="M45 27C45 22 41 16 32 16"/></g><circle cx="44" cy="44" r="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/><path d="M40 44L43 47L48 41" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const stepRouterSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><polygon points="32,20 42,26 42,38 32,44 22,38 22,26" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/><circle cx="32" cy="32" r="3" fill="#ea580c"/><path d="M42 26L52 20" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/><circle cx="52" cy="20" r="3" fill="#0284c7"/><path d="M42 32L52 32" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/><circle cx="52" cy="32" r="3" fill="#16a34a"/><path d="M42 38L52 44" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/><circle cx="52" cy="44" r="3" fill="#8b5cf6"/></svg>`;
-  const stepAuditRailSvg = `<svg width="48" height="48" viewBox="0 0 64 64" fill="none"><line x1="16" y1="20" x2="48" y2="20" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="48" y2="32" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="44" x2="48" y2="44" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="20" r="4" fill="#8b5cf6"/><circle cx="38" cy="32" r="4" fill="#8b5cf6"/><circle cx="28" cy="44" r="4" fill="#8b5cf6"/><circle cx="46" cy="44" r="4" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1.5"/></svg>`;
-
-  // 5. Four Rules Mandala SVGs
-  const ruleIdempotentSvg = `<svg width="52" height="52" viewBox="0 0 64 64" fill="none"><g stroke="#ea580c" stroke-width="1.5" fill="#fff7ed"><ellipse cx="32" cy="14" rx="4" ry="8"/><ellipse cx="32" cy="50" rx="4" ry="8"/><ellipse cx="14" cy="32" rx="8" ry="4"/><ellipse cx="50" cy="32" rx="8" ry="4"/><ellipse cx="19" cy="19" rx="5" ry="8" transform="rotate(-45 19 19)"/><ellipse cx="45" cy="19" rx="5" ry="8" transform="rotate(45 45 19)"/><ellipse cx="19" cy="45" rx="5" ry="8" transform="rotate(45 19 45)"/><ellipse cx="45" cy="45" rx="5" ry="8" transform="rotate(-45 45 45)"/></g><circle cx="32" cy="32" r="6" fill="#ea580c"/><circle cx="32" cy="32" r="2.5" fill="#ffffff"/></svg>`;
-  const ruleControlledSvg = `<svg width="52" height="52" viewBox="0 0 64 64" fill="none"><g stroke="#16a34a" stroke-width="1.4" fill="#f0fdf4"><polygon points="32,10 38,20 48,16 44,26 54,32 44,38 48,48 38,44 32,54 26,44 16,48 20,38 10,32 20,26 16,16 26,20"/></g><circle cx="32" cy="32" r="12" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/><rect x="27" y="30" width="10" height="8" rx="1.5" fill="#16a34a"/><path d="M29 30V27C29 25.34 30.34 24 32 24C33.66 24 35 25.34 35 27V30" stroke="#16a34a" stroke-width="1.5" fill="none"/></svg>`;
-  const ruleAuditableSvg = `<svg width="52" height="52" viewBox="0 0 64 64" fill="none"><g fill="#8b5cf6"><circle cx="32" cy="12" r="1.5"/><circle cx="32" cy="52" r="1.5"/><circle cx="12" cy="32" r="1.5"/><circle cx="52" cy="32" r="1.5"/><circle cx="18" cy="18" r="1.5"/><circle cx="46" cy="18" r="1.5"/><circle cx="18" cy="46" r="1.5"/><circle cx="46" cy="46" r="1.5"/><circle cx="23" cy="14" r="1.2"/><circle cx="41" cy="14" r="1.2"/><circle cx="23" cy="50" r="1.2"/><circle cx="41" cy="50" r="1.2"/><circle cx="14" cy="23" r="1.2"/><circle cx="14" cy="41" r="1.2"/><circle cx="50" cy="23" r="1.2"/><circle cx="50" cy="41" r="1.2"/></g><circle cx="32" cy="32" r="12" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="2 2" fill="#faf5ff"/><line x1="32" y1="20" x2="32" y2="44" stroke="#8b5cf6" stroke-width="1.2"/><line x1="20" y1="32" x2="44" y2="32" stroke="#8b5cf6" stroke-width="1.2"/><line x1="23.5" y1="23.5" x2="40.5" y2="40.5" stroke="#8b5cf6" stroke-width="1.2"/><line x1="23.5" y1="40.5" x2="40.5" y2="23.5" stroke="#8b5cf6" stroke-width="1.2"/><circle cx="32" cy="32" r="4" fill="#8b5cf6"/></svg>`;
-  const ruleIsolatedSvg = `<svg width="52" height="52" viewBox="0 0 64 64" fill="none"><rect x="14" y="14" width="36" height="36" rx="4" stroke="#0284c7" stroke-width="2" stroke-dasharray="4 3" fill="#f0f9ff"/><line x1="22" y1="32" x2="28" y2="32" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#0284c7"/><line x1="36" y1="32" x2="42" y2="32" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="14" r="2" fill="#0284c7"/><circle cx="50" cy="14" r="2" fill="#0284c7"/><circle cx="14" cy="50" r="2" fill="#0284c7"/><circle cx="50" cy="50" r="2" fill="#0284c7"/></svg>`;
-
-  // 6. Action Rows Mandalas
-  const actionReportMandala = `<svg width="44" height="44" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="22" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/><polygon points="32,20 42,26 42,38 32,44 22,38 22,26" fill="#ea580c"/><polygon points="32,24 38,28 38,36 32,40 26,36 26,28" fill="#ffffff"/><circle cx="32" cy="32" r="2.5" fill="#ea580c"/></svg>`;
-  const actionAckMandala = `<svg width="44" height="44" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="22" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/><polygon points="32,18 36,24 44,22 42,30 48,34 42,38 44,46 36,44 32,50 28,44 20,46 22,38 16,34 22,30 20,22 28,24" fill="#16a34a"/><circle cx="32" cy="32" r="4" fill="#ffffff"/></svg>`;
-
-  // 7. Value Props Strip Icons
-  const propOpenMapSvg = `<svg width="44" height="44" viewBox="0 0 64 64" fill="none"><path d="M30 10L36 12L38 16L34 20L38 24L44 26L48 30L44 36L42 42L36 48L32 54L28 48L22 42L18 36L20 30L24 26L22 20L26 14L30 10Z" stroke="#ea580c" stroke-width="1.6" stroke-dasharray="2 3" fill="#fff7ed"/><circle cx="32" cy="24" r="2" fill="#ea580c"/><circle cx="38" cy="32" r="2" fill="#ea580c"/><circle cx="28" cy="36" r="2" fill="#ea580c"/><circle cx="32" cy="44" r="2" fill="#ea580c"/></svg>`;
-  const propTypedCodeSvg = `<svg width="44" height="44" viewBox="0 0 64 64" fill="none"><rect x="14" y="14" width="36" height="36" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3 2"/><path d="M26 26L21 32L26 38" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 26L43 32L38 38" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="34" y1="24" x2="30" y2="40" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/></svg>`;
-  const propSecureShieldSvg = `<svg width="44" height="44" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="22" fill="#faf5ff" stroke="#8b5cf6" stroke-width="1.5"/><path d="M32 18L22 23V31C22 38 26 43 32 45C38 43 42 38 42 31V23L32 18Z" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.8" stroke-linejoin="round"/><rect x="29" y="30" width="6" height="6" rx="1" fill="#8b5cf6"/><path d="M30 30V28C30 26.9 30.9 26 32 26C33.1 26 34 26.9 34 28V30" stroke="#8b5cf6" stroke-width="1.4" fill="none"/></svg>`;
-  const propExtensibleMandalaSvg = `<svg width="44" height="44" viewBox="0 0 64 64" fill="none"><g stroke="#0284c7" stroke-width="1.5" fill="#f0f9ff"><polygon points="32,12 36,22 46,18 42,28 52,32 42,36 46,46 36,42 32,52 28,42 18,46 22,36 12,32 22,28 18,18 28,22"/></g><circle cx="32" cy="32" r="5" fill="#0284c7"/><circle cx="32" cy="32" r="2" fill="#ffffff"/></svg>`;
+  const webIcon = lineArt("Web", "#2563EB", `<rect x="10" y="14" width="44" height="36" rx="6"/><path d="M10 24h44"/><circle cx="18" cy="19" r="1.5"/><circle cx="24" cy="19" r="1.5"/><path d="M18 32h16M18 38h26M18 44h20"/>`);
+  const waIcon = lineArt("WhatsApp", "#16A34A", `<path d="M32 14a18 18 0 0 1 12.6 30.8L32 50l-3.4-6.2A18 18 0 1 1 32 14z"/><circle cx="24" cy="32" r="1.6"/><circle cx="32" cy="32" r="1.6"/><circle cx="40" cy="32" r="1.6"/>`);
+  const phoneIcon = lineArt("Phone / IVR", "#FF8A00", `<path d="M22 24c0 8 6 14 14 14l3.4-3.4c.5-.5 1.2-.6 1.8-.3 1.8.7 3.7 1 5.8 1 .8 0 1.5.7 1.5 1.5V42c0 .8-.7 1.5-1.5 1.5C31 43.5 20.5 33 20.5 18c0-.8.7-1.5 1.5-1.5H27c.8 0 1.5.7 1.5 1.5 0 2 .3 4 .9 5.8.2.6.1 1.2-.3 1.7L22 24z"/><path d="M40 22c1.6 2 2.6 4.6 2.6 7.2s-1 5.2-2.6 7.2"/><path d="M45 17c3 3.6 4.6 8 4.6 12.6s-1.6 9-4.6 12.6" stroke-dasharray="2 3"/>`);
+  const mcpIcon = lineArt("AI / MCP Agent", "#8B5CF6", `<circle cx="32" cy="32" r="5"/><circle cx="16" cy="20" r="3.4"/><circle cx="48" cy="20" r="3.4"/><circle cx="16" cy="44" r="3.4"/><circle cx="48" cy="44" r="3.4"/><path d="M28 29 19 22M36 29l9-7M28 35l-9 7M36 35l9 7"/>`);
+  const lotusIcon = lineArt("CAP lotus hub", "#FF8A00", `<ellipse cx="32" cy="16" rx="5" ry="10"/><ellipse cx="32" cy="48" rx="5" ry="10"/><ellipse cx="16" cy="32" rx="10" ry="5"/><ellipse cx="48" cy="32" rx="10" ry="5"/><ellipse cx="21" cy="21" rx="5" ry="10" transform="rotate(-45 21 21)"/><ellipse cx="43" cy="21" rx="5" ry="10" transform="rotate(45 43 21)"/><ellipse cx="21" cy="43" rx="5" ry="10" transform="rotate(45 21 43)"/><ellipse cx="43" cy="43" rx="5" ry="10" transform="rotate(-45 43 43)"/><circle cx="32" cy="32" r="6"/><circle cx="32" cy="32" r="2.2"/>`);
+  const cyberIcon = lineArt("Cybercrime Intake", "#2563EB", `<path d="M32 12 12 24h40L32 12z"/><path d="M16 24v20M24 24v20M32 24v20M40 24v20M48 24v20"/><path d="M12 44h40M10 50h44"/>`);
+  const bankIcon = lineArt("Bank / FIU Response", "#16A34A", `<path d="M32 10c-3.5 0-5 6-5 6h10s-1.5-6-5-6z"/><path d="M32 16 14 26h36L32 16z"/><path d="M18 26v18M26 26v18M32 26v18M38 26v18M46 26v18"/><path d="M12 44h40"/>`);
+  const futureIcon = lineArt("Future Services", "#8B5CF6", `<path d="M22 54Q32 38 44 14"/><path d="M32 38c4-4 12-6 16-8M28 44c4-4 12-6 16-8M24 50c4-4 12-6 16-8"/><ellipse cx="44" cy="18" rx="10" ry="13" transform="rotate(28 44 18)"/><circle cx="43" cy="17" r="2.2"/>`);
+  const stepRequest = lineArt("Request", "#EA580C", `<rect x="16" y="10" width="28" height="40" rx="3"/><path d="M22 20h12M22 26h16M22 32h14M22 38h8"/><circle cx="42" cy="44" r="8"/><circle cx="42" cy="44" r="3.4"/>`);
+  const stepValidate = lineArt("Validate", "#2563EB", `<path d="M32 12 16 18v12c0 10 7 18 16 20 9-2 16-10 16-20V18L32 12z"/><path d="m24 32 6 6 12-12"/>`);
+  const stepConfirm = lineArt("Confirm", "#16A34A", `<path d="M32 18c-6 0-10 5-10 11 0 9 6 16 10 19"/><path d="M26 28c0-3 3-6 6-6s6 3 6 6c0 6-4 11-7 15"/><path d="M32 14c-9 0-15 7-15 15 0 11 8 20 15 23"/><path d="M38 20c3 2 5 6 5 10 0 7-4 13-7 17"/><circle cx="44" cy="44" r="7"/><path d="m41 44 2 2 4-5"/>`);
+  const stepExecute = lineArt("Execute", "#FF8A00", `<polygon points="32,18 44,25 44,39 32,46 20,39 20,25"/><circle cx="32" cy="32" r="3"/><path d="m44 25 10-6M44 32h12m-12 7 10 6"/><circle cx="54" cy="19" r="2.4"/><circle cx="56" cy="32" r="2.4"/><circle cx="54" cy="45" r="2.4"/>`);
+  const stepTrack = lineArt("Track", "#8B5CF6", `<path d="M14 20h36M14 32h36M14 44h36"/><circle cx="24" cy="20" r="3.4"/><circle cx="38" cy="32" r="3.4"/><circle cx="28" cy="44" r="3.4"/>`);
+  const ruleIdempotent = lineArt("Idempotent", "#FF8A00", `<ellipse cx="32" cy="16" rx="4" ry="8"/><ellipse cx="32" cy="48" rx="4" ry="8"/><ellipse cx="16" cy="32" rx="8" ry="4"/><ellipse cx="48" cy="32" rx="8" ry="4"/><ellipse cx="21" cy="21" rx="4" ry="8" transform="rotate(-45 21 21)"/><ellipse cx="43" cy="21" rx="4" ry="8" transform="rotate(45 43 21)"/><ellipse cx="21" cy="43" rx="4" ry="8" transform="rotate(45 21 43)"/><ellipse cx="43" cy="43" rx="4" ry="8" transform="rotate(-45 43 43)"/><circle cx="32" cy="32" r="5"/><path d="M50 14a8 8 0 0 1 0 12"/>`);
+  const ruleControlled = lineArt("Controlled", "#16A34A", `<polygon points="32,10 36,22 48,18 42,28 54,32 42,36 48,46 36,42 32,54 28,42 16,46 22,36 10,32 22,28 16,18 28,22"/><rect x="27" y="31" width="10" height="8" rx="1.5"/><path d="M29 31v-3a3 3 0 0 1 6 0v3"/>`);
+  const ruleAuditable = lineArt("Auditable", "#8B5CF6", `<circle cx="32" cy="32" r="16"/><path d="M32 16v32M16 32h32M21 21l22 22M21 43 43 21"/><circle cx="32" cy="32" r="4"/>`);
+  const ruleIsolated = lineArt("Isolated", "#2563EB", `<rect x="14" y="14" width="36" height="36" rx="4" stroke-dasharray="4 3"/><path d="M22 32h6m8 0h6"/><circle cx="32" cy="32" r="4"/>`);
+  const actionReport = lineArt("report_financial_fraud", "#EA580C", `<polygon points="32,14 46,22 46,40 32,48 18,40 18,22"/><polygon points="32,22 40,27 40,37 32,42 24,37 24,27"/><circle cx="32" cy="32" r="2.4"/>`);
+  const actionAck = lineArt("acknowledge_response", "#16A34A", `<polygon points="32,12 36,24 48,22 42,32 50,40 38,40 36,52 32,42 28,52 26,40 14,40 22,32 16,22 28,24"/><circle cx="32" cy="32" r="3"/>`);
+  const pipelineArrow = `
+    <div class="pipeline-arrow-divider" aria-hidden="true">
+      <svg class="pipeline-arrow-dash" viewBox="0 0 28 12" width="28" height="12" fill="none">
+        <path class="flow" d="M1 6h20" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="m18 2 5 4-5 4" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  `;
 
   const bodyContent = `
+    <noscript><style>.js-reveal{opacity:1;transform:none}</style></noscript>
+    <div class="cap-shell">
+    <img class="cap-hero-illus" src="/images/line/cap-corner-vines.png" alt="" aria-hidden="true" />
     <div class="cap-page">
 
-      <!-- =========================================================
-           1. HERO SECTION & CONVERGENT ARCHITECTURE DIAGRAM
-           ========================================================= -->
       <section class="cap-hero-section">
         <div class="cap-hero-grid">
-          
-          <!-- Left Column: Copy & Actions -->
-          <div class="cap-hero-copy">
+          <div class="cap-hero-copy js-reveal is-inview">
             <span class="cap-hero-badge">OPEN PROTOCOL</span>
-            <h1 class="cap-title">Civic Action<br>Protocol</h1>
+            <h1 class="cap-hero-title">Civic Action Protocol</h1>
             <h2 class="cap-hero-tagline">The layer between intent and action.</h2>
             <p class="cap-hero-desc">
               A typed protocol for discovering, validating, executing and tracking public-service actions.
@@ -910,144 +944,117 @@ export function renderCapPageHtml(): string {
             </div>
           </div>
 
-          <!-- Right Column: Interactive Convergent Architecture Diagram -->
-          <div class="cap-arch-stage">
-            
-            <!-- Top Channel Origin Nodes -->
+          <div class="cap-arch-stage js-reveal">
             <div class="arch-channels-grid">
               <div class="arch-channel-node">
-                <div class="arch-channel-icon-box">${webChannelSvg}</div>
+                <div class="arch-channel-icon-box">${webIcon}</div>
                 <span class="arch-channel-label">Web</span>
               </div>
               <div class="arch-channel-node">
-                <div class="arch-channel-icon-box">${waChannelSvg}</div>
+                <div class="arch-channel-icon-box">${waIcon}</div>
                 <span class="arch-channel-label">WhatsApp</span>
               </div>
               <div class="arch-channel-node">
-                <div class="arch-channel-icon-box">${phoneChannelSvg}</div>
+                <div class="arch-channel-icon-box">${phoneIcon}</div>
                 <span class="arch-channel-label">Phone / IVR</span>
               </div>
               <div class="arch-channel-node">
-                <div class="arch-channel-icon-box">${mcpChannelSvg}</div>
+                <div class="arch-channel-icon-box">${mcpIcon}</div>
                 <span class="arch-channel-label">AI / MCP Agent</span>
               </div>
             </div>
 
-            <!-- Flowing Curved Dotted Connectors -->
             <div class="arch-connectors-svg-wrap" aria-hidden="true">
               <svg class="arch-connectors-svg" viewBox="0 0 480 60" preserveAspectRatio="none">
-                <path d="M 60 4 C 60 30, 240 20, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" stroke-dasharray="3 3" />
-                <path d="M 180 4 C 180 30, 240 25, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" stroke-dasharray="3 3" />
-                <path d="M 300 4 C 300 30, 240 25, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" stroke-dasharray="3 3" />
-                <path d="M 420 4 C 420 30, 240 20, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" stroke-dasharray="3 3" />
+                <path d="M 60 4 C 60 30, 240 20, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" />
+                <path d="M 180 4 C 180 30, 240 25, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" />
+                <path d="M 300 4 C 300 30, 240 25, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" />
+                <path d="M 420 4 C 420 30, 240 20, 240 56" fill="none" stroke="#cbd5e1" stroke-width="1.6" />
               </svg>
             </div>
 
-            <!-- Central CAP Mandala Hub -->
             <div class="arch-cap-hub">
-              <div class="arch-mandala-emblem">${capMandalaSvg}</div>
+              <div class="arch-mandala-emblem">${lotusIcon}</div>
               <span class="arch-cap-title">CAP</span>
               <span class="arch-cap-sub">Civic Action Protocol</span>
             </div>
 
-            <!-- Downward Vertical Connector -->
             <div class="arch-down-connector" aria-hidden="true">
               <div class="arch-down-line"></div>
               <span class="arch-services-tag">Services</span>
             </div>
 
-            <!-- Bottom Target Services Nodes -->
             <div class="arch-services-grid">
               <div class="arch-service-card">
-                <div class="arch-service-icon">${cybercrimeSvg}</div>
-                <span class="arch-service-title">Cybercrime<br>Intake (1930)</span>
+                <div class="arch-service-icon">${cyberIcon}</div>
+                <span class="arch-service-title">Cybercrime<br>Intake</span>
               </div>
-
               <div class="arch-service-card">
-                <div class="arch-service-icon">${bankFiuSvg}</div>
+                <div class="arch-service-icon">${bankIcon}</div>
                 <span class="arch-service-title">Bank / FIU<br>Response</span>
               </div>
-
               <div class="arch-service-card">
-                <div class="arch-service-icon">${peacockFeatherSvg}</div>
+                <div class="arch-service-icon">${futureIcon}</div>
                 <span class="arch-service-title">Future Services</span>
                 <span class="arch-service-sub">(Pension, Certificates,<br>Benefits, etc.)</span>
               </div>
             </div>
-
           </div>
-
         </div>
       </section>
 
-      <!-- =========================================================
-           2. ONE ACTION. END TO END. (5-STEP PIPELINE + LIVE CASE)
-           ========================================================= -->
+      <div class="cap-mid has-side-rails">
+      ${renderSideRailsHtml()}
       <section class="cap-pipeline-section" id="pipeline">
         <span class="cap-section-kicker">ONE ACTION. END TO END.</span>
-        
+
         <div class="pipeline-stage-grid">
-          
-          <!-- 5-Step Connected Pipeline Card -->
           <div class="pipeline-flow-card">
-            
-            <!-- Step 01 -->
             <div class="pipeline-step-node">
-              <div class="pipeline-step-num">01</div>
-              <div class="pipeline-step-icon-box">${stepDocStampSvg}</div>
+              <div class="pipeline-step-icon-box">${stepRequest}</div>
               <h3 class="pipeline-step-title">Request</h3>
               <span class="pipeline-step-pill code-font">report_financial_fraud</span>
               <p class="pipeline-step-desc">Action is requested by a caller.</p>
             </div>
 
-            <div class="pipeline-arrow-divider">···›</div>
+            ${pipelineArrow}
 
-            <!-- Step 02 -->
             <div class="pipeline-step-node">
-              <div class="pipeline-step-num">02</div>
-              <div class="pipeline-step-icon-box">${stepShieldValidateSvg}</div>
+              <div class="pipeline-step-icon-box">${stepValidate}</div>
               <h3 class="pipeline-step-title">Validate</h3>
               <span class="pipeline-step-pill">Schema · Fields · Policy</span>
               <p class="pipeline-step-desc">CAP validates data, schema and policy.</p>
             </div>
 
-            <div class="pipeline-arrow-divider">···›</div>
+            ${pipelineArrow}
 
-            <!-- Step 03 -->
             <div class="pipeline-step-node">
-              <div class="pipeline-step-num">03</div>
-              <div class="pipeline-step-icon-box">${stepBiometricFingerprintSvg}</div>
+              <div class="pipeline-step-icon-box">${stepConfirm}</div>
               <h3 class="pipeline-step-title">Confirm</h3>
               <span class="pipeline-step-pill">Citizen approval</span>
               <p class="pipeline-step-desc">High-impact actions need explicit citizen confirmation.</p>
             </div>
 
-            <div class="pipeline-arrow-divider">···›</div>
+            ${pipelineArrow}
 
-            <!-- Step 04 -->
             <div class="pipeline-step-node">
-              <div class="pipeline-step-num">04</div>
-              <div class="pipeline-step-icon-box">${stepRouterSvg}</div>
+              <div class="pipeline-step-icon-box">${stepExecute}</div>
               <h3 class="pipeline-step-title">Execute</h3>
               <span class="pipeline-step-pill">Route to service</span>
               <p class="pipeline-step-desc">CAP routes the action to the right service.</p>
             </div>
 
-            <div class="pipeline-arrow-divider">···›</div>
+            ${pipelineArrow}
 
-            <!-- Step 05 -->
             <div class="pipeline-step-node">
-              <div class="pipeline-step-num">05</div>
-              <div class="pipeline-step-icon-box">${stepAuditRailSvg}</div>
+              <div class="pipeline-step-icon-box">${stepTrack}</div>
               <h3 class="pipeline-step-title">Track</h3>
               <span class="pipeline-step-pill">Event + Status</span>
               <p class="pipeline-step-desc">Every transition is recorded and auditable.</p>
             </div>
-
           </div>
 
-          <!-- Floating Live Case Box -->
-          <aside class="pipeline-case-card">
+          <aside class="pipeline-case-card js-reveal">
             <span class="pipeline-case-label">Live case</span>
             <div class="pipeline-case-box">
               <div>
@@ -1061,61 +1068,43 @@ export function renderCapPageHtml(): string {
               </a>
             </div>
           </aside>
-
         </div>
       </section>
 
-      <!-- =========================================================
-           3. RULES CAP WON'T BREAK. (4 INDIGENOUS MANDALA CARDS)
-           ========================================================= -->
-      <section class="cap-rules-section">
+      <section class="cap-rules-section js-reveal">
         <span class="cap-section-kicker">RULES CAP WON'T BREAK.</span>
-
         <div class="rules-cards-grid">
-          
-          <!-- Card 1: Idempotent -->
           <article class="rule-card">
-            <div class="rule-icon-box">${ruleIdempotentSvg}</div>
+            <div class="rule-icon-box">${ruleIdempotent}</div>
             <h3 class="rule-title">Idempotent</h3>
             <p class="rule-desc">Same request with the same key never creates duplicate actions.</p>
             <span class="rule-tag-pill">No duplicate side effects</span>
           </article>
-
-          <!-- Card 2: Controlled -->
           <article class="rule-card">
-            <div class="rule-icon-box">${ruleControlledSvg}</div>
+            <div class="rule-icon-box">${ruleControlled}</div>
             <h3 class="rule-title">Controlled</h3>
             <p class="rule-desc">High-impact actions require explicit citizen confirmation before execution.</p>
             <span class="rule-tag-pill">Confirmation required</span>
           </article>
-
-          <!-- Card 3: Auditable -->
           <article class="rule-card">
-            <div class="rule-icon-box">${ruleAuditableSvg}</div>
+            <div class="rule-icon-box">${ruleAuditable}</div>
             <h3 class="rule-title">Auditable</h3>
             <p class="rule-desc">Every meaningful transition is cryptographically sealed with evidence hash.</p>
             <span class="rule-tag-pill">Tamper-proof audit trail</span>
           </article>
-
-          <!-- Card 4: Isolated -->
           <article class="rule-card">
-            <div class="rule-icon-box">${ruleIsolatedSvg}</div>
+            <div class="rule-icon-box">${ruleIsolated}</div>
             <h3 class="rule-title">Isolated</h3>
             <p class="rule-desc">Demo environments are separated from real service access.</p>
             <span class="rule-tag-pill">Clear simulation boundary</span>
           </article>
-
         </div>
       </section>
+      </div>
 
-      <!-- =========================================================
-           4. TYPED ACTIONS, NOT PORTAL CLICKS.
-           ========================================================= -->
       <section class="cap-actions-section">
         <div class="actions-split-grid">
-          
-          <!-- Left Column -->
-          <div class="actions-intro-col">
+          <div class="actions-intro-col js-reveal">
             <span class="cap-section-kicker">TYPED ACTIONS, NOT PORTAL CLICKS.</span>
             <p class="actions-intro-text">
               CAP exposes a small set of typed actions that map to real public-service work.
@@ -1126,12 +1115,9 @@ export function renderCapPageHtml(): string {
             </a>
           </div>
 
-          <!-- Right Column (2 Horizontal Cards) -->
           <div class="actions-cards-stack">
-            
-            <!-- Action Card 1 -->
-            <a href="/app" class="action-row-card">
-              <div class="action-row-icon">${actionReportMandala}</div>
+            <a href="/app" class="action-row-card js-reveal">
+              <div class="action-row-icon">${actionReport}</div>
               <div class="action-row-main">
                 <div class="action-row-head">
                   <span class="action-row-name">report_financial_fraud</span>
@@ -1146,9 +1132,8 @@ export function renderCapPageHtml(): string {
               <div class="action-row-arrow">›</div>
             </a>
 
-            <!-- Action Card 2 -->
-            <a href="/app" class="action-row-card">
-              <div class="action-row-icon">${actionAckMandala}</div>
+            <a href="/app" class="action-row-card js-reveal">
+              <div class="action-row-icon">${actionAck}</div>
               <div class="action-row-main">
                 <div class="action-row-head">
                   <span class="action-row-name">acknowledge_response</span>
@@ -1162,75 +1147,51 @@ export function renderCapPageHtml(): string {
               </div>
               <div class="action-row-arrow">›</div>
             </a>
-
           </div>
-
         </div>
       </section>
 
-      <!-- =========================================================
-           5. WARM INDIAN CIVIC ARCHITECTURE BANNER CALLOUT
-           ========================================================= -->
-      <section class="cap-banner-card">
-        <div class="banner-cap-emblem">
-          <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-            <polygon points="32,8 52,18 52,46 32,56 12,46 12,18" fill="#ea580c"/>
-            <polygon points="32,14 46,21 46,43 32,50 18,43 18,21" fill="#ffffff"/>
-            <polygon points="32,20 40,24 40,40 32,44 24,40 24,24" fill="#ea580c"/>
-          </svg>
-        </div>
-
+      <section class="cap-banner-card js-reveal">
         <div class="banner-text-col">
           <h2 class="banner-heading">CAP gives public services a common action surface.</h2>
           <p class="banner-sub">One protocol. Many services. Safer outcomes for citizens.</p>
         </div>
-
         <a href="/agents" class="btn-banner-agent">
           <span>Explore agent interface</span>
           <span>→</span>
         </a>
-
-        <img class="banner-monument-img" src="/images/raksha/cap-heritage-monument.png" alt="Indian Civic Heritage Edifice Architecture" loading="lazy" />
       </section>
-
-      <!-- =========================================================
-           6. INDIGENOUS VALUE PROPS STRIP
-           ========================================================= -->
-      <footer class="cap-props-strip">
-        <div class="prop-item">
-          <div class="prop-icon-box">${propOpenMapSvg}</div>
-          <div class="prop-text">
-            <h4 class="prop-title">Open</h4>
-            <span class="prop-sub">Built for public good.</span>
-          </div>
-        </div>
-
-        <div class="prop-item">
-          <div class="prop-icon-box">${propTypedCodeSvg}</div>
-          <div class="prop-text">
-            <h4 class="prop-title">Typed</h4>
-            <span class="prop-sub">Explicit schemas and actions.</span>
-          </div>
-        </div>
-
-        <div class="prop-item">
-          <div class="prop-icon-box">${propSecureShieldSvg}</div>
-          <div class="prop-text">
-            <h4 class="prop-title">Secure</h4>
-            <span class="prop-sub">Policy, confirmation and encryption built-in.</span>
-          </div>
-        </div>
-
-        <div class="prop-item">
-          <div class="prop-icon-box">${propExtensibleMandalaSvg}</div>
-          <div class="prop-text">
-            <h4 class="prop-title">Extensible</h4>
-            <span class="prop-sub">Add new services without changing callers.</span>
-          </div>
-        </div>
-      </footer>
-
     </div>
+    </div>
+  `;
+
+  const extraScripts = `
+    <script>
+      (function () {
+        var targets = document.querySelectorAll(".js-reveal, .pipeline-flow-card");
+        function revealAll() {
+          for (var i = 0; i < targets.length; i++) {
+            targets[i].classList.add("is-inview");
+          }
+        }
+        if (typeof IntersectionObserver !== "function") {
+          revealAll();
+        } else {
+          var io = new IntersectionObserver(function (entries) {
+            for (var i = 0; i < entries.length; i++) {
+              if (entries[i].isIntersecting) {
+                entries[i].target.classList.add("is-inview");
+                io.unobserve(entries[i].target);
+              }
+            }
+          }, { threshold: 0.06, rootMargin: "0px 0px -8% 0px" });
+          for (var j = 0; j < targets.length; j++) {
+            io.observe(targets[j]);
+          }
+        }
+        setTimeout(revealAll, 4000);
+      })();
+    </script>
   `;
 
   return renderPageLayout({
@@ -1238,6 +1199,7 @@ export function renderCapPageHtml(): string {
     activeNav: "cap",
     bodyContent,
     extraStyles,
+    extraScripts,
     isSingleScreen: false,
   });
 }

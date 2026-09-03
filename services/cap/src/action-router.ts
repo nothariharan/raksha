@@ -11,9 +11,7 @@ import {
   AcknowledgeResponsePayload,
 } from "@raksha/schemas";
 import {
-  generateCaseId,
   generateExternalReference,
-  generateEventId,
   globalEventBus,
 } from "@raksha/shared";
 import {
@@ -23,6 +21,8 @@ import {
   defaultEventRepository,
   IActionRepository,
   defaultActionRepository,
+  IdentityAllocator,
+  defaultIdentityAllocator,
 } from "@raksha/core";
 import { capabilityRegistry } from "./capability-registry.js";
 
@@ -30,15 +30,18 @@ export class ActionRouter {
   private caseRepo: ICaseRepository;
   private eventRepo: IEventRepository;
   private actionRepo: IActionRepository;
+  private ids: IdentityAllocator;
 
   constructor(
     caseRepo?: ICaseRepository,
     eventRepo?: IEventRepository,
-    actionRepo?: IActionRepository
+    actionRepo?: IActionRepository,
+    ids?: IdentityAllocator
   ) {
     this.caseRepo = caseRepo || defaultCaseRepository;
     this.eventRepo = eventRepo || defaultEventRepository;
     this.actionRepo = actionRepo || defaultActionRepository;
+    this.ids = ids || defaultIdentityAllocator;
   }
 
   async validateAction(
@@ -103,7 +106,7 @@ export class ActionRouter {
       const p = payload as { incident?: FraudIncident } | FraudIncident;
       const incident = "incident" in p && p.incident ? p.incident : (p as FraudIncident);
 
-      const caseId = generateCaseId("CAP");
+      const caseId = await this.ids.allocateCaseId("CAP");
       const externalRef = generateExternalReference("1930");
       const now = new Date().toISOString();
 
@@ -165,7 +168,7 @@ export class ActionRouter {
 
       if (idempotencyKey) {
         await this.actionRepo.record({
-          id: generateEventId("ACT"),
+          id: await this.ids.allocateEventId("ACT"),
           actionName: action,
           caseId,
           incidentId: incident.id,
@@ -218,7 +221,7 @@ export class ActionRouter {
 
       if (idempotencyKey) {
         await this.actionRepo.record({
-          id: generateEventId("ACT"),
+          id: await this.ids.allocateEventId("ACT"),
           actionName: action,
           caseId: ack.caseId,
           incidentId: ack.incidentId || existing.incidentId,
@@ -236,7 +239,7 @@ export class ActionRouter {
     const defaultResponse: CAPActionResponse<R> = {
       success: true,
       status: "ACCEPTED",
-      caseId: generateCaseId("CAP"),
+      caseId: await this.ids.allocateCaseId("CAP"),
       timestamp: new Date().toISOString(),
     };
 

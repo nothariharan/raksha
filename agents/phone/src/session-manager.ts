@@ -6,6 +6,7 @@
 import { IncidentState } from "@raksha/schemas";
 import { SupportedLanguage } from "@raksha/i18n";
 import { TelephonyCallContext, TelephonyProviderType } from "./providers/interface.js";
+import { normalizeMobile } from "@raksha/shared";
 
 export interface PhoneSession {
   sessionId: string;
@@ -24,7 +25,7 @@ export class PhoneSessionManager {
   private sessionsByCaller: Map<string, PhoneSession> = new Map();
 
   getOrCreateSession(context: TelephonyCallContext): PhoneSession {
-    const cleanPhone = context.callerNumber.replace(/\D/g, "").slice(-10);
+    const cleanPhone = normalizeMobile(context.callerNumber);
     let session = this.sessionsByCallSid.get(context.callSid);
 
     if (!session && cleanPhone) {

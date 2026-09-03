@@ -1,12 +1,12 @@
 {
-  "id": "RKS-DEMO-001",
+  "id": "RKS-000001",
   "version": "raksha/0.1",
-  "state": "READY",
+  "state": "INTAKE",
   "incidentType": "FINANCIAL_CYBER_FRAUD",
   "fraudCategory": "ELECTRICITY_BILL_SCAM",
   "reporter": {
     "name": "Ramesh Kumar",
-    "mobile": "+919876543210",
+    "mobile": "919876543210",
     "preferredLanguage": "hi",
     "consentToShare": true
   },
@@ -25,16 +25,7 @@
     "beneficiaryIdentifier": "fraudster.merchant@ybl",
     "beneficiaryInstitution": "Yes Bank Ltd"
   },
-  "evidence": [
-    {
-      "id": "EVD-DEMO-001",
-      "type": "SCREENSHOT",
-      "uri": "https://synthetic.storage/demo/payment_receipt.jpg",
-      "ocrText": "Google Pay - Completed\nPaid ₹5,000.00 to fraudster.merchant@ybl\nUPI Ref No: 423456789012\nDebited from: State Bank of India",
-      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "sealedAt": "2026-08-25T18:43:00+05:30"
-    }
-  ],
+  "evidence": [],
   "createdAt": "2026-08-25T18:42:30+05:30",
-  "updatedAt": "2026-08-25T18:43:00+05:30"
+  "updatedAt": "2026-08-25T18:42:30+05:30"
 }

@@ -78,6 +78,7 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
         confirmedField,
         confirmedValue,
         language: session.language,
+        callerPhone: context.callerNumber,
       });
 
       this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);

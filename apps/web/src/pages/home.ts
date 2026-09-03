@@ -19,7 +19,7 @@ export function renderHomePageHtml(): string {
     .hero {
       width: min(1360px, 100%);
       display: grid;
-      grid-template-columns: minmax(260px, 0.88fr) minmax(460px, 1.4fr) minmax(240px, 0.72fr);
+      grid-template-columns: minmax(320px, 1.18fr) minmax(400px, 1.28fr) minmax(220px, 0.62fr);
       gap: clamp(1.2rem, 2.8vw, 3.5rem);
       align-items: center;
     }
@@ -30,16 +30,13 @@ export function renderHomePageHtml(): string {
       z-index: 5;
     }
     .hero-copy h1 {
-      max-width: 450px;
-      font-size: clamp(2.6rem, 4.2vw, 4.5rem);
-      line-height: 0.98;
-      letter-spacing: -0.065em;
-      font-weight: 800;
+      max-width: 20ch;
+      font-size: clamp(3.15rem, 5vw, 5rem);
     }
     .hero-copy h1 em {
-      display: block;
       color: var(--mode, var(--orange));
       font-style: normal;
+      font-family: inherit;
       transition: color 0.3s ease;
     }
     .hero-copy p {
@@ -140,8 +137,8 @@ export function renderHomePageHtml(): string {
 
     /* Call mode: Shifted further to the left */
     .hero-stage[data-current-mode="call"] .hero-person {
-      object-position: 12% 48%;
-      transform: translateX(-24px);
+      object-position: 4% 48%;
+      transform: translateX(-56px);
     }
     .hero-stage[data-current-mode="call"] .companion-wrap {
       bottom: 12%;
@@ -802,17 +799,29 @@ export function renderHomePageHtml(): string {
       z-index: 5;
     }
     .mode-kicker {
+      font-family: var(--font);
       color: var(--mode, var(--orange));
       font-size: 0.74rem;
-      font-weight: 800;
+      font-weight: 600;
       letter-spacing: 0.09em;
+      text-transform: uppercase;
       transition: color 0.3s ease;
     }
-    .mode-detail h2 {
+    .mode-detail h2,
+    .mode-heading {
       margin: 0.6rem 0 0.8rem;
-      font-size: clamp(1.75rem, 2.6vw, 2.7rem);
-      line-height: 1;
-      letter-spacing: -0.055em;
+      font-size: clamp(2.4rem, 3.2vw, 3.4rem);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.45rem 0.6rem;
+    }
+    .mode-heading-icon {
+      width: 0.78em;
+      height: 0.78em;
+      object-fit: contain;
+      flex-shrink: 0;
+      transform: translateY(0.04em);
     }
     .mode-detail p {
       color: var(--text-muted);
@@ -823,19 +832,20 @@ export function renderHomePageHtml(): string {
       list-style: none;
       margin-top: 1.4rem;
       display: grid;
-      gap: 0.75rem;
+      gap: 0.85rem;
     }
     .mode-detail li {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.7rem;
       font-size: 0.86rem;
       font-weight: 650;
     }
-    .mode-detail li b {
-      color: var(--mode, var(--orange));
-      font-size: 1rem;
-      transition: color 0.3s ease;
+    .mode-bullet-icon {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      flex-shrink: 0;
     }
 
     /* Responsive Adjustments */
@@ -853,41 +863,63 @@ export function renderHomePageHtml(): string {
         grid-template-columns: 1fr 1fr;
         column-gap: 2rem;
       }
-      .mode-detail .mode-kicker, .mode-detail h2 { grid-column: 1; }
+      .mode-detail .mode-kicker, .mode-detail h2, .mode-detail .mode-heading { grid-column: 1; }
       .mode-detail p, .mode-detail ul { grid-column: 2; grid-row: 1; }
       .mode-detail h2 { margin-bottom: 0; }
       .mode-detail ul { grid-row: 2; margin-top: 0.8rem; }
     }
 
     @media (max-width: 760px) {
-      .landing { display: block; padding: 2.2rem 1.1rem 3rem; }
-      .hero { display: flex; flex-direction: column; gap: 1.8rem; }
+      .landing { display: block; padding: 1.35rem 1rem 2.4rem; min-height: 0; overflow: visible; }
+      .hero { display: flex; flex-direction: column; gap: 1.35rem; }
       .hero-copy { width: 100%; }
-      .hero-copy h1 { font-size: clamp(2.6rem, 11vw, 3.8rem); }
-      .hero-stage { width: 100%; height: 530px; min-height: 0; }
-      .mode-detail { width: 100%; display: block; }
-      .mode-detail h2 { margin-bottom: 0.7rem; }
-      .mode-detail ul { margin-top: 1rem; }
+      .hero-copy h1 { font-size: clamp(2.25rem, 10.5vw, 3.15rem); max-width: none; line-height: 1.02; }
+      .hero-copy p { margin: 0.95rem 0 1.15rem; font-size: 0.92rem; max-width: none; }
+      .hero-cta { width: 100%; justify-content: center; }
+      .hero-stage { width: 100%; height: min(400px, 78vw); min-height: 300px; }
+      .mode-switch {
+        width: calc(100% - 8px);
+        bottom: 6px;
+        padding: 0.28rem;
+      }
+      .mode-switch button {
+        font-size: 0.7rem;
+        padding: 0.58rem 0.3rem;
+      }
+      .mode-detail { width: 100%; display: block; padding-top: 1.1rem; }
+      .mode-detail h2, .mode-heading { margin-bottom: 0.55rem; font-size: clamp(2rem, 8.4vw, 2.55rem); }
+      .mode-heading-icon { width: 0.72em; height: 0.72em; }
+      .mode-detail ul { margin-top: 1rem; gap: 0.7rem; }
+      .mode-bullet-icon { width: 20px; height: 20px; }
       .hero-stage[data-align="left"] .hero-person,
-      .hero-stage[data-align="right"] .hero-person {
-        object-position: 50% 38%;
+      .hero-stage[data-align="right"] .hero-person,
+      .hero-stage[data-current-mode="call"] .hero-person,
+      .hero-stage[data-current-mode="web"] .hero-person,
+      .hero-stage[data-current-mode="whatsapp"] .hero-person {
+        object-position: 50% 36%;
         transform: none !important;
       }
       .companion-wrap,
       .hero-stage[data-align="left"] .companion-wrap,
-      .hero-stage[data-align="right"] .companion-wrap {
+      .hero-stage[data-align="right"] .companion-wrap,
+      .hero-stage[data-current-mode="call"] .companion-wrap,
+      .hero-stage[data-current-mode="whatsapp"] .companion-wrap,
+      .hero-stage[data-current-mode="web"] .companion-wrap {
         left: 50% !important;
         right: auto !important;
-        bottom: 12% !important;
-        transform: translateX(-50%) scale(0.88);
+        bottom: 18% !important;
+        transform: translateX(-50%) scale(0.68);
         transform-origin: center bottom;
       }
+      .call-card, .wa-card { width: min(270px, 78vw); }
       .stage-accent,
       .hero-stage[data-align="left"] .stage-accent,
       .hero-stage[data-align="right"] .stage-accent {
         top: 3%;
         right: 4% !important;
         left: auto !important;
+        font-size: 0.64rem;
+        padding: 0.35rem 0.65rem;
       }
     }
 
@@ -931,10 +963,10 @@ export function renderHomePageHtml(): string {
         
         <!-- Column 1: Editorial Heading & CTA -->
         <div class="hero-copy">
-          <h1 id="heroTitle">Tell us what happened.<em>We handle the rest.</em></h1>
+          <h1 id="heroTitle">Tell us what happened.<br><em>We handle the rest.</em></h1>
           <p id="heroSub">Call, send a voice note, or upload a receipt. Raksha turns the details into a verified emergency report.</p>
           <a class="hero-cta" href="/app">
-            <span>Start a report</span>
+            <span id="heroCta">Start a report</span>
             <span aria-hidden="true">→</span>
           </a>
         </div>
@@ -997,18 +1029,141 @@ export function renderHomePageHtml(): string {
         <!-- Column 3: Mode Narrative Details -->
         <aside class="mode-detail" id="modeDetail">
           <div class="mode-kicker">CALL RAKSHA</div>
-          <h2>Just call.</h2>
+          <h2 class="mode-heading">Just call.<img class="mode-heading-icon" src="/images/line/channel-phone.png" alt="" /></h2>
           <p>Talk in the language you are comfortable with. We ask one clear question at a time.</p>
           <ul>
-            <li><b>•</b>No forms to navigate</li>
-            <li><b>•</b>Multilingual support</li>
-            <li><b>•</b>A guided next step</li>
+            <li><img class="mode-bullet-icon" src="/images/line/mode-no-forms.png" alt="" />No forms to navigate</li>
+            <li><img class="mode-bullet-icon" src="/images/line/mode-languages.png" alt="" />Multilingual support</li>
+            <li><img class="mode-bullet-icon" src="/images/line/mode-next-step.png" alt="" />A guided next step</li>
           </ul>
         </aside>
 
       </div>
     </section>
   `;
+
+  const homeI18n = {
+    en: {
+      heroTitle: "Tell us what happened.<br><em>We handle the rest.</em>",
+      heroSub: "Call, send a voice note, or upload a receipt. Raksha turns the details into a verified emergency report.",
+      heroCta: "Start a report",
+      tabs: { call: "Call Raksha", whatsapp: "WhatsApp", web: "Use the web" },
+      howKicker: "HOW RAKSHA WORKS",
+      howTitle: 'You bring <br>the story.<br>We handle <br>the <span class="hl-motion">rest.</span>',
+      howDesc: "Raksha turns what you share into a verified report and gets it to the right authorities. You stay in control at every step.",
+      howWatch: "Watch the journey",
+      howWatchSub: "See how a report moves through Raksha",
+      modes: {
+        call: {
+          accent: "Toll-Free 24/7 Helpline",
+          kicker: "CALL RAKSHA",
+          heading: "Just call.",
+          copy: "Talk in the language you are comfortable with. We ask one clear question at a time.",
+          bullets: ["No forms to navigate", "Multilingual support", "A guided next step"],
+          alt: "Young person calling Raksha for help",
+        },
+        whatsapp: {
+          accent: "Verified WhatsApp Assistant",
+          kicker: "WHATSAPP RAKSHA",
+          heading: "Just message.",
+          copy: "Send a voice note, a screenshot, or a message. Your case can continue right where you left it.",
+          bullets: ["Voice notes and photos", "One case across channels", "No portal to learn"],
+          alt: "Elderly woman sending a Raksha WhatsApp voice message",
+        },
+        web: {
+          accent: "Citizen Intake Portal",
+          kicker: "RAKSHA ON THE WEB",
+          heading: "Just show us.",
+          copy: "Upload a receipt or type what happened. Raksha extracts the important details before you send.",
+          bullets: ["Receipt extraction", "Review before sending", "Evidence stays linked"],
+          alt: "Young adult using Raksha on a laptop",
+        },
+      },
+      call: { kicker: "Calling Raksha", sub: "Connecting you to a trained support specialist...", mute: "Mute", end: "End", speaker: "Speaker" },
+      wa: { name: "Raksha Support", status: "Online", reply: "Thank you. We've received your message. How can we help you today?", user: "I got scammed on a fake website...", placeholder: "Type a message" },
+      web: { title: "Raksha Web", describe: "Describe", details: "Add Details", review: "Review", submit: "Submit", evidence: "Add Evidence", drop: "Upload receipt, screenshot, or file", browse: "Browse Files", preview: "Case Preview", category: "Category", catVal: "Financial Fraud", channel: "Channel", channelVal: "Web", status: "Status", statusVal: "Draft" },
+    },
+    hi: {
+      heroTitle: "बताइए क्या हुआ।<br><em>बाकी हम संभाल लेंगे।</em>",
+      heroSub: "कॉल करें, वॉइस नोट भेजें या रसीद अपलोड करें। रक्षा आपके लिए सत्यापित रिपोर्ट तैयार करती है।",
+      heroCta: "रिपोर्ट शुरू करें",
+      tabs: { call: "रक्षा को कॉल करें", whatsapp: "व्हाट्सऐप", web: "वेब इस्तेमाल करें" },
+      howKicker: "रक्षा कैसे काम करती है",
+      howTitle: 'आप कहानी<br>लाते हैं।<br>बाकी <span class="hl-motion">हम संभालते हैं।</span>',
+      howDesc: "रक्षा जो भी आप साझा कर सकते हैं उसे सत्यापित रिपोर्ट बनाती है और सही अधिकारियों तक पहुँचाती है। हर कदम पर नियंत्रण आपके पास रहता है।",
+      howWatch: "पूरा सफ़र देखें",
+      howWatchSub: "देखें कि रिपोर्ट रक्षा में कैसे आगे बढ़ती है",
+      modes: {
+        call: {
+          accent: "टोल-फ़्री 24/7 हेल्पलाइन",
+          kicker: "रक्षा को कॉल करें",
+          heading: "बस कॉल करें।",
+          copy: "जिस भाषा में सहज हों, उसी में बात करें। हम एक समय में एक साफ़ सवाल पूछते हैं।",
+          bullets: ["कोई फ़ॉर्म नहीं भरना", "बहुभाषी सहायता", "एक स्पष्ट अगला कदम"],
+          alt: "युवा व्यक्ति सहायता के लिए रक्षा को कॉल कर रहा है",
+        },
+        whatsapp: {
+          accent: "सत्यापित व्हाट्सऐप सहायक",
+          kicker: "व्हाट्सऐप पर रक्षा",
+          heading: "बस संदेश भेजें।",
+          copy: "वॉइस नोट, स्क्रीनशॉट या संदेश भेजें। आपका केस वहीं से जारी रह सकता है।",
+          bullets: ["वॉइस नोट और फ़ोटो", "सभी माध्यमों पर एक केस", "कोई पोर्टल नहीं सीखना"],
+          alt: "बुज़ुर्ग महिला रक्षा को व्हाट्सऐप वॉइस संदेश भेज रही हैं",
+        },
+        web: {
+          accent: "नागरिक रिपोर्ट पोर्टल",
+          kicker: "वेब पर रक्षा",
+          heading: "बस दिखा दीजिए।",
+          copy: "रसीद अपलोड करें या लिखें क्या हुआ। भेजने से पहले रक्षा ज़रूरी विवरण निकालती है।",
+          bullets: ["रसीद से विवरण", "भेजने से पहले समीक्षा", "सबूत जुड़ा रहता है"],
+          alt: "युवा वयस्क लैपटॉप पर रक्षा का उपयोग कर रहा है",
+        },
+      },
+      call: { kicker: "रक्षा से कॉल", sub: "आपको प्रशिक्षित सहायता से जोड़ रहे हैं...", mute: "म्यूट", end: "समाप्त", speaker: "स्पीकर" },
+      wa: { name: "रक्षा सहायता", status: "ऑनलाइन", reply: "धन्यवाद। आपका संदेश मिल गया है। हम आपकी कैसे मदद कर सकते हैं?", user: "मुझे एक नकली वेबसाइट पर धोखा हुआ...", placeholder: "संदेश लिखें" },
+      web: { title: "रक्षा वेब", describe: "वर्णन", details: "विवरण जोड़ें", review: "समीक्षा", submit: "भेजें", evidence: "सबूत जोड़ें", drop: "रसीद, स्क्रीनशॉट या फ़ाइल अपलोड करें", browse: "फ़ाइल चुनें", preview: "केस पूर्वावलोकन", category: "श्रेणी", catVal: "वित्तीय धोखाधड़ी", channel: "माध्यम", channelVal: "वेब", status: "स्थिति", statusVal: "ड्राफ़्ट" },
+    },
+    ta: {
+      heroTitle: "என்ன நடந்தது என்று சொல்லுங்கள்.<br><em>மீதியை நாங்கள் பார்த்துக்கொள்கிறோம்.</em>",
+      heroSub: "அழைக்கவும், குரல் பதிவு அனுப்பவும் அல்லது ரசீதை பதிவேற்றவும். ரக்ஷா சரிபார்க்கப்பட்ட புகாரை உருவாக்குகிறது.",
+      heroCta: "புகாரைத் தொடங்கு",
+      tabs: { call: "ரக்ஷாவை அழை", whatsapp: "வாட்ஸ்அப்", web: "இணையம்" },
+      howKicker: "ரக்ஷா எப்படி வேலை செய்கிறது",
+      howTitle: 'நீங்கள் கதையைக்<br>கொண்டு வாருங்கள்.<br>மீதியை <span class="hl-motion">நாங்கள் கையாளுகிறோம்.</span>',
+      howDesc: "நீங்கள் பகிரக்கூடியதை ரக்ஷா சரிபார்க்கப்பட்ட புகாராக மாற்றி சரியான அதிகாரிகளிடம் கொண்டு செல்கிறது. ஒவ்வொரு அடியிலும் கட்டுப்பாடு உங்களிடமே.",
+      howWatch: "பயணத்தைப் பாருங்கள்",
+      howWatchSub: "ஒரு புகார் ரக்ஷாவில் எப்படி நகர்கிறது என்று பாருங்கள்",
+      modes: {
+        call: {
+          accent: "கட்டணமில்லா 24/7 உதவி",
+          kicker: "ரக்ஷாவை அழைக்கவும்",
+          heading: "அழையுங்கள்.",
+          copy: "உங்களுக்கு வசதியான மொழியில் பேசுங்கள். நாங்கள் ஒரு நேரத்தில் ஒரு தெளிவான கேள்வி கேட்கிறோம்.",
+          bullets: ["படிவங்கள் இல்லை", "பலமொழி ஆதரவு", "அடுத்த வழிகாட்டல்"],
+          alt: "உதவிக்காக ரக்ஷாவை அழைக்கும் இளைஞர்",
+        },
+        whatsapp: {
+          accent: "சரிபார்க்கப்பட்ட வாட்ஸ்அப் உதவியாளர்",
+          kicker: "வாட்ஸ்அப்பில் ரக்ஷா",
+          heading: "செய்தி அனுப்புங்கள்.",
+          copy: "குரல் குறிப்பு, திரைப்பிடிப்பு அல்லது செய்தி அனுப்புங்கள். உங்கள் வழக்கு அங்கேயே தொடரலாம்.",
+          bullets: ["குரல் குறிப்புகளும் புகைப்படங்களும்", "அனைத்து வழிகளிலும் ஒரே வழக்கு", "போர்டல் கற்க வேண்டாம்"],
+          alt: "ரக்ஷாவுக்கு வாட்ஸ்அப் குரல் செய்தி அனுப்பும் மூத்த பெண்",
+        },
+        web: {
+          accent: "குடிமக்கள் புகார் வாயில்",
+          kicker: "இணையத்தில் ரக்ஷா",
+          heading: "காட்டுங்கள்.",
+          copy: "ரசீதை பதிவேற்றவும் அல்லது என்ன நடந்தது என்று எழுதவும். அனுப்பும் முன் ரக்ஷா முக்கிய விவரங்களை எடுக்கும்.",
+          bullets: ["ரசீதிலிருந்து விவரம்", "அனுப்பும் முன் சரிபார்ப்பு", "ஆதாரம் இணைந்தே இருக்கும்"],
+          alt: "மடிக்கணினியில் ரக்ஷாவைப் பயன்படுத்தும் இளைஞர்",
+        },
+      },
+      call: { kicker: "ரக்ஷாவை அழைக்கிறோம்", sub: "பயிற்சி பெற்ற உதவியாளருடன் இணைக்கிறோம்...", mute: "அமைதி", end: "முடி", speaker: "ஸ்பீக்கர்" },
+      wa: { name: "ரக்ஷா உதவி", status: "ஆன்லைன்", reply: "நன்றி. உங்கள் செய்தி கிடைத்தது. இன்று எப்படி உதவலாம்?", user: "போலி இணையதளத்தில் ஏமாற்றப்பட்டேன்...", placeholder: "செய்தியை எழுதுங்கள்" },
+      web: { title: "ரக்ஷா வலை", describe: "விவரம்", details: "விவரங்கள்", review: "சரிபார்", submit: "அனுப்பு", evidence: "ஆதாரம் சேர்", drop: "ரசீது, திரைப்பிடிப்பு அல்லது கோப்பை பதிவேற்று", browse: "கோப்புகளைப் பார்", preview: "வழக்கு முன்னோட்டம்", category: "வகை", catVal: "நிதி மோசடி", channel: "வழி", channelVal: "வலை", status: "நிலை", statusVal: "வரைவு" },
+    },
+  } as const;
 
   const extraScripts = `
     <script>
@@ -1025,183 +1180,38 @@ export function renderHomePageHtml(): string {
         const callWaveHtml = '${callWaveHtml}';
         const waWaveHtml = '${waWaveHtml}';
 
-        // Pre-rendered rich interactive illustration cards
-        const cards = {
-          call: \`
-            <div class="call-card">
-              <div class="call-card-kicker">Calling Raksha</div>
-              <div class="call-card-number">1930</div>
-              <div class="call-card-sub">Connecting you to a trained support specialist...</div>
-              <div class="call-waveform">\${callWaveHtml}</div>
-              <div class="call-timer" id="callTimer">00:06</div>
-              <div class="call-actions-row">
-                <button class="call-action-btn" type="button" aria-label="Mute">
-                  <span class="call-action-circle">\${muteSvg}</span>
-                  <span class="call-action-label">Mute</span>
-                </button>
-                <button class="call-action-btn" type="button" aria-label="End call">
-                  <span class="call-action-circle end-btn">\${phoneEndSvg}</span>
-                  <span class="call-action-label">End</span>
-                </button>
-                <button class="call-action-btn" type="button" aria-label="Speaker">
-                  <span class="call-action-circle">\${speakerSvg}</span>
-                  <span class="call-action-label">Speaker</span>
-                </button>
-              </div>
-            </div>
-          \`,
-          whatsapp: \`
-            <div class="wa-card">
-              <div class="wa-header">
-                <span class="wa-header-back">‹</span>
-                <div class="wa-avatar">\${shieldSvg}</div>
-                <div class="wa-header-info">
-                  <div class="wa-header-name">
-                    Raksha Support
-                    <svg class="wa-verified" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                  </div>
-                  <div class="wa-header-status">Online</div>
-                </div>
-                <span class="wa-header-more">⋮</span>
-              </div>
-              <div class="wa-chat-body">
-                <!-- Voice Message Bubble -->
-                <div class="wa-msg wa-voice">
-                  <div class="wa-voice-player">
-                    <span class="wa-play-btn">\${playSvg}</span>
-                    <div class="wa-voice-waves">\${waWaveHtml}</div>
-                  </div>
-                  <div class="wa-msg-meta">
-                    <span>0:18</span>
-                    <span>10:30 AM</span>
-                    <span class="wa-ticks">✓✓</span>
-                  </div>
-                </div>
-                <!-- Support Response Bubble -->
-                <div class="wa-msg wa-them">
-                  Thank you. We've received your message. How can we help you today?
-                  <div class="wa-msg-meta">
-                    <span>10:31 AM</span>
-                  </div>
-                </div>
-                <!-- User Scam Text Bubble -->
-                <div class="wa-msg wa-us">
-                  I got scammed on a fake website...
-                  <div class="wa-msg-meta">
-                    <span>10:31 AM</span>
-                    <span class="wa-ticks">✓✓</span>
-                  </div>
-                </div>
-              </div>
-              <!-- Input Bar with Paperclip & Mic -->
-              <div class="wa-input-bar">
-                <div class="wa-input-pill">
-                  <span>Type a message</span>
-                  <span>\${paperclipSvg}</span>
-                </div>
-                <div class="wa-mic-btn" aria-label="Record voice note">
-                  \${micSvg}
-                </div>
-              </div>
-            </div>
-          \`,
-          web: \`
-            <div class="web-card">
-              <div class="web-header">
-                <div class="web-header-icon">\${shieldSvg}</div>
-                <div class="web-header-title">Raksha Web</div>
-              </div>
-              <!-- Stepper -->
-              <div class="web-stepper">
-                <div class="web-step-item active">
-                  <div class="web-step-circle">\${checkSvg}</div>
-                  <div class="web-step-label">Describe</div>
-                </div>
-                <div class="web-step-item">
-                  <div class="web-step-circle">2</div>
-                  <div class="web-step-label">Add Details</div>
-                </div>
-                <div class="web-step-item">
-                  <div class="web-step-circle">3</div>
-                  <div class="web-step-label">Review</div>
-                </div>
-                <div class="web-step-item">
-                  <div class="web-step-circle">4</div>
-                  <div class="web-step-label">Submit</div>
-                </div>
-              </div>
-              <!-- Evidence & Case Preview -->
-              <div class="web-panels-grid">
-                <div class="web-panel-box">
-                  <div class="web-panel-title">Add Evidence</div>
-                  <div class="web-dropzone">
-                    <div class="web-dropzone-text">Upload receipt, screenshot, or file</div>
-                    <button type="button" class="web-dropzone-btn">Browse Files</button>
-                  </div>
-                </div>
-                <div class="web-panel-box">
-                  <div class="web-panel-title">Case Preview</div>
-                  <div class="web-preview-box">
-                    <div class="web-preview-row">
-                      <span class="web-preview-key">Category</span>
-                      <span class="web-preview-val">Financial Fraud</span>
-                    </div>
-                    <div class="web-preview-row">
-                      <span class="web-preview-key">Channel</span>
-                      <span class="web-preview-val">Web</span>
-                    </div>
-                    <div class="web-preview-row">
-                      <span class="web-preview-key">Status</span>
-                      <span class="web-status-pill">Draft</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          \`
+        const HOME_I18N = ${JSON.stringify(homeI18n)};
+        let currentLang = 'en';
+        let currentMode = 'call';
+
+        const skins = {
+          call: { align: 'left', color: '#e85d17', bg: '#fff1e8', border: '#f2c6ad', image: '/images/raksha/hero-call.png' },
+          whatsapp: { align: 'right', color: '#008069', bg: '#e6f7f2', border: '#a2e3d3', image: '/images/raksha/hero-whatsapp.png' },
+          web: { align: 'left', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', image: '/images/raksha/hero-web.png' }
+        };
+        const MODE_ICONS = {
+          call: { heading: 'channel-phone', bullets: ['mode-no-forms', 'mode-languages', 'mode-next-step'] },
+          whatsapp: { heading: 'channel-whatsapp', bullets: ['mode-voice-photo', 'hub-lotus', 'mode-no-portal'] },
+          web: { heading: 'channel-web', bullets: ['step-request', 'step-confirm', 'mode-evidence-link'] }
         };
 
-        const modes = {
-          call: {
-            align: 'left',
-            color: '#e85d17',
-            bg: '#fff1e8',
-            border: '#f2c6ad',
-            accentText: 'Toll-Free 24/7 Helpline',
-            image: '/images/raksha/hero-call.png',
-            alt: 'Young person calling Raksha for help',
-            kicker: 'CALL RAKSHA',
-            heading: 'Just call.',
-            copy: 'Talk in the language you are comfortable with. We ask one clear question at a time.',
-            bullets: ['No forms to navigate', 'Multilingual support', 'A guided next step']
-          },
-          whatsapp: {
-            align: 'right',
-            color: '#008069',
-            bg: '#e6f7f2',
-            border: '#a2e3d3',
-            accentText: 'Verified WhatsApp Assistant',
-            image: '/images/raksha/hero-whatsapp.png',
-            alt: 'Elderly woman sending a Raksha WhatsApp voice message',
-            kicker: 'WHATSAPP RAKSHA',
-            heading: 'Just message.',
-            copy: 'Send a voice note, a screenshot, or a message. Your case can continue right where you left it.',
-            bullets: ['Voice notes and photos', 'One case across channels', 'No portal to learn']
-          },
-          web: {
-            align: 'left',
-            color: '#2563eb',
-            bg: '#eff6ff',
-            border: '#bfdbfe',
-            accentText: 'Citizen Intake Portal',
-            image: '/images/raksha/hero-web.png',
-            alt: 'Young adult using Raksha on a laptop',
-            kicker: 'RAKSHA ON THE WEB',
-            heading: 'Just show us.',
-            copy: 'Upload a receipt or type what happened. Raksha extracts the important details before you send.',
-            bullets: ['Receipt extraction', 'Review before sending', 'Evidence stays linked']
+        function pack() {
+          return HOME_I18N[currentLang] || HOME_I18N.en;
+        }
+
+        function cardHtml(name) {
+          const t = pack();
+          if (name === 'call') {
+            const c = t.call;
+            return '<div class="call-card"><div class="call-card-kicker">' + c.kicker + '</div><div class="call-card-number">1930</div><div class="call-card-sub">' + c.sub + '</div><div class="call-waveform">' + callWaveHtml + '</div><div class="call-timer" id="callTimer">00:06</div><div class="call-actions-row"><button class="call-action-btn" type="button" aria-label="' + c.mute + '"><span class="call-action-circle">' + muteSvg + '</span><span class="call-action-label">' + c.mute + '</span></button><button class="call-action-btn" type="button" aria-label="' + c.end + '"><span class="call-action-circle end-btn">' + phoneEndSvg + '</span><span class="call-action-label">' + c.end + '</span></button><button class="call-action-btn" type="button" aria-label="' + c.speaker + '"><span class="call-action-circle">' + speakerSvg + '</span><span class="call-action-label">' + c.speaker + '</span></button></div></div>';
           }
-        };
+          if (name === 'whatsapp') {
+            var w = t.wa;
+            return '<div class="wa-card"><div class="wa-header"><span class="wa-header-back">‹</span><div class="wa-avatar">' + shieldSvg + '</div><div class="wa-header-info"><div class="wa-header-name">' + w.name + '<svg class="wa-verified" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div><div class="wa-header-status">' + w.status + '</div></div><span class="wa-header-more">⋮</span></div><div class="wa-chat-body"><div class="wa-msg wa-voice"><div class="wa-voice-player"><span class="wa-play-btn">' + playSvg + '</span><div class="wa-voice-waves">' + waWaveHtml + '</div></div><div class="wa-msg-meta"><span>0:18</span><span>10:30 AM</span><span class="wa-ticks">✓✓</span></div></div><div class="wa-msg wa-them">' + w.reply + '<div class="wa-msg-meta"><span>10:31 AM</span></div></div><div class="wa-msg wa-us">' + w.user + '<div class="wa-msg-meta"><span>10:31 AM</span><span class="wa-ticks">✓✓</span></div></div></div><div class="wa-input-bar"><div class="wa-input-pill"><span>' + w.placeholder + '</span><span>' + paperclipSvg + '</span></div><div class="wa-mic-btn" aria-label="' + w.placeholder + '">' + micSvg + '</div></div></div>';
+          }
+          var b = t.web;
+          return '<div class="web-card"><div class="web-header"><div class="web-header-icon">' + shieldSvg + '</div><div class="web-header-title">' + b.title + '</div></div><div class="web-stepper"><div class="web-step-item active"><div class="web-step-circle">' + checkSvg + '</div><div class="web-step-label">' + b.describe + '</div></div><div class="web-step-item"><div class="web-step-circle">2</div><div class="web-step-label">' + b.details + '</div></div><div class="web-step-item"><div class="web-step-circle">3</div><div class="web-step-label">' + b.review + '</div></div><div class="web-step-item"><div class="web-step-circle">4</div><div class="web-step-label">' + b.submit + '</div></div></div><div class="web-panels-grid"><div class="web-panel-box"><div class="web-panel-title">' + b.evidence + '</div><div class="web-dropzone"><div class="web-dropzone-text">' + b.drop + '</div><button type="button" class="web-dropzone-btn">' + b.browse + '</button></div></div><div class="web-panel-box"><div class="web-panel-title">' + b.preview + '</div><div class="web-preview-box"><div class="web-preview-row"><span class="web-preview-key">' + b.category + '</span><span class="web-preview-val">' + b.catVal + '</span></div><div class="web-preview-row"><span class="web-preview-key">' + b.channel + '</span><span class="web-preview-val">' + b.channelVal + '</span></div><div class="web-preview-row"><span class="web-preview-key">' + b.status + '</span><span class="web-status-pill">' + b.statusVal + '</span></div></div></div></div></div>';
+        }
 
         const stage = document.getElementById('heroStage');
         const person = document.getElementById('heroPerson');
@@ -1221,64 +1231,75 @@ export function renderHomePageHtml(): string {
           }
         }, 1000);
 
-        function selectMode(name) {
-          const m = modes[name];
+        function selectMode(name, instant) {
+          currentMode = name;
+          const skin = skins[name];
+          const copy = pack().modes[name];
           const section = stage.closest('.landing');
-          section.style.setProperty('--mode', m.color);
-          section.style.setProperty('--mode-bg', m.bg);
-          section.style.setProperty('--mode-border', m.border);
+          section.style.setProperty('--mode', skin.color);
+          section.style.setProperty('--mode-bg', skin.bg);
+          section.style.setProperty('--mode-border', skin.border);
+
+          if (accentText) accentText.textContent = copy.accent;
+          var icons = MODE_ICONS[name];
+          detail.innerHTML = '<div class="mode-kicker">' + copy.kicker + '</div><h2 class="mode-heading">' + copy.heading + '<img class="mode-heading-icon" src="/images/line/' + icons.heading + '.png" alt="" /></h2><p>' + copy.copy + '</p><ul>' + copy.bullets.map(function(x, i) { return '<li><img class="mode-bullet-icon" src="/images/line/' + icons.bullets[i] + '.png" alt="" />' + x + '</li>'; }).join('') + '</ul>';
+
+          document.querySelectorAll('[data-mode]').forEach(function(btn) {
+            const active = btn.dataset.mode === name;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', String(active));
+            btn.textContent = pack().tabs[btn.dataset.mode];
+          });
+
+          function paintCard() {
+            stage.dataset.align = skin.align;
+            stage.dataset.currentMode = name;
+            person.src = skin.image;
+            person.alt = copy.alt;
+            wrap.innerHTML = cardHtml(name);
+            person.style.opacity = '1';
+            person.style.transform = '';
+            wrap.style.opacity = '1';
+            wrap.style.transform = '';
+          }
+
+          if (instant) {
+            paintCard();
+            return;
+          }
 
           person.style.opacity = '0';
           person.style.transform = 'translateY(10px)';
           wrap.style.opacity = '0';
           wrap.style.transform = 'translateY(8px) scale(0.96)';
-
-          if (accentText) {
-            accentText.textContent = m.accentText;
-          }
-
-          setTimeout(() => {
-            stage.dataset.align = m.align;
-            stage.dataset.currentMode = name;
-            person.src = m.image;
-            person.alt = m.alt;
-            wrap.innerHTML = cards[name];
-            
-            person.style.opacity = '1';
-            person.style.transform = '';
-            wrap.style.opacity = '1';
-            wrap.style.transform = '';
-          }, 180);
-
-          detail.innerHTML = '<div class="mode-kicker">' + m.kicker + '</div><h2>' + m.heading + '</h2><p>' + m.copy + '</p><ul>' + m.bullets.map(x => '<li><b>•</b>' + x + '</li>').join('') + '</ul>';
-
-          document.querySelectorAll('[data-mode]').forEach(btn => {
-            const active = btn.dataset.mode === name;
-            btn.classList.toggle('active', active);
-            btn.setAttribute('aria-selected', String(active));
-          });
+          setTimeout(paintCard, 180);
         }
 
-        document.querySelectorAll('[data-mode]').forEach(btn => {
-          btn.addEventListener('click', () => selectMode(btn.dataset.mode));
+        document.querySelectorAll('[data-mode]').forEach(function(btn) {
+          btn.addEventListener('click', function() { selectMode(btn.dataset.mode); });
         });
 
-        // Multilingual Switcher Support
         window.switchLang = function(lang) {
-          const hi = lang === 'hi';
-          const ta = lang === 'ta';
+          currentLang = (lang === 'hi' || lang === 'ta') ? lang : 'en';
+          const t = pack();
           const title = document.getElementById('heroTitle');
           const sub = document.getElementById('heroSub');
-          if (hi) {
-            title.innerHTML = 'बताइए क्या हुआ।<em>बाकी हम संभाल लेंगे।</em>';
-            sub.textContent = 'कॉल करें, वॉइस नोट भेजें या रसीद अपलोड करें। रक्षा आपके लिए सत्यापित रिपोर्ट तैयार करती है।';
-          } else if (ta) {
-            title.innerHTML = 'என்ன நடந்தது என்று சொல்லுங்கள்.<em>மீதியை நாங்கள் பார்த்துக்கொள்கிறோம்.</em>';
-            sub.textContent = 'அழைக்கவும், குரல் பதிவு அனுப்பவும் அல்லது ரசீதை பதிவேற்றவும். ரக்ஷா சரிபார்க்கப்பட்ட புகாரை உருவாக்குகிறது.';
-          } else {
-            title.innerHTML = 'Tell us what happened.<em>We handle the rest.</em>';
-            sub.textContent = 'Call, send a voice note, or upload a receipt. Raksha turns the details into a verified emergency report.';
-          }
+          const cta = document.getElementById('heroCta');
+          if (title) title.innerHTML = t.heroTitle;
+          if (sub) sub.textContent = t.heroSub;
+          if (cta) cta.textContent = t.heroCta;
+          const howKicker = document.getElementById('howKicker');
+          const howTitle = document.getElementById('howTitle');
+          const howDesc = document.getElementById('howDesc');
+          const howWatch = document.getElementById('howWatch');
+          const howWatchSub = document.getElementById('howWatchSub');
+          if (howKicker) howKicker.textContent = t.howKicker;
+          if (howTitle) howTitle.innerHTML = t.howTitle;
+          if (howDesc) howDesc.textContent = t.howDesc;
+          if (howWatch) howWatch.textContent = t.howWatch;
+          if (howWatchSub) howWatchSub.textContent = t.howWatchSub;
+          selectMode(currentMode, true);
+          if (typeof window.applyHowLang === "function") window.applyHowLang(currentLang);
         };
       })();
     </script>

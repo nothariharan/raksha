@@ -1,0 +1,30 @@
+{
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm export:web",
+  "outputDirectory": "apps/web/out",
+  "headers": [
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/v1/:path*", "destination": "https://raksha-protocol.onrender.com/v1/:path*" },
+    { "source": "/api/cap/:path*", "destination": "https://raksha-protocol.onrender.com/api/cap/:path*" },
+    { "source": "/cap/:path*", "destination": "https://raksha-protocol.onrender.com/cap/:path*" },
+    { "source": "/system/health", "destination": "https://raksha-protocol.onrender.com/system/health" },
+    { "source": "/health", "destination": "https://raksha-protocol.onrender.com/health" },
+    { "source": "/ready", "destination": "https://raksha-protocol.onrender.com/ready" },
+    { "source": "/portal-a", "destination": "https://raksha-protocol.onrender.com/portal-a" },
+    { "source": "/portal-a/:path*", "destination": "https://raksha-protocol.onrender.com/portal-a/:path*" },
+    { "source": "/portal-b", "destination": "https://raksha-protocol.onrender.com/portal-b" },
+    { "source": "/portal-b/:path*", "destination": "https://raksha-protocol.onrender.com/portal-b/:path*" },
+    { "source": "/whatsapp/:path*", "destination": "https://raksha-protocol.onrender.com/whatsapp/:path*" },
+    { "source": "/phone/:path*", "destination": "https://raksha-protocol.onrender.com/phone/:path*" },
+    { "source": "/mcp", "destination": "https://raksha-protocol.onrender.com/mcp" },
+    { "source": "/mcp/:path*", "destination": "https://raksha-protocol.onrender.com/mcp/:path*" }
+  ]
+}

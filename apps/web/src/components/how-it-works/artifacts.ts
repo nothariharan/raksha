@@ -130,7 +130,7 @@ export function renderStepArtifact(stepKey: string): string {
           <div class="artifact-cap-nodes">
             <div class="artifact-cap-box cap-action">
               <span class="artifact-cap-tag">Action</span>
-              <span class="artifact-cap-val font-mono">report_fraud</span>
+              <span class="artifact-cap-val font-mono">report_financial_fraud</span>
             </div>
             <div class="artifact-cap-arrow" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>

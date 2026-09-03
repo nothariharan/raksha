@@ -4,6 +4,8 @@
  * Features 4 channel cards (Call, WhatsApp, Web, AI Agents with authentic AI logos from thesvg package) and 4 trust value props.
  */
 
+import { renderSideRailsHtml } from "../side-rails.js";
+
 export function renderChannelContinuityHtml(): string {
   // Official brand SVGs directly from thesvg v3.3.1
   const openaiSvg = `<svg width="42" height="42" xmlns="http://www.w3.org/2000/svg"   preserveAspectRatio="xMidYMid" viewBox="0 0 256 260"><path fill="#10A37F" d="M239.184 106.203a64.716 64.716 0 0 0-5.576-53.103C219.452 28.459 191 15.784 163.213 21.74A65.586 65.586 0 0 0 52.096 45.22a64.716 64.716 0 0 0-43.23 31.36c-14.31 24.602-11.061 55.634 8.033 76.74a64.665 64.665 0 0 0 5.525 53.102c14.174 24.65 42.644 37.324 70.446 31.36a64.72 64.72 0 0 0 48.754 21.744c28.481.025 53.714-18.361 62.414-45.481a64.767 64.767 0 0 0 43.229-31.36c14.137-24.558 10.875-55.423-8.083-76.483Zm-97.56 136.338a48.397 48.397 0 0 1-31.105-11.255l1.535-.87 51.67-29.825a8.595 8.595 0 0 0 4.247-7.367v-72.85l21.845 12.636c.218.111.37.32.409.563v60.367c-.056 26.818-21.783 48.545-48.601 48.601Zm-104.466-44.61a48.345 48.345 0 0 1-5.781-32.589l1.534.921 51.722 29.826a8.339 8.339 0 0 0 8.441 0l63.181-36.425v25.221a.87.87 0 0 1-.358.665l-52.335 30.184c-23.257 13.398-52.97 5.431-66.404-17.803ZM23.549 85.38a48.499 48.499 0 0 1 25.58-21.333v61.39a8.288 8.288 0 0 0 4.195 7.316l62.874 36.272-21.845 12.636a.819.819 0 0 1-.767 0L41.353 151.53c-23.211-13.454-31.171-43.144-17.804-66.405v.256Zm179.466 41.695-63.08-36.63L161.73 77.86a.819.819 0 0 1 .768 0l52.233 30.184a48.6 48.6 0 0 1-7.316 87.635v-61.391a8.544 8.544 0 0 0-4.4-7.213Zm21.742-32.69-1.535-.922-51.619-30.081a8.39 8.39 0 0 0-8.492 0L99.98 99.808V74.587a.716.716 0 0 1 .307-.665l52.233-30.133a48.652 48.652 0 0 1 72.236 50.391v.205ZM88.061 139.097l-21.845-12.585a.87.87 0 0 1-.41-.614V65.685a48.652 48.652 0 0 1 79.757-37.346l-1.535.87-51.67 29.825a8.595 8.595 0 0 0-4.246 7.367l-.051 72.697Zm11.868-25.58 28.138-16.217 28.188 16.218v32.434l-28.086 16.218-28.188-16.218-.052-32.434Z"/></svg>`;
@@ -104,13 +106,15 @@ export function renderChannelContinuityHtml(): string {
   const groqSvg = `<svg width="42" height="42" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 201 201"><path fill="#F54F35" d="M0 0h201v201H0V0Z"/><path fill="#FEFBFB" d="m128 49 1.895 1.52C136.336 56.288 140.602 64.49 142 73c.097 1.823.148 3.648.161 5.474l.03 3.247.012 3.482.017 3.613c.01 2.522.016 5.044.02 7.565.01 3.84.041 7.68.072 11.521.007 2.455.012 4.91.016 7.364l.038 3.457c-.033 11.717-3.373 21.83-11.475 30.547-4.552 4.23-9.148 7.372-14.891 9.73l-2.387 1.055c-9.275 3.355-20.3 2.397-29.379-1.13-5.016-2.38-9.156-5.17-13.234-8.925 3.678-4.526 7.41-8.394 12-12l3.063 2.375c5.572 3.958 11.135 5.211 17.937 4.625 6.96-1.384 12.455-4.502 17-10 4.174-6.784 4.59-12.222 4.531-20.094l.012-3.473c.003-2.414-.005-4.827-.022-7.241-.02-3.68 0-7.36.026-11.04-.003-2.353-.008-4.705-.016-7.058l.025-3.312c-.098-7.996-1.732-13.21-6.681-19.47-6.786-5.458-13.105-8.211-21.914-7.792-7.327 1.188-13.278 4.7-17.777 10.601C75.472 72.012 73.86 78.07 75 85c2.191 7.547 5.019 13.948 12 18 5.848 3.061 10.892 3.523 17.438 3.688l2.794.103c2.256.082 4.512.147 6.768.209v16c-16.682.673-29.615.654-42.852-10.848-8.28-8.296-13.338-19.55-13.71-31.277.394-9.87 3.93-17.894 9.562-25.875l1.688-2.563C84.698 35.563 110.05 34.436 128 49Z"/></svg>`;
 
   return `
-    <section class="channels-section" id="channels">
+    <section class="channels-section has-side-rails" id="channels">
+      ${renderSideRailsHtml()}
+      <img class="channels-section-watermark" src="/images/line/bg-cap-lotus.png" alt="" aria-hidden="true" />
       <div class="channels-container">
         <!-- Section Header -->
         <div class="channels-header">
-          <span class="channels-kicker">ONE CASE. EVERY CHANNEL.</span>
-          <h2 class="channels-title">Start anywhere. Same case, always.</h2>
-          <p class="channels-sub">Begin on one channel, continue on another. Your case stays intact.</p>
+          <span class="channels-kicker" data-i18n="ch.kicker">ONE CASE. EVERY CHANNEL.</span>
+          <h2 class="channels-title" data-i18n="ch.title">Start anywhere. Same case, always.</h2>
+          <p class="channels-sub" data-i18n="ch.sub">Begin on one channel, continue on another. Your case stays intact.</p>
         </div>
 
         <!-- Persistent Floating Case Capsule -->
@@ -144,8 +148,8 @@ export function renderChannelContinuityHtml(): string {
               </div>
             </div>
             <div class="channel-content">
-              <h3>Call Raksha</h3>
-              <p>Speak to us in your language.</p>
+              <h3 data-i18n="ch.call.title">Call Raksha</h3>
+              <p data-i18n="ch.call.p">Speak to us in your language.</p>
             </div>
           </article>
 
@@ -158,8 +162,8 @@ export function renderChannelContinuityHtml(): string {
               <img class="channel-mascot-img" src="/images/raksha/hero-whatsapp.png" alt="Elderly citizen using WhatsApp for Raksha" loading="lazy" />
             </div>
             <div class="channel-content">
-              <h3>WhatsApp Raksha</h3>
-              <p>Send voice notes, photos or messages.</p>
+              <h3 data-i18n="ch.wa.title">WhatsApp Raksha</h3>
+              <p data-i18n="ch.wa.p">Send voice notes, photos or messages.</p>
             </div>
           </article>
 
@@ -172,8 +176,8 @@ export function renderChannelContinuityHtml(): string {
               <img class="channel-mascot-img" src="/images/raksha/hero-web.png" alt="Citizen filing incident on Raksha web console" loading="lazy" />
             </div>
             <div class="channel-content">
-              <h3>Raksha on the Web</h3>
-              <p>Upload receipts, add details and review.</p>
+              <h3 data-i18n="ch.web.title">Raksha on the Web</h3>
+              <p data-i18n="ch.web.p">Upload receipts, add details and review.</p>
             </div>
           </article>
 
@@ -198,53 +202,10 @@ export function renderChannelContinuityHtml(): string {
               </div>
             </div>
             <div class="channel-content">
-              <h3>AI Agents</h3>
-              <p>Let AI agents assist and continue for you.</p>
+              <h3 data-i18n="ch.ai.title">AI Agents</h3>
+              <p data-i18n="ch.ai.p">Let AI agents assist and continue for you.</p>
             </div>
           </article>
-        </div>
-
-        <!-- Bottom Trust & Value Props Bar -->
-        <div class="trust-bar">
-          <div class="trust-item">
-            <div class="trust-icon icon-check">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-            </div>
-            <div class="trust-text">
-              <h4>Secure & Private</h4>
-              <p>Your data is protected end to end.</p>
-            </div>
-          </div>
-
-          <div class="trust-item">
-            <div class="trust-icon icon-lock">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg>
-            </div>
-            <div class="trust-text">
-              <h4>Verified & Trusted</h4>
-              <p>Government-grade security and process.</p>
-            </div>
-          </div>
-
-          <div class="trust-item">
-            <div class="trust-icon icon-sparkle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </div>
-            <div class="trust-text">
-              <h4>Always with You</h4>
-              <p>One case. Any channel. Real human support.</p>
-            </div>
-          </div>
-
-          <div class="trust-item">
-            <div class="trust-icon icon-people">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            </div>
-            <div class="trust-text">
-              <h4>For Everyone</h4>
-              <p>Built for India. Built for every person.</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -46,27 +46,30 @@ function isUiRoute(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/incidents" ||
-    /^\/incidents\/[^/]+$/.test(pathname)
+    pathname === "/portal-b" ||
+    pathname === "/portal-b/" ||
+    pathname === "/portal-b/incidents" ||
+    /^\/incidents\/[^/]+$/.test(pathname) ||
+    /^\/portal-b\/incidents\/[^/]+$/.test(pathname)
   );
 }
 
-export function createPortalBServer() {
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    const pathname = url.pathname;
-    const method = req.method || "GET";
+export async function handlePortalBRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  const pathname = url.pathname;
+  const method = req.method || "GET";
 
-    if (method === "OPTIONS") {
-      res.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
-      });
-      res.end();
-      return;
-    }
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+    });
+    res.end();
+    return;
+  }
 
-    try {
+  try {
       if (pathname === "/health" && method === "GET") {
         sendJson(res, 200, {
           status: "ok",
@@ -141,11 +144,12 @@ export function createPortalBServer() {
       }
 
       sendJson(res, 404, { error: `Route not found: ${method} ${pathname}` });
-    } catch (err) {
-      console.error("[Portal B Error]:", err);
-      sendJson(res, 500, { error: (err as Error).message || "Internal Server Error" });
-    }
-  });
+  } catch (err) {
+    console.error("[Portal B Error]:", err);
+    sendJson(res, 500, { error: (err as Error).message || "Internal Server Error" });
+  }
+}
 
-  return server;
+export function createPortalBServer() {
+  return createServer(handlePortalBRequest);
 }

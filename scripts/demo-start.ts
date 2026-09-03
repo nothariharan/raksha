@@ -1,6 +1,7 @@
 /**
  * Raksha Full-Stack Demo Launcher (pnpm demo / pnpm demo:start)
  * Spawns and coordinates all 8 protocol services in a single managed process with live health verification.
+ * Does NOT wipe state — use `pnpm demo:reset` explicitly for seeded demos.
  */
 
 import { createCoreServer } from "@raksha/core";
@@ -11,7 +12,6 @@ import { createPhoneWebhookServer } from "@raksha/agent-phone";
 import { createMCPServer } from "@raksha/agent-mcp";
 import { createPortalAServer } from "@raksha/portal-a";
 import { createPortalBServer } from "@raksha/portal-b";
-import { runDemoReset } from "./demo-reset.js";
 
 const PORT_CORE = Number(process.env.PORT_CORE) || 3001;
 const PORT_CAP = Number(process.env.PORT_CAP) || 3002;
@@ -23,10 +23,8 @@ const PORT_PHONE = Number(process.env.PORT_PHONE) || 3006;
 const PORT_MCP = Number(process.env.PORT_MCP) || 3007;
 
 export async function startFullDemoStack(): Promise<void> {
-  // 1. Reset to deterministic known state
-  await runDemoReset();
-
-  console.log("Starting Raksha Protocol Services...\n");
+  console.log("Starting Raksha Protocol Services (preserving existing store)...\n");
+  console.log("  Tip: run `pnpm demo:reset` first if you need a clean seeded demo.\n");
 
   const coreServer = createCoreServer();
   const capServer = createCapServer();
