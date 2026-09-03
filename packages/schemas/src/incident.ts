@@ -21,6 +21,23 @@ export type IncidentState =
   | "TRACKING"
   | "REJECTED";
 
+/**
+ * States that represent an open, resumable workflow.
+ * findOpenByMobile() only returns incidents in these states.
+ * SUBMITTED, ACKNOWLEDGED, TRACKING, REJECTED are terminal — a new case starts fresh.
+ */
+export const OPEN_INCIDENT_STATES: IncidentState[] = [
+  "INTAKE",
+  "EXTRACTING",
+  "VALIDATING",
+  "QUESTION_PENDING",
+  "USER_CONFIRMATION",
+  "READY",
+  "EVIDENCE_SEALED",
+  "PACKET_READY",
+  "HANDOFF_PENDING",
+];
+
 export type InputSource = "web" | "whatsapp" | "phone" | "agent" | "mcp";
 
 export type InputEventType =

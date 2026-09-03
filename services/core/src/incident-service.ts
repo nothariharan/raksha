@@ -10,6 +10,7 @@ import {
   PROTOCOL_VERSION,
 } from "@raksha/schemas";
 import { globalEventBus } from "@raksha/shared";
+import { normalizeMobile } from "@raksha/shared";
 import { ValidationEngine } from "./validation-engine.js";
 import {
   IIncidentRepository,
@@ -122,6 +123,17 @@ export class IncidentService {
     }
 
     return incident;
+  }
+
+  /**
+   * Find the most-recent open incident for a citizen mobile number.
+   * Normalizes the mobile before lookup so "+91...", "91...", "0..." all resolve to the same key.
+   * Returns null when no open case exists (caller should create one).
+   */
+  async findOpenByMobile(mobile: string): Promise<FraudIncident | null> {
+    const normalized = normalizeMobile(mobile);
+    if (!normalized) return null;
+    return this.incidentRepo.findOpenByMobile(normalized);
   }
 
   async getIncident(id: string): Promise<FraudIncident | null> {

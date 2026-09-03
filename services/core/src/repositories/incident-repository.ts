@@ -3,12 +3,18 @@
  * Handles persistent storage and retrieval of canonical FraudIncidents.
  */
 
-import { FraudIncident } from "@raksha/schemas";
+import { FraudIncident, OPEN_INCIDENT_STATES } from "@raksha/schemas";
 import { DatabaseClient, defaultDbClient } from "../db/connection.js";
 
 export interface IIncidentRepository {
   create(incident: FraudIncident): Promise<FraudIncident>;
   findById(id: string): Promise<FraudIncident | null>;
+  /**
+   * Find the most-recent open incident for a normalized mobile number.
+   * "Open" = state is one of OPEN_INCIDENT_STATES.
+   * Returns null if no open incident exists.
+   */
+  findOpenByMobile(normalizedMobile: string): Promise<FraudIncident | null>;
   update(id: string, updates: Partial<FraudIncident>): Promise<FraudIncident>;
   list(): Promise<FraudIncident[]>;
   delete(id: string): Promise<boolean>;
@@ -74,6 +80,44 @@ export class IncidentRepository implements IIncidentRepository {
       this.db.persistToDisk();
     }
     return incident;
+  }
+
+  async findOpenByMobile(normalizedMobile: string): Promise<FraudIncident | null> {
+    if (this.db.isPg()) {
+      const pool = this.db.getPool()!;
+      const res = await pool.query(
+        `SELECT * FROM incidents
+         WHERE reporter_mobile = $1
+           AND state = ANY($2::text[])
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [normalizedMobile, OPEN_INCIDENT_STATES]
+      );
+      if (res.rows.length === 0) return null;
+      return this.mapRowToIncident(res.rows[0]);
+    } else {
+      // Force a fresh read from disk so restarts and concurrent callers see current state
+      await this.db.ensureSchema();
+      const data = this.db.getData();
+      const all = Object.values(data.incidents ?? {}) as FraudIncident[];
+      const openStatesSet = new Set<string>(OPEN_INCIDENT_STATES);
+      const open = all
+        .filter(
+          (inc) => {
+            // Compare after normalizing both sides to ensure format-agnostic match
+            const incMobile = inc.reporter?.mobile
+              ? inc.reporter.mobile.replace(/\D/g, "")
+              : "";
+            const queryMobile = normalizedMobile.replace(/\D/g, "");
+            return (
+              incMobile === queryMobile &&
+              openStatesSet.has(inc.state)
+            );
+          }
+        )
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      return open[0] ?? null;
+    }
   }
 
   async findById(id: string): Promise<FraudIncident | null> {

@@ -2,6 +2,7 @@ import { CAPActionResponse, ProcessResponse, FraudIncident } from "@raksha/schem
 import { getTranslation } from "@raksha/i18n";
 import { processService, incidentService } from "@raksha/core";
 import { actionRouter } from "@raksha/cap";
+import { normalizeMobile } from "@raksha/shared";
 
 export interface PhoneToolsConfig {
   coreBaseUrl?: string;
@@ -118,6 +119,7 @@ export class PhoneToolsHandler {
     confirmedField?: string;
     confirmedValue?: unknown;
     language?: string;
+    callerPhone?: string;
   }): Promise<{
     incidentId: string;
     state: string;
@@ -144,17 +146,19 @@ export class PhoneToolsHandler {
     }
 
     let data: ProcessResponse;
+    const normalizedCaller = params.callerPhone ? normalizeMobile(params.callerPhone) : undefined;
     try {
       if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
         const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            incidentId: params.incidentId,
+            incidentId: params.incidentId || undefined,
             source: "phone",
             modality: "voice",
             content: params.userSpeech,
             language: lang,
+            reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
             userClarificationAnswer,
           }),
         });
@@ -162,11 +166,12 @@ export class PhoneToolsHandler {
           data = (await res.json()) as ProcessResponse;
         } else {
           const out = await processService.processInput({
-            incidentId: params.incidentId,
+            incidentId: params.incidentId || undefined,
             source: "phone",
             modality: "voice",
             content: params.userSpeech,
             language: lang,
+            reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
             userClarificationAnswer,
           });
           data = {
@@ -178,11 +183,12 @@ export class PhoneToolsHandler {
         }
       } else {
         const out = await processService.processInput({
-          incidentId: params.incidentId,
+          incidentId: params.incidentId || undefined,
           source: "phone",
           modality: "voice",
           content: params.userSpeech,
           language: lang,
+          reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
           userClarificationAnswer,
         });
         data = {
@@ -194,11 +200,12 @@ export class PhoneToolsHandler {
       }
     } catch {
       const out = await processService.processInput({
-        incidentId: params.incidentId,
+        incidentId: params.incidentId || undefined,
         source: "phone",
         modality: "voice",
         content: params.userSpeech,
         language: lang,
+        reporter: normalizedCaller ? { mobile: normalizedCaller } : undefined,
         userClarificationAnswer,
       });
       data = {

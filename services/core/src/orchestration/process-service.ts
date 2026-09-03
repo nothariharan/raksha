@@ -4,6 +4,7 @@
  */
 
 import { FraudIncident, IncidentState, InputSource } from "@raksha/schemas";
+import { normalizeMobile } from "@raksha/shared";
 import { MultimodalExtractor, ExtractedFraudCandidate, ModalityType } from "../extraction/extractor.js";
 import { ReconciliationEngine, ReconciliationResult } from "../reconciliation/reconciler.js";
 import { ClarificationEngine, ClarificationDecision } from "../clarification/clarification-engine.js";
@@ -52,23 +53,48 @@ export class ProcessService {
     const lang = input.language || "en";
     let incident: FraudIncident;
 
-    // 1. Load or Create Incident
+    // 1. Load or Create Incident — mobile-first resolution
+    //
+    // Priority order:
+    //   a) Explicit incidentId supplied → load & verify ownership
+    //   b) reporter.mobile supplied → findOpenByMobile (resume) or createIncident (new)
+    //   c) Neither → error (REPORTER_MOBILE_REQUIRED)
     if (input.incidentId) {
       const existing = await this.incidentService.getIncident(input.incidentId);
       if (!existing) {
         throw new Error(`Incident not found: ${input.incidentId}`);
       }
+      // Ownership check: if the caller also provides a mobile it must match
+      if (input.reporter?.mobile) {
+        const callerNorm = normalizeMobile(input.reporter.mobile);
+        const ownerNorm = existing.reporter.mobile
+          ? normalizeMobile(existing.reporter.mobile)
+          : null;
+        if (ownerNorm && ownerNorm !== callerNorm) {
+          throw new Error(
+            `Incident ${input.incidentId} does not belong to mobile ${callerNorm}`
+          );
+        }
+      }
       incident = existing;
+    } else if (input.reporter?.mobile) {
+      const normalized = normalizeMobile(input.reporter.mobile);
+      const open = await this.incidentService.findOpenByMobile(normalized);
+      if (open) {
+        incident = open;
+      } else {
+        incident = await this.incidentService.createIncident({
+          source: input.source,
+          narrative: { text: input.content },
+          reporter: {
+            mobile: normalized,
+            name: input.reporter?.name,
+            preferredLanguage: lang,
+          },
+        });
+      }
     } else {
-      incident = await this.incidentService.createIncident({
-        source: input.source,
-        narrative: { text: input.content },
-        reporter: {
-          mobile: input.reporter?.mobile,
-          name: input.reporter?.name,
-          preferredLanguage: lang,
-        },
-      });
+      throw new Error("REPORTER_MOBILE_REQUIRED: supply reporter.mobile or incidentId");
     }
 
     // 2. Ingest Evidence if applicable

@@ -10,6 +10,7 @@ import {
   ProcessResponse,
 } from "@raksha/schemas";
 import { processService, incidentService } from "@raksha/core";
+import { normalizeMobile } from "@raksha/shared";
 import { actionRouter } from "@raksha/cap";
 import {
   RawWhatsAppPayload,
@@ -48,7 +49,7 @@ export class WhatsAppService {
 
   async handleIncomingMessage(rawPayload: RawWhatsAppPayload): Promise<WhatsAppProcessResult> {
     const inputEvent: NormalizedInputEvent = WhatsAppMessageNormalizer.normalize(rawPayload);
-    const senderPhone = inputEvent.senderPhone || "+919876543210";
+    const senderPhone = normalizeMobile(inputEvent.senderPhone || "+919876543210");
     const messageId = inputEvent.messageId || `msg-${Date.now()}`;
 
     // 1. Idempotency Check
@@ -101,20 +102,29 @@ export class WhatsAppService {
       content = inputEvent.text;
 
       // Handle direct STATUS / CASE query
-      if (/^\s*(status|check status|case|track)\s*$/i.test(content) && activeIncidentId) {
-        const existingInc = await this.getIncidentStatus(activeIncidentId);
-        if (existingInc) {
-          const amt = (existingInc.transaction?.amount || 0).toLocaleString();
-          const channel = existingInc.transaction?.channel || "UPI";
-          const bank = existingInc.transaction?.debitInstitution || "State Bank of India";
-          const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*\n\nYour emergency fraud report is active in the Civic Action Protocol.`;
-          return {
-            success: true,
-            replyText,
-            incidentId: activeIncidentId,
-            state: existingInc.state,
-            fromCache: false,
-          };
+      if (/^\s*(status|check status|case|track)\s*$/i.test(content)) {
+        // Prefer session-cached incidentId; fall back to Core mobile lookup
+        let lookupId = activeIncidentId;
+        if (!lookupId) {
+          const normPhone = normalizeMobile(senderPhone);
+          const openInc = await incidentService.findOpenByMobile(normPhone);
+          lookupId = openInc?.id ?? null;
+        }
+        if (lookupId) {
+          const existingInc = await this.getIncidentStatus(lookupId);
+          if (existingInc) {
+            const amt = (existingInc.transaction?.amount || 0).toLocaleString();
+            const channel = existingInc.transaction?.channel || "UPI";
+            const bank = existingInc.transaction?.debitInstitution || "State Bank of India";
+            const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*\n\nYour emergency fraud report is active in the Civic Action Protocol.`;
+            return {
+              success: true,
+              replyText,
+              incidentId: lookupId,
+              state: existingInc.state,
+              fromCache: false,
+            };
+          }
         }
       }
 

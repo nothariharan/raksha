@@ -15,6 +15,7 @@
     "test": "tsx test/run-e2e.ts",
     "test:gateway": "tsx test/test-prod-gateway.ts",
     "test:persistence": "tsx test/persistence-identity.test.ts && tsx test/cold-start-matrix.ts",
+    "test:cross-channel": "cross-env FORCE_FILE_DB=true tsx test/cross-channel.test.ts",
     "test:e2e:cap": "tsx test/run-e2e.ts",
     "verify:prod": "tsx scripts/verify-prod-persistence.ts",
     "demo": "tsx scripts/demo-start.ts",

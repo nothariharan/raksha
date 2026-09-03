@@ -226,6 +226,7 @@ export class DatabaseClient {
 
       CREATE INDEX IF NOT EXISTS idx_incidents_state ON incidents(state);
       CREATE INDEX IF NOT EXISTS idx_incidents_transaction_id ON incidents(transaction_id);
+      CREATE INDEX IF NOT EXISTS idx_incidents_mobile_state ON incidents(reporter_mobile, state) WHERE reporter_mobile IS NOT NULL;
       CREATE INDEX IF NOT EXISTS idx_evidence_incident_id ON evidence(incident_id);
       CREATE INDEX IF NOT EXISTS idx_cap_cases_incident_id ON cap_cases(incident_id);
       CREATE INDEX IF NOT EXISTS idx_events_case_id ON events(case_id);

@@ -48,15 +48,22 @@ export async function runDemoReset(): Promise<void> {
   defaultPhoneSessionManager.clear();
 
   if (seedIncident) {
-    await defaultIncidentRepository.create(seedIncident);
-    if (seedIncident.id !== "RKS-000001") {
-      await defaultIncidentRepository.create({
-        ...seedIncident,
-        id: "RKS-000001",
-      });
-    }
-    defaultConversationStore.bindIncident(persona.mobile, seedIncident.id, seedIncident.state);
-    console.log(`  ✓ Seeded canonical incident: ${seedIncident.id} (Citizen: ${persona.name}, ₹${seedIncident.transaction.amount})`);
+    // Normalize mobile before seeding so DB lookup via normalizeMobile() will match
+    const normalizedMobile = seedIncident.reporter?.mobile
+      ? seedIncident.reporter.mobile.replace(/\D/g, "").replace(/^0+/, "")
+      : "919876543210";
+    const seedRow = {
+      ...seedIncident,
+      reporter: {
+        ...seedIncident.reporter,
+        mobile: normalizedMobile,
+      },
+    };
+    await defaultIncidentRepository.create(seedRow);
+    // Bind session caches so any pre-existing channel session picks up RKS-000001 immediately
+    defaultConversationStore.bindIncident(normalizedMobile, seedRow.id, seedRow.state);
+    defaultConversationStore.bindIncident(`+${normalizedMobile}`, seedRow.id, seedRow.state);
+    console.log(`  ✓ Seeded canonical incident: ${seedRow.id} (Citizen: ${persona.name}, mobile: ${normalizedMobile})`);
   }
 
   // Sequences must sit past seeded numeric suffixes so next allocate is RKS-000002.
@@ -64,7 +71,12 @@ export async function runDemoReset(): Promise<void> {
 
   console.log("  ✓ Event ledger and identity sequences synced past seed");
   console.log("\n==========================================================");
-  console.log("  DEMO RESET COMPLETE: READY FOR LIVE PRESENTATION");
+  console.log("  DEMO RESET COMPLETE");
+  console.log("");
+  console.log("  Citizen : Ramesh Kumar");
+  console.log("  Mobile  : 919876543210");
+  console.log("  Incident: RKS-000001");
+  console.log("  State   : INTAKE");
   console.log("==========================================================\n");
 }
 

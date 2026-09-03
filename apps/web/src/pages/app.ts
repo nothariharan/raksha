@@ -614,6 +614,14 @@ const bodyContent = `
             <p class="app-subtitle" id="wsSub">Speak in your language, show your payment receipt, or describe what happened.</p>
           </div>
 
+          <!-- Citizen identity: shown for demo; lets the mentor confirm cross-channel linkage -->
+          <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 1rem 0;font-size:0.82rem;color:var(--text-muted);">
+            <span>Mobile:</span>
+            <input id="reporterMobile" type="tel" value="+919876543210"
+              style="flex:1;padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:6px;font-size:0.82rem;outline:none;"
+              oninput="currentReporterMobile=this.value" />
+          </div>
+
           <div class="action-grid">
             <div class="action-btn" onclick="startLiveVoiceCall()">
               <span class="btn-icon"><img class="line-icon" src="/images/line/voice-shankha.png" alt="" draggable="false" /></span>
@@ -761,6 +769,10 @@ const bodyContent = `
       let currentIncidentId = null;
       let currentIncident = null;
       let currentLanguage = "en";
+      // Demo citizen identity — pre-filled for the Ramesh Kumar mentor demo.
+      // The user can override via the mobile input field rendered in the idle card.
+      const DEMO_MOBILE = "+919876543210";
+      let currentReporterMobile = DEMO_MOBILE;
       let isDevOpen = false;
       let activeConversation = null;
       let conversationPollInterval = null;
@@ -1083,7 +1095,8 @@ const bodyContent = `
               source: "phone",
               modality: "voice",
               content: speechText,
-              language: "hi"
+              language: "hi",
+              reporter: { mobile: currentReporterMobile }
             })
           });
           if (res.ok) {
@@ -1308,7 +1321,8 @@ const bodyContent = `
                 modality: "image",
                 content: base64,
                 mimeType: file.type,
-                language: currentLanguage
+                language: currentLanguage,
+                reporter: { mobile: currentReporterMobile }
               })
             });
             if (!res.ok) {
@@ -1349,7 +1363,8 @@ const bodyContent = `
               source: "web",
               modality: "text",
               content: text,
-              language: currentLanguage
+              language: currentLanguage,
+              reporter: { mobile: currentReporterMobile }
             })
           });
           if (!res.ok) {
@@ -1380,7 +1395,8 @@ const bodyContent = `
               source: "web",
               modality: "text",
               content: val,
-              language: currentLanguage
+              language: currentLanguage,
+              reporter: { mobile: currentReporterMobile }
             })
           });
           const data = await res.json();
@@ -1403,7 +1419,8 @@ const bodyContent = `
               source: "web",
               modality: "text",
               content: "I confirm the amount is " + chosenValue,
-              language: currentLanguage
+              language: currentLanguage,
+              reporter: { mobile: currentReporterMobile }
             })
           });
           const data = await res.json();
@@ -1620,6 +1637,25 @@ const bodyContent = `
       window.submitQuestionAnswer = submitQuestionAnswer;
       window.dispatchEmergencyReport = dispatchEmergencyReport;
       window.resetToHome = resetToHome;
+
+      // Session recovery: on page load, check if the citizen already has an open incident.
+      // This lets the web tab rejoin the same case after a page refresh.
+      (async function recoverSession() {
+        try {
+          const mobile = (document.getElementById("reporterMobile"))?.value || DEMO_MOBILE;
+          const res = await protocolFetch(CORE_URL + "/v1/incidents/open?mobile=" + encodeURIComponent(mobile));
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.found && data.incident && data.incident.id) {
+            currentIncidentId = data.incident.id;
+            currentIncident = data.incident;
+            updateIncidentUI(data.incident, data.incident.state);
+            console.log("[Raksha] Recovered open session:", data.incident.id);
+          }
+        } catch (e) {
+          // Non-fatal — fresh session
+        }
+      })();
     </script>
   `;
 

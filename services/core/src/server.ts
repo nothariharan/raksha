@@ -166,6 +166,11 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
           sendJson(res, 400, { error: "Missing content or userClarificationAnswer in body" });
           return;
         }
+        // Identity guard: every request must supply reporter.mobile or an incidentId
+        if (!body.incidentId && !body.reporter?.mobile) {
+          sendJson(res, 400, { error: "REPORTER_MOBILE_REQUIRED" });
+          return;
+        }
         const result = await processService.processInput(body);
         sendJson(res, 200, result);
         return;
@@ -237,6 +242,18 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
       if (pathname === "/v1/incidents" && method === "GET") {
         const incidents = await incidentService.listIncidents();
         sendJson(res, 200, { incidents });
+        return;
+      }
+
+      // GET /v1/incidents/open?mobile=... — preflight lookup for cross-channel session recovery
+      if (pathname === "/v1/incidents/open" && method === "GET") {
+        const mobile = url.searchParams.get("mobile");
+        if (!mobile) {
+          sendJson(res, 400, { error: "MOBILE_REQUIRED" });
+          return;
+        }
+        const open = await incidentService.findOpenByMobile(mobile);
+        sendJson(res, 200, { found: !!open, incident: open ?? null });
         return;
       }
 
