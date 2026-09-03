@@ -10,7 +10,6 @@ import {
 } from "@raksha/schemas";
 import {
   computeSha256,
-  generateEvidenceId,
   globalEventBus,
 } from "@raksha/shared";
 import {
@@ -19,21 +18,25 @@ import {
   IEventRepository,
   defaultEventRepository,
 } from "./repositories/index.js";
+import { IdentityAllocator, defaultIdentityAllocator } from "./db/identity-allocator.js";
 
 export class EvidenceService {
   private evidenceRepo: IEvidenceRepository;
   private eventRepo: IEventRepository;
+  private ids: IdentityAllocator;
 
   constructor(
     evidenceRepo?: IEvidenceRepository,
-    eventRepo?: IEventRepository
+    eventRepo?: IEventRepository,
+    ids?: IdentityAllocator
   ) {
     this.evidenceRepo = evidenceRepo || defaultEvidenceRepository;
     this.eventRepo = eventRepo || defaultEventRepository;
+    this.ids = ids || defaultIdentityAllocator;
   }
 
   async addEvidence(input: CreateEvidenceInput): Promise<EvidenceReference> {
-    const id = generateEvidenceId();
+    const id = await this.ids.allocateEvidenceId();
     let sha256 = input.sha256;
 
     if (!sha256) {

@@ -9,7 +9,7 @@ import {
   IncidentValidation,
   PROTOCOL_VERSION,
 } from "@raksha/schemas";
-import { generateIncidentId, globalEventBus } from "@raksha/shared";
+import { globalEventBus } from "@raksha/shared";
 import { ValidationEngine } from "./validation-engine.js";
 import {
   IIncidentRepository,
@@ -19,24 +19,28 @@ import {
   IEvidenceRepository,
   defaultEvidenceRepository,
 } from "./repositories/index.js";
+import { IdentityAllocator, defaultIdentityAllocator } from "./db/identity-allocator.js";
 
 export class IncidentService {
   private incidentRepo: IIncidentRepository;
   private eventRepo: IEventRepository;
   private evidenceRepo: IEvidenceRepository;
+  private ids: IdentityAllocator;
 
   constructor(
     incidentRepo?: IIncidentRepository,
     eventRepo?: IEventRepository,
-    evidenceRepo?: IEvidenceRepository
+    evidenceRepo?: IEvidenceRepository,
+    ids?: IdentityAllocator
   ) {
     this.incidentRepo = incidentRepo || defaultIncidentRepository;
     this.eventRepo = eventRepo || defaultEventRepository;
     this.evidenceRepo = evidenceRepo || defaultEvidenceRepository;
+    this.ids = ids || defaultIdentityAllocator;
   }
 
   async createIncident(input: CreateIncidentInput): Promise<FraudIncident> {
-    const id = generateIncidentId("RKS");
+    const id = await this.ids.allocateIncidentId("RKS");
     const now = new Date().toISOString();
 
     const incident: FraudIncident = {

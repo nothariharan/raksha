@@ -10,12 +10,32 @@ import pg from "pg";
 
 const { Pool } = pg;
 
+export interface DatabaseSequences {
+  incident: number;
+  case: number;
+  evidence: number;
+  event: number;
+}
+
 export interface DatabaseStoreData {
   incidents: Record<string, unknown>;
   evidence: Record<string, unknown>;
   cap_cases: Record<string, unknown>;
   events: Array<unknown>;
   cap_actions: Record<string, unknown>;
+  /** Last allocated numeric suffix per kind (file DB). Next id = max(seq, rowMax) + 1. */
+  sequences?: DatabaseSequences;
+}
+
+function emptyStore(): DatabaseStoreData {
+  return {
+    incidents: {},
+    evidence: {},
+    cap_cases: {},
+    events: [],
+    cap_actions: {},
+    sequences: { incident: 0, case: 0, evidence: 0, event: 0 },
+  };
 }
 
 export class DatabaseClient {
@@ -26,15 +46,16 @@ export class DatabaseClient {
 
   constructor(customStoragePath?: string) {
     this.filePath = customStoragePath || join(process.cwd(), ".data", "raksha-db.json");
-    this.memoryData = {
-      incidents: {},
-      evidence: {},
-      cap_cases: {},
-      events: [],
-      cap_actions: {},
-    };
+    this.memoryData = emptyStore();
 
     this.initStorage();
+  }
+
+  /** Ensure older file DBs without `sequences` get a zeroed counter map. */
+  public ensureSequencesShape(): void {
+    if (!this.memoryData.sequences) {
+      this.memoryData.sequences = { incident: 0, case: 0, evidence: 0, event: 0 };
+    }
   }
 
   private initStorage(): void {
@@ -70,7 +91,8 @@ export class DatabaseClient {
       if (existsSync(this.filePath)) {
         const raw = readFileSync(this.filePath, "utf-8");
         if (raw.trim()) {
-          this.memoryData = JSON.parse(raw);
+          this.memoryData = { ...emptyStore(), ...JSON.parse(raw) };
+          this.ensureSequencesShape();
         }
       } else {
         this.persistToDisk();
@@ -110,25 +132,20 @@ export class DatabaseClient {
     if (existsSync(this.filePath)) {
       const raw = readFileSync(this.filePath, "utf-8");
       if (raw.trim()) {
-        this.memoryData = JSON.parse(raw);
+        this.memoryData = { ...emptyStore(), ...JSON.parse(raw) };
+        this.ensureSequencesShape();
       }
     }
   }
 
   public clearStorage(): void {
-    this.memoryData = {
-      incidents: {},
-      evidence: {},
-      cap_cases: {},
-      events: [],
-      cap_actions: {},
-    };
+    this.memoryData = emptyStore();
     this.persistToDisk();
   }
 
   public async ensureSchema(): Promise<void> {
-    if (!this.isPg() || !this.pool) return;
-    const schemaSql = `
+    if (this.isPg() && this.pool) {
+      const schemaSql = `
       CREATE TABLE IF NOT EXISTS incidents (
         id VARCHAR(64) PRIMARY KEY,
         protocol_version VARCHAR(32) NOT NULL DEFAULT 'raksha/0.1',
@@ -214,9 +231,19 @@ export class DatabaseClient {
       CREATE INDEX IF NOT EXISTS idx_events_case_id ON events(case_id);
       CREATE INDEX IF NOT EXISTS idx_events_incident_id ON events(incident_id);
       CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+
+      CREATE SEQUENCE IF NOT EXISTS raksha_incident_seq;
+      CREATE SEQUENCE IF NOT EXISTS raksha_case_seq;
+      CREATE SEQUENCE IF NOT EXISTS raksha_evidence_seq;
+      CREATE SEQUENCE IF NOT EXISTS raksha_event_seq;
     `;
-    await this.pool.query(schemaSql);
-    console.log("[DatabaseClient] PostgreSQL database tables and indexes verified.");
+      await this.pool.query(schemaSql);
+      console.log("[DatabaseClient] PostgreSQL database tables, sequences, and indexes verified.");
+    }
+
+    // File and Postgres: align identity sequences past existing row suffixes.
+    const { IdentityAllocator } = await import("./identity-allocator.js");
+    await new IdentityAllocator(this).syncSequences();
   }
 
   public async close(): Promise<void> {

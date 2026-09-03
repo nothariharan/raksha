@@ -2,10 +2,17 @@ import { CAPEvent, CAPEventType } from "@raksha/schemas";
 import { generateEventId } from "./id-generator.js";
 
 export type EventHandler<T = unknown> = (event: CAPEvent<T>) => void | Promise<void>;
+export type EventIdFactory = () => Promise<string> | string;
 
 export class EventBus {
   private listeners: Map<string, EventHandler[]> = new Map();
   private eventLog: CAPEvent[] = [];
+  private idFactory: EventIdFactory | null = null;
+
+  /** Prefer IdentityAllocator in production so event ids survive restarts. */
+  setIdFactory(factory: EventIdFactory | null): void {
+    this.idFactory = factory;
+  }
 
   subscribe<T = unknown>(eventType: CAPEventType | string, handler: EventHandler<T>): () => void {
     const handlers = this.listeners.get(eventType) || [];
@@ -27,9 +34,13 @@ export class EventBus {
     incidentId?: string;
     source: string;
     payload: T;
+    id?: string;
   }): Promise<CAPEvent<T>> {
+    const id =
+      params.id ||
+      (this.idFactory ? await this.idFactory() : generateEventId());
     const event: CAPEvent<T> = {
-      id: generateEventId(),
+      id,
       type: params.type,
       caseId: params.caseId,
       incidentId: params.incidentId,

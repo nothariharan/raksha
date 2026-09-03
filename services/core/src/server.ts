@@ -9,6 +9,7 @@ import { evidenceService } from "./evidence-service.js";
 import { defaultEventRepository } from "./repositories/index.js";
 import { MultimodalExtractor } from "./extraction/extractor.js";
 import { ProcessInput, processService } from "./orchestration/process-service.js";
+import { wirePersistentIdentity } from "./db/wire-identity.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -293,5 +294,9 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
 }
 
 export function createCoreServer() {
+  // Best-effort: sync file sequences + wire event ids (prod path awaits wirePersistentIdentity).
+  void wirePersistentIdentity().catch((err) => {
+    console.warn("[CoreServer] identity wire notice:", (err as Error).message);
+  });
   return createServer(handleCoreRequest);
 }

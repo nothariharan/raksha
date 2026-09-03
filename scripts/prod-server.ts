@@ -5,7 +5,12 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
-import { handleCoreRequest } from "@raksha/core";
+import {
+  handleCoreRequest,
+  defaultDbClient,
+  defaultIdentityAllocator,
+  wirePersistentIdentity,
+} from "@raksha/core";
 import { handleCapRequest } from "@raksha/cap";
 import { handlePortalARequest } from "@raksha/portal-a";
 import { handlePortalBRequest } from "@raksha/portal-b";
@@ -13,7 +18,6 @@ import { handleWebRequest } from "@raksha/web";
 import { handleWhatsAppRequest } from "@raksha/agent-whatsapp";
 import { handlePhoneRequest } from "@raksha/agent-phone";
 import { handleMcpRequest } from "@raksha/agent-mcp";
-import { defaultDbClient } from "@raksha/core";
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN || "").replace(/\/$/, "");
@@ -154,13 +158,11 @@ export async function startProductionGateway(): Promise<void> {
   console.log("  STARTING RAKSHA PROTOCOL HOST");
   console.log("==========================================================");
 
+  await wirePersistentIdentity(defaultDbClient, defaultIdentityAllocator);
   if (defaultDbClient.isPg()) {
-    console.log("[Production] Initializing PostgreSQL schema verification...");
-    await defaultDbClient.ensureSchema().catch((err) => {
-      console.warn("[Production] PostgreSQL schema verification notice:", err.message);
-    });
+    console.log("[Production] PostgreSQL schema + identity sequences ready.");
   } else {
-    console.log("[Production] Running on persistent local storage driver.");
+    console.log("[Production] File store + identity sequences ready.");
   }
 
   const server = createUnifiedGatewayServer();

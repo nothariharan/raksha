@@ -5,7 +5,11 @@
 
 import { existsSync, unlinkSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { defaultDbClient, defaultIncidentRepository } from "@raksha/core";
+import {
+  defaultDbClient,
+  defaultIncidentRepository,
+  defaultIdentityAllocator,
+} from "@raksha/core";
 import { defaultConversationStore } from "@raksha/agent-whatsapp";
 import { defaultPhoneSessionManager } from "@raksha/agent-phone";
 import { resetCounters, globalEventBus } from "@raksha/shared";
@@ -24,6 +28,7 @@ export async function runDemoReset(): Promise<void> {
   defaultDbClient.clearStorage();
   resetCounters();
   globalEventBus.clear();
+  globalEventBus.setIdFactory(() => defaultIdentityAllocator.allocateEventId("EVT"));
 
   // Read Canonical Persona & Seed Incident
   const personaPath = join(process.cwd(), "demo-data", "persona.json");
@@ -54,7 +59,10 @@ export async function runDemoReset(): Promise<void> {
     console.log(`  ✓ Seeded canonical incident: ${seedIncident.id} (Citizen: ${persona.name}, ₹${seedIncident.transaction.amount})`);
   }
 
-  console.log("  ✓ Event ledger and CAP case counters reset to zero");
+  // Sequences must sit past seeded numeric suffixes so next allocate is RKS-000002.
+  await defaultIdentityAllocator.syncSequences();
+
+  console.log("  ✓ Event ledger and identity sequences synced past seed");
   console.log("\n==========================================================");
   console.log("  DEMO RESET COMPLETE: READY FOR LIVE PRESENTATION");
   console.log("==========================================================\n");
