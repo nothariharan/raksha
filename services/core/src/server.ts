@@ -70,20 +70,44 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
       }
 
       if (pathname === "/system/health" && method === "GET") {
+        const unified = process.env.RAKSHA_GATEWAY_MODE === "unified";
+        const gatewayPort = Number(process.env.PORT) || 3000;
+        if (unified) {
+          sendJson(res, 200, {
+            status: "HEALTHY",
+            mode: "unified",
+            version: "0.7.0",
+            protocol: "cap/0.1",
+            timestamp: new Date().toISOString(),
+            services: {
+              gateway: { status: "UP", port: gatewayPort },
+              core: { status: "UP", mount: "/v1" },
+              cap: { status: "UP", mount: "/api/cap" },
+              portalA: { status: "UP", mount: "/portal-a" },
+              portalB: { status: "UP", mount: "/portal-b" },
+              whatsapp: { status: "UP", mount: "/whatsapp" },
+              phone: { status: "UP", mount: "/phone" },
+              mcp: { status: "UP", mount: "/mcp" },
+            },
+          });
+          return;
+        }
+
         sendJson(res, 200, {
           status: "HEALTHY",
+          mode: "multi-process",
           version: "0.7.0",
           protocol: "cap/0.1",
           timestamp: new Date().toISOString(),
           services: {
-            core: { status: "UP", port: 3001 },
-            cap: { status: "UP", port: 3002 },
-            portalA: { status: "UP", port: 3003 },
-            portalB: { status: "UP", port: 3004 },
-            web: { status: "UP", port: 3000 },
-            whatsapp: { status: "UP", port: 3005 },
-            phone: { status: "UP", port: 3006 },
-            mcp: { status: "UP", port: 3007 },
+            core: { status: "UP", port: Number(process.env.PORT_CORE) || 3001 },
+            cap: { status: "UP", port: Number(process.env.PORT_CAP) || 3002 },
+            portalA: { status: "UP", port: Number(process.env.PORT_PORTAL_A) || 3003 },
+            portalB: { status: "UP", port: Number(process.env.PORT_PORTAL_B) || 3004 },
+            web: { status: "UP", port: Number(process.env.PORT_WEB) || 3000 },
+            whatsapp: { status: "UP", port: Number(process.env.PORT_WHATSAPP) || 3005 },
+            phone: { status: "UP", port: Number(process.env.PORT_PHONE) || 3006 },
+            mcp: { status: "UP", port: Number(process.env.PORT_MCP) || 3007 },
           },
         });
         return;

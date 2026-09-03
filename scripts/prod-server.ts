@@ -4,7 +4,7 @@
  * The citizen website is served from Vercel; this process keeps APIs and adapters.
  */
 
-import { createServer, IncomingMessage, ServerResponse } from "node:http";
+import { createServer, IncomingMessage, ServerResponse, type Server } from "node:http";
 import {
   handleCoreRequest,
   defaultDbClient,
@@ -153,7 +153,9 @@ export function createUnifiedGatewayServer() {
   });
 }
 
-export async function startProductionGateway(): Promise<void> {
+export async function startProductionGateway(): Promise<Server> {
+  process.env.RAKSHA_GATEWAY_MODE = "unified";
+
   console.log("==========================================================");
   console.log("  STARTING RAKSHA PROTOCOL HOST");
   console.log("==========================================================");
@@ -166,22 +168,26 @@ export async function startProductionGateway(): Promise<void> {
   }
 
   const server = createUnifiedGatewayServer();
-  server.listen(PORT, () => {
-    console.log(`\n✓ Raksha protocol host listening on port ${PORT}`);
-    if (PUBLIC_WEB_ORIGIN) {
-      console.log(`  - Citizen website  : ${PUBLIC_WEB_ORIGIN}`);
-    } else {
-      console.log(`  - Citizen pages    : http://localhost:${PORT}/ (set PUBLIC_WEB_ORIGIN in production)`);
-    }
-    console.log(`  - Core API         : http://localhost:${PORT}/v1/process`);
-    console.log(`  - CAP API          : http://localhost:${PORT}/cap/actions/execute`);
-    console.log(`  - Portal A (1930)  : http://localhost:${PORT}/portal-a`);
-    console.log(`  - Portal B (Bank)  : http://localhost:${PORT}/portal-b`);
-    console.log(`  - WhatsApp webhook : http://localhost:${PORT}/whatsapp/webhook`);
-    console.log(`  - Phone telephony  : http://localhost:${PORT}/phone/simulate`);
-    console.log(`  - MCP agent server : http://localhost:${PORT}/mcp`);
-    console.log(`  - Health           : http://localhost:${PORT}/health\n`);
+  await new Promise<void>((resolve) => {
+    server.listen(PORT, () => resolve());
   });
+
+  console.log(`\n✓ Raksha protocol host listening on port ${PORT}`);
+  if (PUBLIC_WEB_ORIGIN) {
+    console.log(`  - Citizen website  : ${PUBLIC_WEB_ORIGIN}`);
+  } else {
+    console.log(`  - Citizen pages    : http://localhost:${PORT}/ (set PUBLIC_WEB_ORIGIN in production)`);
+  }
+  console.log(`  - Core API         : http://localhost:${PORT}/v1/process`);
+  console.log(`  - CAP API          : http://localhost:${PORT}/cap/actions/execute`);
+  console.log(`  - Portal A (1930)  : http://localhost:${PORT}/portal-a`);
+  console.log(`  - Portal B (Bank)  : http://localhost:${PORT}/portal-b`);
+  console.log(`  - WhatsApp webhook : http://localhost:${PORT}/whatsapp/webhook`);
+  console.log(`  - Phone telephony  : http://localhost:${PORT}/phone/simulate`);
+  console.log(`  - MCP agent server : http://localhost:${PORT}/mcp`);
+  console.log(`  - Health           : http://localhost:${PORT}/health\n`);
+
+  return server;
 }
 
 if (process.argv[1]?.includes("prod-server")) {
