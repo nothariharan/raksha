@@ -6,6 +6,7 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { RawWhatsAppPayload } from "./message-normalizer.js";
 import { WhatsAppService, defaultWhatsAppService } from "./whatsapp-service.js";
+import { wireWhatsAppHandoffSubscriber } from "./handoff-subscriber.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -99,5 +100,7 @@ export async function handleWhatsAppRequest(
 }
 
 export function createWhatsAppWebhookServer(service?: WhatsAppService) {
+  // Ensure citizen notify runs from incident.accepted (event-driven, not scripts)
+  wireWhatsAppHandoffSubscriber(service);
   return createServer((req, res) => handleWhatsAppRequest(req, res, service));
 }

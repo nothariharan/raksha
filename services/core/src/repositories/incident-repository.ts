@@ -15,6 +15,11 @@ export interface IIncidentRepository {
    * Returns null if no open incident exists.
    */
   findOpenByMobile(normalizedMobile: string): Promise<FraudIncident | null>;
+  /**
+   * Find the most-recent incident for a mobile (any state).
+   * Used by STATUS / tracking lookups after handoff.
+   */
+  findLatestByMobile(normalizedMobile: string): Promise<FraudIncident | null>;
   update(id: string, updates: Partial<FraudIncident>): Promise<FraudIncident>;
   list(): Promise<FraudIncident[]>;
   delete(id: string): Promise<boolean>;
@@ -117,6 +122,35 @@ export class IncidentRepository implements IIncidentRepository {
         )
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
       return open[0] ?? null;
+    }
+  }
+
+  async findLatestByMobile(normalizedMobile: string): Promise<FraudIncident | null> {
+    if (this.db.isPg()) {
+      const pool = this.db.getPool()!;
+      const res = await pool.query(
+        `SELECT * FROM incidents
+         WHERE reporter_mobile = $1
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [normalizedMobile]
+      );
+      if (res.rows.length === 0) return null;
+      return this.mapRowToIncident(res.rows[0]);
+    } else {
+      await this.db.ensureSchema();
+      const data = this.db.getData();
+      const all = Object.values(data.incidents ?? {}) as FraudIncident[];
+      const queryMobile = normalizedMobile.replace(/\D/g, "");
+      const matches = all
+        .filter((inc) => {
+          const incMobile = inc.reporter?.mobile
+            ? inc.reporter.mobile.replace(/\D/g, "")
+            : "";
+          return incMobile === queryMobile;
+        })
+        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      return matches[0] ?? null;
     }
   }
 

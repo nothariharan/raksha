@@ -10,8 +10,12 @@ import { createWebServer } from "@raksha/web";
 import { createWhatsAppWebhookServer } from "@raksha/agent-whatsapp";
 import { createPhoneWebhookServer } from "@raksha/agent-phone";
 import { createMCPServer } from "@raksha/agent-mcp";
-import { createPortalAServer } from "@raksha/portal-a";
-import { createPortalBServer } from "@raksha/portal-b";
+import { createPortalAServer, portalAIntakeService } from "@raksha/portal-a";
+import { createPortalBServer, portalBResponseService } from "@raksha/portal-b";
+
+// Ensure Portal A / B event subscribers are live in this process (side-effect of imports above).
+void portalAIntakeService;
+void portalBResponseService;
 
 const PORT_CORE = Number(process.env.PORT_CORE) || 3001;
 const PORT_CAP = Number(process.env.PORT_CAP) || 3002;

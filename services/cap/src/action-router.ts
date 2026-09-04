@@ -1,6 +1,11 @@
 /**
  * Persistent Action Router for CAP
  * Executes typed actions with idempotency protection and event persistence.
+ *
+ * Happy-path autonomy contract:
+ *   report_financial_fraud → incident.accepted (exactly once per incident)
+ *   → Portal A / Portal B / WhatsApp react via EventBus subscribers
+ *   (no developer scripts in the chain)
  */
 
 import {
@@ -21,27 +26,35 @@ import {
   defaultEventRepository,
   IActionRepository,
   defaultActionRepository,
+  IIncidentRepository,
+  defaultIncidentRepository,
   IdentityAllocator,
   defaultIdentityAllocator,
 } from "@raksha/core";
 import { capabilityRegistry } from "./capability-registry.js";
 
+const SIMULATION_BOUNDARY =
+  "SIMULATED DEMONSTRATION — CAP event pipeline is real; 1930 / bank systems are simulated.";
+
 export class ActionRouter {
   private caseRepo: ICaseRepository;
   private eventRepo: IEventRepository;
   private actionRepo: IActionRepository;
+  private incidentRepo: IIncidentRepository;
   private ids: IdentityAllocator;
 
   constructor(
     caseRepo?: ICaseRepository,
     eventRepo?: IEventRepository,
     actionRepo?: IActionRepository,
-    ids?: IdentityAllocator
+    ids?: IdentityAllocator,
+    incidentRepo?: IIncidentRepository
   ) {
     this.caseRepo = caseRepo || defaultCaseRepository;
     this.eventRepo = eventRepo || defaultEventRepository;
     this.actionRepo = actionRepo || defaultActionRepository;
     this.ids = ids || defaultIdentityAllocator;
+    this.incidentRepo = incidentRepo || defaultIncidentRepository;
   }
 
   async validateAction(
@@ -75,12 +88,35 @@ export class ActionRouter {
     return { valid: errors.length === 0, errors };
   }
 
+  private extractIncident(payload: unknown): FraudIncident {
+    const p = payload as { incident?: FraudIncident } | FraudIncident;
+    return ("incident" in (p as object) && (p as { incident?: FraudIncident }).incident
+      ? (p as { incident: FraudIncident }).incident
+      : (p as FraudIncident));
+  }
+
+  private async responseFromExistingCase(capCase: CAPCase): Promise<CAPActionResponse> {
+    return {
+      success: true,
+      status: capCase.status === "ACTION_TAKEN" ? "ACTION_TAKEN" : "ACCEPTED",
+      caseId: capCase.id,
+      externalReference: capCase.externalReference,
+      data: {
+        caseId: capCase.id,
+        status: capCase.status,
+        externalReference: capCase.externalReference,
+        idempotentReplay: true,
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   async executeAction<T = unknown, R = unknown>(
     action: CAPActionName,
     payload: T,
     idempotencyKey?: string
   ): Promise<CAPActionResponse<R>> {
-    // 1. Idempotency Check
+    // 1. Idempotency Check (explicit key)
     if (idempotencyKey) {
       const existingAction = await this.actionRepo.findByIdempotencyKey(idempotencyKey);
       if (existingAction && existingAction.responsePayload) {
@@ -103,8 +139,27 @@ export class ActionRouter {
 
     // 3. Handle 'report_financial_fraud'
     if (action === "report_financial_fraud") {
-      const p = payload as { incident?: FraudIncident } | FraudIncident;
-      const incident = "incident" in p && p.incident ? p.incident : (p as FraudIncident);
+      const incident = this.extractIncident(payload);
+
+      // Semantic idempotency: one CAP case per incident for report_financial_fraud
+      const existingCase = await this.caseRepo.findByIncidentId(incident.id);
+      if (existingCase) {
+        const replay = (await this.responseFromExistingCase(existingCase)) as CAPActionResponse<R>;
+        if (idempotencyKey) {
+          await this.actionRepo.record({
+            id: await this.ids.allocateEventId("ACT"),
+            actionName: action,
+            caseId: existingCase.id,
+            incidentId: incident.id,
+            status: "ACCEPTED",
+            idempotencyKey,
+            requestPayload: payload,
+            responsePayload: replay,
+            executedAt: new Date().toISOString(),
+          });
+        }
+        return replay;
+      }
 
       const caseId = await this.ids.allocateCaseId("CAP");
       const externalRef = generateExternalReference("1930");
@@ -124,18 +179,42 @@ export class ActionRouter {
 
       await this.caseRepo.create(capCase);
 
+      // Persist civic handoff on the Core incident (best-effort; never blocks CAP accept)
+      try {
+        const stored = await this.incidentRepo.findById(incident.id);
+        if (stored) {
+          await this.incidentRepo.update(incident.id, {
+            state: "SUBMITTED",
+            handoff: {
+              ...stored.handoff,
+              target: "portal-a",
+              status: "ACCEPTED",
+              externalReference: externalRef,
+              submittedAt: now,
+              nextRequiredAction: "Await simulated 1930 / bank response",
+            },
+          });
+        }
+      } catch (err) {
+        console.warn("[CAP] Could not mark incident SUBMITTED:", (err as Error).message);
+      }
+
+      const acceptedPayload = {
+        caseId,
+        incidentId: incident.id,
+        externalReference: externalRef,
+        targetPortal: "portal-a",
+        status: "ACCEPTED",
+        incident,
+        simulationBoundary: SIMULATION_BOUNDARY,
+      };
+
       const event = await globalEventBus.emit({
         type: "incident.accepted",
         caseId,
         incidentId: incident.id,
         source: "cap",
-        payload: {
-          caseId,
-          incidentId: incident.id,
-          externalReference: externalRef,
-          targetPortal: "portal-a",
-          status: "ACCEPTED",
-        },
+        payload: acceptedPayload,
       });
       await this.eventRepo.append(event);
 
@@ -144,42 +223,30 @@ export class ActionRouter {
         status: "ACCEPTED",
         caseId,
         externalReference: externalRef,
-        data: { caseId, status: "ACCEPTED", externalReference: externalRef } as unknown as R,
+        data: {
+          caseId,
+          status: "ACCEPTED",
+          externalReference: externalRef,
+          simulationBoundary: SIMULATION_BOUNDARY,
+        } as unknown as R,
         timestamp: now,
       };
 
-      // Outbound Citizen Notification to WhatsApp
-      if (incident.reporter?.mobile) {
-        const whatsappUrl = process.env.WHATSAPP_URL || "http://localhost:3005";
-        fetch(`${whatsappUrl}/whatsapp/notify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mobile: incident.reporter.mobile,
-            incidentId: incident.id,
-            referenceNumber: externalRef,
-            amount: incident.transaction?.amount,
-            channel: incident.transaction?.channel,
-            bank: incident.transaction?.debitInstitution,
-            utr: incident.transaction?.transactionId,
-          }),
-        }).catch(() => {});
-      }
+      // Always record the action for audit (use incident-scoped key if none supplied)
+      const recordKey = idempotencyKey || `cap-report-${incident.id}`;
+      await this.actionRepo.record({
+        id: await this.ids.allocateEventId("ACT"),
+        actionName: action,
+        caseId,
+        incidentId: incident.id,
+        status: "ACCEPTED",
+        idempotencyKey: recordKey,
+        requestPayload: payload,
+        responsePayload: response,
+        executedAt: now,
+      });
 
-      if (idempotencyKey) {
-        await this.actionRepo.record({
-          id: await this.ids.allocateEventId("ACT"),
-          actionName: action,
-          caseId,
-          incidentId: incident.id,
-          status: "ACCEPTED",
-          idempotencyKey,
-          requestPayload: payload,
-          responsePayload: response,
-          executedAt: now,
-        });
-      }
-
+      // WhatsApp / Portal A / Portal B are EventBus subscribers — no direct notify here.
       return response;
     }
 
@@ -197,16 +264,44 @@ export class ActionRouter {
         };
       }
 
+      // Idempotent replay if already actioned
+      if (existing.status === "ACTION_TAKEN") {
+        const replay = (await this.responseFromExistingCase(existing)) as CAPActionResponse<R>;
+        return replay;
+      }
+
       const updatedCase = await this.caseRepo.update(ack.caseId, {
         status: "ACTION_TAKEN",
       });
+
+      try {
+        const stored = await this.incidentRepo.findById(
+          ack.incidentId || existing.incidentId
+        );
+        if (stored) {
+          await this.incidentRepo.update(stored.id, {
+            state: "ACKNOWLEDGED",
+            handoff: {
+              ...stored.handoff,
+              status: "ACKNOWLEDGED",
+              acknowledgedAt: new Date().toISOString(),
+              nextRequiredAction: undefined,
+            },
+          });
+        }
+      } catch (err) {
+        console.warn("[CAP] Could not mark incident ACKNOWLEDGED:", (err as Error).message);
+      }
 
       const event = await globalEventBus.emit({
         type: "response.acknowledged",
         caseId: ack.caseId,
         incidentId: ack.incidentId || existing.incidentId,
         source: "portal-b",
-        payload: ack,
+        payload: {
+          ...ack,
+          simulationBoundary: SIMULATION_BOUNDARY,
+        },
       });
       await this.eventRepo.append(event);
 
@@ -215,23 +310,26 @@ export class ActionRouter {
         status: "ACTION_TAKEN",
         caseId: ack.caseId,
         externalReference: updatedCase.externalReference,
-        data: { caseId: ack.caseId, status: "ACTION_TAKEN" } as unknown as R,
+        data: {
+          caseId: ack.caseId,
+          status: "ACTION_TAKEN",
+          simulationBoundary: SIMULATION_BOUNDARY,
+        } as unknown as R,
         timestamp: new Date().toISOString(),
       };
 
-      if (idempotencyKey) {
-        await this.actionRepo.record({
-          id: await this.ids.allocateEventId("ACT"),
-          actionName: action,
-          caseId: ack.caseId,
-          incidentId: ack.incidentId || existing.incidentId,
-          status: "ACTION_TAKEN",
-          idempotencyKey,
-          requestPayload: payload,
-          responsePayload: response,
-          executedAt: new Date().toISOString(),
-        });
-      }
+      const recordKey = idempotencyKey || `cap-ack-${ack.caseId}-${ack.actionTaken}`;
+      await this.actionRepo.record({
+        id: await this.ids.allocateEventId("ACT"),
+        actionName: action,
+        caseId: ack.caseId,
+        incidentId: ack.incidentId || existing.incidentId,
+        status: "ACTION_TAKEN",
+        idempotencyKey: recordKey,
+        requestPayload: payload,
+        responsePayload: response,
+        executedAt: new Date().toISOString(),
+      });
 
       return response;
     }
@@ -248,6 +346,10 @@ export class ActionRouter {
 
   async getCase(caseId: string): Promise<CAPCase | null> {
     return this.caseRepo.findById(caseId);
+  }
+
+  async getCaseByIncidentId(incidentId: string): Promise<CAPCase | null> {
+    return this.caseRepo.findByIncidentId(incidentId);
   }
 
   async getCaseEvents(caseId: string) {
