@@ -14,17 +14,19 @@ export class TextExtractor {
 
     let amount: number | undefined;
     let fraudCategory: FraudCategory = "OTHER";
-    let channel: "UPI" | "CARD" | "BANK_TRANSFER" | "WALLET" | "OTHER" = "UPI";
+    let channel: "UPI" | "CARD" | "BANK_TRANSFER" | "WALLET" | "OTHER" = "OTHER";
     let application: string | undefined;
     let transactionId: string | null = null;
     let debitInstitution: string | null = null;
     let beneficiaryIdentifier: string | null = null;
 
     // 1. Amount Extraction (₹5000, Rs 5000, 5,000 rupees, 50k, etc.)
-    const amountRegex = /(?:rs\.?|inr|₹|\bamount\b|\bpaid\b|\bsent\b|\blost\b)\s*[:=]?\s*([0-9]+(?:,[0-9]+)*(?:\.[0-9]{2})?|\d+k)/i;
+    const amountRegex =
+      /(?:rs\.?|inr|₹|\bamount\b|\bpaid\b|\bsent\b|\blost\b)\s*[:=]?\s*([0-9]+(?:,[0-9]+)*(?:\.[0-9]{2})?|\d+k)|([0-9]+(?:,[0-9]+)*)\s*(?:rupees|rs\.?|inr)\b/i;
     const directNumberMatch = text.match(amountRegex);
-    if (directNumberMatch && directNumberMatch[1]) {
-      let rawVal = directNumberMatch[1].toLowerCase().replace(/,/g, "");
+    const amountToken = directNumberMatch?.[1] || directNumberMatch?.[2];
+    if (amountToken) {
+      let rawVal = amountToken.toLowerCase().replace(/,/g, "");
       if (rawVal.endsWith("k")) {
         amount = parseFloat(rawVal.slice(0, -1)) * 1000;
       } else {
@@ -65,7 +67,15 @@ export class TextExtractor {
     }
 
     // 2. Application & Channel Detection (Multilingual: English, Devanagari, Tamil, etc.)
-    if (/phonepe|phone\s*pe|फ़ोनपे|फोनपे|போன்பே|ఫోన్‌పే|ಫೋನ್‍ಪೇ|ফোনপে/i.test(text)) {
+    const deniedUpi = /did\s+not\s+use|didn't\s+use|did\s+not\s+use\s+any\s+upi|no\s+upi|not\s+(use|used)\s+(any\s+)?(upi|phonepe|gpay)/i.test(
+      text
+    );
+    if (deniedUpi) {
+      channel = "BANK_TRANSFER";
+      application = undefined;
+      confidence.channel = 0.88;
+      sourceRefs.channel = [sourceId];
+    } else if (/phonepe|phone\s*pe|फ़ोनपे|फोनपे|போன்பே|ఫోన్‌పే|ಫೋನ್‍ಪೇ|ফোনপে/i.test(text)) {
       application = "PhonePe";
       channel = "UPI";
       confidence.application = 0.95;
@@ -137,10 +147,13 @@ export class TextExtractor {
       sourceRefs.fraudCategory = [sourceId];
     }
 
-    // 4. UTR Extraction from text if citizen pasted 12 digits
-    const utrMatch = text.match(/\b([0-9]{12})\b/);
-    if (utrMatch) {
-      transactionId = utrMatch[1];
+    // 4. UTR / reference — 12-digit preferred; labeled 8–16 digit refs also accepted
+    const labeledUtr = text.match(
+      /\b(?:utr|rrn|reference(?:\s+no\.?)?|txn(?:\s*id)?|transaction\s+id)(?:\s+(?:number|id))?\s*(?:is|:|#)?\s*([0-9]{8,16})/i
+    );
+    const twelveUtr = text.match(/\b([0-9]{12})\b/);
+    if (labeledUtr?.[1] || twelveUtr?.[1]) {
+      transactionId = (labeledUtr?.[1] || twelveUtr?.[1]) as string;
       confidence.transactionId = 0.95;
       sourceRefs.transactionId = [sourceId];
     }

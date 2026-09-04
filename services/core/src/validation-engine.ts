@@ -79,6 +79,10 @@ export class ValidationEngine {
       conflicts,
       nextQuestion,
       validatedAt: new Date().toISOString(),
+      // Preserve edge-gate flags — validate() rebuilds status/missing but must not wipe proof flow.
+      factsConfirmed: incident.validation?.factsConfirmed,
+      proofVerified: incident.validation?.proofVerified,
+      contextCaptured: incident.validation?.contextCaptured,
     };
   }
 }

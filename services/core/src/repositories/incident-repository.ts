@@ -181,6 +181,8 @@ export class IncidentRepository implements IIncidentRepository {
       transaction: { ...existing.transaction, ...(updates.transaction || {}) },
       validation: { ...existing.validation, ...(updates.validation || {}) },
       handoff: { ...existing.handoff, ...(updates.handoff || {}) },
+      fraudCategory: updates.fraudCategory !== undefined ? updates.fraudCategory : existing.fraudCategory,
+      scamSummary: updates.scamSummary !== undefined ? updates.scamSummary : existing.scamSummary,
       updatedAt: new Date().toISOString(),
     };
 

@@ -81,6 +81,47 @@ export function handleWebRequest(
     return;
   }
 
+  // Conversation token (WebRTC) — required for reliable browser playback.
+  // Signed WebSocket + ulaw telephony formats were why citizens heard silence.
+  if (pathname === "/app/elevenlabs/conversation-token" && method === "GET") {
+    const apiKey = process.env.ELEVENLABS_API_KEY || "";
+    const agentId =
+      url.searchParams.get("agentId") ||
+      process.env.ELEVENLABS_WEB_AGENT_ID ||
+      elevenLabsAgentId;
+    if (!apiKey || apiKey.startsWith("synthetic_")) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "ELEVENLABS_API_KEY not configured" }));
+      return;
+    }
+    if (!agentId || agentId.includes("synthetic")) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "ELEVENLABS_INTAKE_AGENT_ID not configured" }));
+      return;
+    }
+
+    const tokenApi =
+      "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=" +
+      encodeURIComponent(agentId);
+
+    fetch(tokenApi, { headers: { "xi-api-key": apiKey } })
+      .then(async (upstream) => {
+        const body = await upstream.text();
+        res.writeHead(upstream.status, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        });
+        res.end(body);
+      })
+      .catch((err) => {
+        res.writeHead(502, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({ error: (err as Error).message || "ElevenLabs conversation token failed" })
+        );
+      });
+    return;
+  }
+
   if (pathname === "/app/elevenlabs/config" && method === "GET") {
     const resolved =
       process.env.ELEVENLABS_WEB_AGENT_ID ||
@@ -95,6 +136,7 @@ export function handleWebRequest(
       JSON.stringify({
         agentId: live,
         signedUrlPath: "/app/elevenlabs/signed-url",
+        conversationTokenPath: "/app/elevenlabs/conversation-token",
         source: live
           ? process.env.ELEVENLABS_WEB_AGENT_ID
             ? "ELEVENLABS_WEB_AGENT_ID"
@@ -168,6 +210,8 @@ export function handleWebRequest(
         renderAppPageHtml({
           coreUrl,
           capUrl,
+          portalAUrl: process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
+          portalBUrl: process.env.PORTAL_B_BASE_URL || "http://localhost:3004",
           elevenLabsAgentId:
             elevenLabsAgentId && !elevenLabsAgentId.includes("synthetic")
               ? elevenLabsAgentId

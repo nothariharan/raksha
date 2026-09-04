@@ -8,10 +8,14 @@ export function renderAppPageHtml(config?: {
   coreUrl?: string;
   capUrl?: string;
   elevenLabsAgentId?: string;
+  portalAUrl?: string;
+  portalBUrl?: string;
 }): string {
   const coreUrl = config?.coreUrl ?? "http://localhost:3001";
   const capUrl = config?.capUrl ?? "http://localhost:3002";
   const elevenLabsAgentId = config?.elevenLabsAgentId ?? "";
+  const portalAUrl = config?.portalAUrl ?? process.env.PORTAL_A_BASE_URL ?? "http://localhost:3003";
+  const portalBUrl = config?.portalBUrl ?? process.env.PORTAL_B_BASE_URL ?? "http://localhost:3004";
 
   const extraStyles = `
     .app-shell {
@@ -162,34 +166,112 @@ export function renderAppPageHtml(config?: {
       align-self: flex-end;
     }
 
+    .ready-card, .filed-card {
+      text-align: left;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .ready-card-head, .filed-card-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      margin-bottom: 1.1rem;
+    }
+    .ready-card-mark, .filed-card-mark {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
+    .ready-card h3, .filed-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin: 0 0 0.25rem;
+      color: var(--text);
+    }
+    .filed-card h3 { color: var(--green); }
+    .ready-card-sub, .filed-card-sub {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin: 0;
+    }
     .details-grid {
-      background: #fafaf9;
+      background: #fff;
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 1.5rem;
-      margin: 1.5rem 0;
+      padding: 1.1rem 1.2rem;
+      margin: 0 0 1.15rem;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.2rem;
+      gap: 1rem 1.2rem;
       text-align: left;
     }
-    .dt-lbl { font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
-    .dt-val { font-size: 1.1rem; font-weight: 700; color: var(--text); }
-    .dt-amount { font-size: 1.6rem; color: var(--orange); }
+    .dt-lbl { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 650; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
+    .dt-val { font-size: 1.02rem; font-weight: 700; color: var(--text); word-break: break-word; }
+    .dt-amount { font-size: 1.45rem; color: var(--orange); }
+    @media (max-width: 520px) {
+      .details-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+    }
 
     .btn-dispatch {
       background: var(--orange);
-      color: white;
+      color: #fff;
       border: none;
-      padding: 0.95rem 1.8rem;
+      padding: 0.85rem 1.4rem;
       border-radius: 10px;
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: 700;
       width: 100%;
       cursor: pointer;
-      transition: background 0.15s;
+      font-family: var(--font);
+      transition: background 0.15s, transform 0.12s;
     }
     .btn-dispatch:hover { background: var(--orange-hover); }
+    .btn-dispatch:active { transform: scale(0.98); }
+
+    .status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      margin: 0 0 1rem;
+    }
+    .status-step {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      padding: 0.55rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .status-step-label {
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: var(--text);
+    }
+    .status-step-time {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .filed-ref {
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      font-weight: 650;
+      color: var(--text);
+      margin: 0 0 0.85rem;
+    }
+    .filed-disclaimer {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0.35rem 0 0;
+    }
 
     /* Raksha Minimal Live Voice Experience (FluidOrb - White / Light Theme) */
     .call-modal-overlay {
@@ -204,17 +286,19 @@ export function renderAppPageHtml(config?: {
       animation: fadeIn 0.25s ease;
       color: #1c1917;
     }
-    .call-modal-overlay.active { display: flex; justify-content: center; align-items: center; }
+    .call-modal-overlay.active { display: flex; justify-content: center; align-items: stretch; }
 
     .call-space {
-      width: min(620px, 100%);
-      min-height: 85vh;
+      width: min(1180px, 100%);
+      min-height: calc(100dvh - 2rem);
+      max-height: 100dvh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 2rem 1.5rem;
+      justify-content: flex-start;
+      align-items: stretch;
+      padding: 1.25rem 1.5rem 1rem;
       position: relative;
+      overflow: hidden;
     }
 
     .call-top-bar {
@@ -260,33 +344,503 @@ export function renderAppPageHtml(config?: {
 
     .call-center-stage {
       width: 100%;
+      flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      text-align: center;
-      margin: auto 0;
+      align-items: stretch;
+      text-align: left;
+      margin: 0.75rem 0 0;
     }
 
+    /* FluidOrb — soft filled disk (matches apps/web FluidOrb shader) */
     .voice-fluid-orb {
-      width: 240px;
-      height: 240px;
-      margin: 0.85rem auto 1.2rem auto;
+      width: 148px;
+      height: 148px;
+      margin: 0 auto 0.85rem auto;
       display: grid;
       place-items: center;
       position: relative;
       background: transparent;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
     }
     .voice-fluid-orb canvas {
       width: 100%;
       height: 100%;
       display: block;
+      border-radius: 50%;
     }
     @media (max-width: 500px) {
       .voice-fluid-orb {
-        width: 168px;
-        height: 168px;
+        width: 112px;
+        height: 112px;
       }
     }
+
+    /* Language gate — first step before live session */
+    .call-lang-gate {
+      width: min(420px, 100%);
+      text-align: center;
+      margin: 0.5rem auto 1.5rem;
+    }
+    .call-lang-gate[hidden] { display: none !important; }
+    .call-lang-kicker {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.65rem;
+    }
+    .call-lang-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.55rem, 3.5vw, 2rem);
+      font-weight: 400;
+      line-height: 1.2;
+      color: var(--text);
+      margin: 0 0 0.55rem;
+    }
+    .call-lang-sub {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin: 0 0 1.35rem;
+    }
+    .call-lang-grid {
+      display: grid;
+      gap: 0.65rem;
+    }
+    .call-lang-option {
+      appearance: none;
+      width: 100%;
+      border: 1.5px solid var(--border);
+      background: var(--bg-white);
+      border-radius: 14px;
+      padding: 0.95rem 1.1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .call-lang-option:hover,
+    .call-lang-option[aria-pressed="true"] {
+      border-color: var(--orange);
+      background: var(--orange-light);
+      box-shadow: 0 1px 0 rgba(234, 88, 12, 0.08);
+    }
+    .call-lang-option .lang-native {
+      font-size: 1.05rem;
+      font-weight: 650;
+      color: var(--text);
+    }
+    .call-lang-option .lang-en {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .call-session-body[hidden] { display: none !important; }
+    .call-session-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      width: 100%;
+    }
+    .call-session-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .call-workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+    .call-pane {
+      background: #ffffff;
+      border: 1px solid #e7e5e4;
+      border-radius: 18px;
+      padding: 0.95rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      box-shadow: 0 1px 0 rgba(28, 25, 23, 0.03);
+    }
+    .call-pane-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #a8a29e;
+      margin-bottom: 0.7rem;
+      flex-shrink: 0;
+    }
+    .transcript-feed {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      padding-right: 0.35rem;
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: #d6d3d1 transparent;
+    }
+    .transcript-feed::-webkit-scrollbar {
+      width: 5px;
+    }
+    .transcript-feed::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .transcript-feed::-webkit-scrollbar-thumb {
+      background: #d6d3d1;
+      border-radius: 999px;
+    }
+    .transcript-feed::-webkit-scrollbar-thumb:hover {
+      background: #a8a29e;
+    }
+    .transcript-empty {
+      color: #a8a29e;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      margin: auto 0;
+      text-align: center;
+      padding: 1.5rem 0.5rem;
+    }
+    .transcript-bubble {
+      max-width: 94%;
+      animation: fadeIn 0.25s ease;
+    }
+    .transcript-bubble.agent {
+      align-self: flex-start;
+    }
+    .transcript-bubble.user {
+      align-self: flex-end;
+    }
+    .transcript-who {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.28rem;
+      color: #a8a29e;
+    }
+    .transcript-bubble.user .transcript-who { color: #ea580c; text-align: right; }
+    .transcript-text {
+      font-size: 0.98rem;
+      line-height: 1.5;
+      color: #1c1917;
+      font-weight: 600;
+    }
+    .transcript-bubble.user .transcript-text {
+      color: #c2410c;
+      font-style: italic;
+      font-weight: 600;
+      text-align: right;
+    }
+    .dossier-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      min-height: 0;
+      padding-right: 0.2rem;
+      scrollbar-width: thin;
+      scrollbar-color: #d6d3d1 transparent;
+    }
+    .dossier-body::-webkit-scrollbar {
+      width: 5px;
+    }
+    .dossier-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .dossier-body::-webkit-scrollbar-thumb {
+      background: #d6d3d1;
+      border-radius: 999px;
+    }
+    .dossier-body::-webkit-scrollbar-thumb:hover {
+      background: #a8a29e;
+    }
+    .dossier-empty {
+      color: #a8a29e;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: auto 0;
+      text-align: left;
+    }
+    .dossier-row {
+      display: grid;
+      grid-template-columns: 7.2rem minmax(0, 1fr);
+      gap: 0.45rem 0.75rem;
+      align-items: baseline;
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid #f5f5f4;
+    }
+    .dossier-row:last-child { border-bottom: none; }
+    .dossier-k {
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #a8a29e;
+    }
+    .dossier-v {
+      font-size: 0.92rem;
+      font-weight: 650;
+      color: #1c1917;
+      word-break: break-word;
+    }
+    .dossier-v.muted { color: #a8a29e; font-weight: 500; }
+    .dossier-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #0369a1;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 999px;
+      padding: 0.28rem 0.7rem;
+      width: fit-content;
+      margin-bottom: 0.25rem;
+    }
+    .dossier-status.ready {
+      color: #c2410c;
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+    .dossier-status.filed {
+      color: #15803d;
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .dossier-actions {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e7e5e4;
+    }
+    .dossier-actions[hidden] { display: none !important; }
+    .dossier-confirm-note {
+      font-size: 0.82rem;
+      color: #57534e;
+      line-height: 1.4;
+      margin: 0;
+    }
+    .dossier-link {
+      display: block;
+      text-decoration: none;
+      border: 1.5px solid #e7e5e4;
+      border-radius: 12px;
+      padding: 0.7rem 0.85rem;
+      background: #fafaf9;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .dossier-link:hover {
+      border-color: #ea580c;
+      background: #fff7ed;
+    }
+    .dossier-link-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #1c1917;
+      margin-bottom: 0.15rem;
+    }
+    .dossier-link-sub {
+      font-size: 0.75rem;
+      color: #78716c;
+      line-height: 1.35;
+    }
+    .dossier-ref {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #15803d;
+    }
+    .dossier-status.proof {
+      color: #7c2d12;
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
+    .btn-proof-upload {
+      appearance: none;
+      border: 1.5px dashed #fdba74;
+      background: #fff7ed;
+      color: #c2410c;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: var(--font);
+      text-align: center;
+    }
+    .btn-proof-upload:hover { background: #ffedd5; border-color: #ea580c; }
+    .call-outcome {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      gap: 1rem;
+      padding: 0.5rem 0 1rem;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+      text-align: left;
+      animation: fadeIn 0.35s ease;
+    }
+    .call-outcome.active { display: flex; }
+    .call-outcome-kicker {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #16a34a;
+    }
+    .call-outcome-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.55rem, 3vw, 2rem);
+      font-weight: 400;
+      margin: 0;
+      color: #1c1917;
+      line-height: 1.2;
+    }
+    .call-outcome-copy {
+      font-size: 0.95rem;
+      color: #57534e;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .call-outcome-ref {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #15803d;
+    }
+    .call-outcome-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .call-outcome-done {
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: #1c1917;
+      margin: 0.25rem 0 0;
+    }
+    .call-outcome-disclaimer {
+      font-size: 0.78rem;
+      color: #a8a29e;
+      margin: 0;
+    }
+    @media (max-width: 860px) {
+      .call-workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(180px, 42vh) minmax(200px, 1fr);
+      }
+      .call-space {
+        overflow-y: auto;
+        max-height: none;
+      }
+    }
+
+    /* Clarification step — editorial, no emoji card chrome */
+    .clarify-block {
+      text-align: center;
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 0.5rem 0 0.25rem;
+    }
+    .clarify-kicker {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.55rem;
+    }
+    .clarify-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 3vw, 1.7rem);
+      font-weight: 400;
+      line-height: 1.25;
+      color: var(--text);
+      margin: 0 0 0.45rem;
+    }
+    .clarify-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0 0 1.25rem;
+      line-height: 1.45;
+    }
+    .clarify-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .clarify-input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      outline: none;
+      background: var(--bg-white);
+    }
+    .clarify-input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+    }
+    .clarify-submit {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 0.85rem 1.35rem;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 650;
+      font-size: 0.92rem;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .clarify-submit:hover { background: var(--orange-hover); }
+
+    .process-block {
+      text-align: center;
+      padding: 2rem 0 1.5rem;
+    }
+    .process-title {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 400;
+      margin: 0 0 0.4rem;
+    }
+    .process-sub {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin: 0;
+    }
+
     .btn-start-speaking .speak-icon {
       width: 22px;
       height: 22px;
@@ -317,7 +871,7 @@ export function renderAppPageHtml(config?: {
       font-size: 0.84rem;
       font-weight: 600;
       letter-spacing: 0.01em;
-      margin-bottom: 1.3rem;
+      margin-bottom: 0;
       box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08);
       transition: all 0.25s ease;
     }
@@ -330,70 +884,14 @@ export function renderAppPageHtml(config?: {
       animation: pulseDot 1.6s infinite;
     }
 
-    .call-transcript-focus {
-      width: 100%;
-      max-width: 520px;
-      min-height: 90px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      padding: 0 1rem;
-      margin-bottom: 1.3rem;
-    }
-    .turn-prompt {
-      font-size: 1.22rem;
-      font-weight: 700;
-      color: #1c1917;
-      line-height: 1.55;
-      letter-spacing: -0.015em;
-      transition: opacity 0.3s;
-    }
-    .turn-user {
-      font-size: 1.05rem;
-      color: #ea580c;
-      font-weight: 600;
-      line-height: 1.45;
-      font-style: italic;
-      transition: opacity 0.3s;
-    }
-
-    .call-case-capsule {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: #ffffff;
-      border: 1px solid #e7e5e4;
-      border-radius: 999px;
-      padding: 0.45rem 1.1rem;
-      font-size: 0.84rem;
-      color: #78716c;
-      margin-bottom: 1.4rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-      transition: all 0.3s ease;
-      animation: fadeIn 0.4s ease;
-    }
-    .capsule-id {
-      font-weight: 700;
-      color: #0284c7;
-    }
-    .capsule-facts {
-      color: #1c1917;
-      font-weight: 600;
-    }
-    .capsule-state {
-      font-weight: 700;
-      color: #d97706;
-      margin-left: 0.25rem;
-    }
-
     .call-controls {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.85rem;
+      gap: 0.65rem;
       width: 100%;
+      flex-shrink: 0;
+      padding-top: 0.25rem;
     }
     .btn-start-speaking {
       background: #ea580c;
@@ -458,17 +956,18 @@ export function renderAppPageHtml(config?: {
       color: #57534e;
     }
 
-    /* Developer Drawer */
+    /* Developer CAP drawer — light editorial, matches site (not dark IDE chrome) */
     #devDrawer {
       position: fixed;
       top: 0;
       right: 0;
-      width: 400px;
+      width: min(420px, 100vw);
       height: 100vh;
-      background: #0f172a;
-      color: #f8fafc;
-      box-shadow: -4px 0 25px rgba(0, 0, 0, 0.3);
-      padding: 1.5rem;
+      background: #fafaf9;
+      color: var(--text);
+      border-left: 1px solid var(--border);
+      box-shadow: -12px 0 40px rgba(28, 25, 23, 0.08);
+      padding: 1.35rem 1.4rem 2rem;
       transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 10000;
@@ -481,22 +980,82 @@ export function renderAppPageHtml(config?: {
     .drawer-top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.35rem;
+      padding-bottom: 0.95rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-kicker {
+      font-size: 0.7rem;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.35rem;
+    }
+    .drawer-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+      margin: 0;
+    }
+    .drawer-close {
+      appearance: none;
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .drawer-close:hover {
+      border-color: var(--orange-border);
+      color: var(--text);
+      background: var(--orange-light);
+    }
+    .drawer-label {
+      font-size: 0.7rem;
+      font-weight: 650;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+    .drawer-incident {
+      font-family: var(--mono);
+      font-weight: 650;
+      font-size: 0.95rem;
+      color: var(--text);
+      padding: 0.7rem 0.85rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .drawer-intro {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin: 0 0 1.25rem;
     }
     .json-view {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 0.85rem;
       font-family: var(--mono);
       font-size: 0.76rem;
-      color: #38bdf8;
-      max-height: 400px;
+      color: #44403c;
+      max-height: min(55vh, 480px);
       overflow-y: auto;
       white-space: pre-wrap;
+      margin: 0;
     }
     .protocol-warming {
       display: none;
@@ -552,53 +1111,109 @@ const bodyContent = `
             <span>← Exit</span>
           </button>
           <div class="call-brand-mark">RAKSHA</div>
-          <div class="call-lang-indicator">English / हिंदी</div>
+          <div class="call-lang-indicator" id="callLangIndicator">Choose language</div>
         </div>
 
         <!-- Central Focused Living Experience -->
         <div class="call-center-stage">
           
-          <div class="voice-fluid-orb" id="callDiyaOrb" data-state="IDLE">
+          <div class="voice-fluid-orb" id="callDiyaOrb" data-state="IDLE" data-color="#ea580c">
             <canvas id="callFluidOrb" aria-hidden="true"></canvas>
           </div>
 
-          <!-- Realtime State Indicator -->
-          <div class="call-state-pill" id="callStatePillWrap" aria-live="polite">
-            <span class="dot"></span>
-            <span id="callStatusBadge">Tap below to start speaking</span>
+          <!-- Language gate (must choose before session starts) -->
+          <div class="call-lang-gate" id="callLangGate">
+            <div class="call-lang-kicker">Before we begin</div>
+            <h2 class="call-lang-title">Which language are you comfortable in?</h2>
+            <p class="call-lang-sub">Raksha will listen and reply only in the language you pick.</p>
+            <div class="call-lang-grid" role="group" aria-label="Language">
+              <button type="button" class="call-lang-option" data-lang="en" onclick="selectCallLanguage('en')">
+                <span class="lang-native">English</span>
+                <span class="lang-en">Speak with me in English</span>
+              </button>
+              <button type="button" class="call-lang-option" data-lang="hi" onclick="selectCallLanguage('hi')">
+                <span class="lang-native">हिंदी</span>
+                <span class="lang-en">हिंदी में बात करें</span>
+              </button>
+              <button type="button" class="call-lang-option" data-lang="ta" onclick="selectCallLanguage('ta')">
+                <span class="lang-native">தமிழ்</span>
+                <span class="lang-en">தமிழில் பேசுங்கள்</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Minimal Focused Conversation Turns -->
-          <div class="call-transcript-focus" id="liveTranscriptBox" aria-live="polite">
-            <div class="turn-prompt" id="agentTurnPrompt">“Tap Start speaking to begin a live Raksha session.”</div>
-            <div class="turn-user" id="userTurnSpeech"></div>
+          <div class="call-session-body" id="callSessionBody" hidden>
+            <div class="call-session-hero">
+              <div class="call-state-pill" id="callStatePillWrap" aria-live="polite">
+                <span class="dot"></span>
+                <span id="callStatusBadge">Tap below to start speaking</span>
+              </div>
+            </div>
+
+            <div class="call-workspace">
+              <section class="call-pane call-transcript-pane" aria-label="Conversation">
+                <div class="call-pane-label">Conversation</div>
+                <div class="transcript-feed" id="liveTranscriptFeed" aria-live="polite">
+                  <div class="transcript-empty" id="transcriptEmpty">Raksha’s replies appear here. What you say shows underneath.</div>
+                </div>
+                <!-- Compatibility hooks for older script paths -->
+                <div id="agentTurnPrompt" hidden></div>
+                <div id="userTurnSpeech" hidden></div>
+              </section>
+
+              <aside class="call-pane call-dossier-pane" aria-label="Gathered information">
+                <div class="call-pane-label">Gathered so far</div>
+                <div class="dossier-body" id="callDossierBody">
+                  <p class="dossier-empty" id="dossierEmpty">As Raksha understands your report, amount, bank, UTR, and other details will appear here for you to confirm.</p>
+                </div>
+                <div class="dossier-actions" id="callDossierActions" hidden></div>
+              </aside>
+            </div>
+
+            <div class="call-case-capsule" id="callCaseCapsule" style="display: none;" aria-hidden="true">
+              <span class="capsule-id" id="capsuleCaseId">—</span>
+              <span id="capsuleFacts" class="capsule-facts"></span>
+              <span id="capsuleState" class="capsule-state"></span>
+            </div>
+
+            <div class="call-controls">
+              <button class="btn-start-speaking" id="btnStartSpeaking" onclick="connectAndStartSpeaking()">
+                <span class="speak-icon"><img src="/images/line/voice-shankha.png" alt="" draggable="false" /></span>
+                <span id="lblStartBtn">Start speaking</span>
+              </button>
+
+              <button class="btn-end-conversation" id="btnEndConversation" style="display: none;" onclick="endLiveVoiceCall()">
+                <span class="end-dot"></span>
+                <span>End conversation</span>
+              </button>
+
+              <button class="btn-submit-narrative" id="btnCallConfirm" style="display: none;" onclick="confirmFromLiveCall()">
+                Confirm these details
+              </button>
+
+              <label class="btn-proof-upload" id="btnCallProof" style="display: none;">
+                Attach payment / scam proof
+                <input type="file" accept="image/*" style="display:none;" onchange="handleCallProofUpload(event)" />
+              </label>
+
+              <button class="btn-view-technical" onclick="toggleDevDrawer()">
+                View technical case details →
+              </button>
+            </div>
           </div>
 
-          <!-- Dynamic Progressive Incident Capsule (Hidden until Core returns facts) -->
-          <div class="call-case-capsule" id="callCaseCapsule" style="display: none;">
-            <span class="capsule-id" id="capsuleCaseId">—</span>
-            <span id="capsuleFacts" class="capsule-facts"></span>
-            <span id="capsuleState" class="capsule-state"></span>
-          </div>
-
-          <!-- Call Controls -->
-          <div class="call-controls">
-            <button class="btn-start-speaking" id="btnStartSpeaking" onclick="connectAndStartSpeaking()">
-              <span class="speak-icon"><img src="/images/line/voice-shankha.png" alt="" draggable="false" /></span>
-              <span id="lblStartBtn">Start speaking</span>
-            </button>
-
-            <button class="btn-end-conversation" id="btnEndConversation" style="display: none;" onclick="endLiveVoiceCall()">
-              <span class="end-dot"></span>
-              <span>End conversation</span>
-            </button>
-
-            <button class="btn-submit-narrative" id="btnCallConfirm" style="display: none;" onclick="confirmFromLiveCall()">
-              Confirm &amp; dispatch to 1930 / bank
-            </button>
-
-            <button class="btn-view-technical" onclick="toggleDevDrawer()">
-              View technical case details →
+          <div class="call-outcome" id="callOutcome" aria-live="polite">
+            <div class="call-outcome-kicker">Report filed</div>
+            <h2 class="call-outcome-title">Emergency freeze request sent</h2>
+            <p class="call-outcome-copy" id="callOutcomeCopy">
+              We sent your verified details to the cyber cell desk and your bank’s freeze desk.
+            </p>
+            <div>Tracking reference<br /><span class="call-outcome-ref" id="callOutcomeRef">—</span></div>
+            <div class="call-outcome-links" id="callOutcomeLinks"></div>
+            <p class="call-outcome-done">Nothing else you need to do here.</p>
+            <p class="call-outcome-disclaimer">Simulated demonstration — not a real government filing.</p>
+            <button class="btn-end-conversation" type="button" onclick="endLiveVoiceCall()" style="align-self:flex-start;margin-top:0.5rem;">
+              Exit
             </button>
           </div>
 
@@ -655,54 +1270,66 @@ const bodyContent = `
         </div>
 
         <!-- PROCESSING -->
-        <div id="wsProcessing" style="display: none; text-align: center; padding: 2.5rem 0;">
-          <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚡</div>
-          <h3 style="font-size: 1.15rem; font-weight: 700;">Reconciling details & sealing evidence...</h3>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Deterministic Multimodal Intake Engine</p>
+        <div id="wsProcessing" style="display: none;">
+          <div class="process-block">
+            <h3 class="process-title">Reconciling what you shared</h3>
+            <p class="process-sub">Sealing evidence into your incident capsule…</p>
+          </div>
         </div>
 
         <!-- MISSING FIELD QUESTION -->
-        <div id="wsQuestion" style="display: none; text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 0.5rem;">❓</div>
-          <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;" id="qPromptText">What is the 12-digit UTR or reference number?</h3>
-          <div style="display: flex; gap: 0.5rem; max-width: 400px; margin: 1.25rem auto 0 auto;">
-            <input type="text" id="qInputVal" placeholder="e.g. 423456789012" style="flex: 1; padding: 0.7rem; border: 1.5px solid var(--border); border-radius: 8px; outline: none;" />
-            <button class="btn-submit-narrative" onclick="submitQuestionAnswer()">Submit</button>
+        <div id="wsQuestion" style="display: none;">
+          <div class="clarify-block">
+            <div class="clarify-kicker">One detail needed</div>
+            <h3 class="clarify-title" id="qPromptText">What is the 12-digit UTR or reference number?</h3>
+            <p class="clarify-sub">Answer in the box below — or keep speaking with Raksha if you are still on the call.</p>
+            <div class="clarify-row">
+              <input type="text" class="clarify-input" id="qInputVal" placeholder="Transaction reference / UTR" autocomplete="off" />
+              <button type="button" class="clarify-submit" onclick="submitQuestionAnswer()">Continue</button>
+            </div>
           </div>
         </div>
 
         <!-- CONFLICT -->
-        <div id="wsConflict" style="display: none; text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
-          <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;" id="conflictHead">Which amount is correct?</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 400px; margin: 1.5rem auto 0 auto;" id="conflictBtnBox"></div>
+        <div id="wsConflict" style="display: none;">
+          <div class="clarify-block">
+            <div class="clarify-kicker">Please confirm</div>
+            <h3 class="clarify-title" id="conflictHead">Which amount is correct?</h3>
+            <p class="clarify-sub">We found two different values — pick the one that matches your payment.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem;" id="conflictBtnBox"></div>
+          </div>
         </div>
 
         <!-- READY -->
-        <div id="wsReady" style="display: none; text-align: center;">
-          <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem;">Payment Identified</h3>
-          <p style="color: var(--text-muted); font-size: 0.88rem;">Verified against your evidence. Ready to send.</p>
-
-          <div class="details-grid">
-            <div>
-              <div class="dt-lbl">Amount</div>
-              <div class="dt-val dt-amount" id="repAmount">—</div>
+        <div id="wsReady" style="display: none;">
+          <div class="ready-card">
+            <div class="ready-card-head">
+              <img class="ready-card-mark" src="/images/line/card-payment-mark.png" alt="" draggable="false" />
+              <div>
+                <h3>Payment identified</h3>
+                <p class="ready-card-sub">These are the facts from this conversation and any receipt you attached.</p>
+              </div>
             </div>
-            <div>
-              <div class="dt-lbl">Channel</div>
-              <div class="dt-val" id="repChannel">—</div>
+            <div class="details-grid">
+              <div>
+                <div class="dt-lbl">Amount</div>
+                <div class="dt-val dt-amount" id="repAmount">—</div>
+              </div>
+              <div>
+                <div class="dt-lbl">Channel</div>
+                <div class="dt-val" id="repChannel">—</div>
+              </div>
+              <div>
+                <div class="dt-lbl">UTR / reference</div>
+                <div class="dt-val" id="repUtr">—</div>
+              </div>
+              <div>
+                <div class="dt-lbl">Debit bank</div>
+                <div class="dt-val" id="repBank">—</div>
+              </div>
             </div>
-            <div>
-              <div class="dt-lbl">12-Digit UTR</div>
-              <div class="dt-val" id="repUtr">—</div>
-            </div>
-            <div>
-              <div class="dt-lbl">Debit Bank</div>
-              <div class="dt-val" id="repBank">—</div>
-            </div>
+            <button class="btn-dispatch" onclick="dispatchEmergencyReport()">Send emergency report</button>
           </div>
-
-          <button class="btn-dispatch" onclick="dispatchEmergencyReport()">🚀 SEND EMERGENCY REPORT</button>
         </div>
 
         <!-- ERROR -->
@@ -717,34 +1344,45 @@ const bodyContent = `
         </div>
 
         <!-- SUBMITTED -->
-        <div id="wsSubmitted" style="display: none; text-align: center;">
-          <div style="font-size: 2.8rem; margin-bottom: 0.5rem;">🛡️</div>
-          <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--green); margin-bottom: 0.25rem;">Report Handed Off</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
-            Report handed off to the simulated 1930 / bank response layer.<br>
-            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">SIMULATED DEMONSTRATION — not a real government filing</span>
-            Reference: <strong id="repRefNum" style="color: var(--text);">—</strong>
-          </p>
-          <div id="liveTimeline" style="text-align: left; display: flex; flex-direction: column; gap: 0.5rem;"></div>
-          <button class="btn-link-type" style="margin-top: 1.5rem;" onclick="resetToHome()">File another report</button>
+        <div id="wsSubmitted" style="display: none;">
+          <div class="filed-card">
+            <div class="filed-card-head">
+              <img class="filed-card-mark" src="/images/line/card-filed-mark.png" alt="" draggable="false" />
+              <div>
+                <h3>Report handed off</h3>
+                <p class="filed-card-sub">The simulated 1930 desk and bank freeze desk have this case.</p>
+                <p class="filed-disclaimer">Simulated demonstration. Not a real government filing.</p>
+              </div>
+            </div>
+            <div class="filed-ref">Tracking <span id="repRefNum">—</span></div>
+            <div id="wsFilingLinks" style="display:flex;flex-direction:column;gap:0.55rem;margin:0 0 1rem;"></div>
+            <div class="status-list" id="liveTimeline"></div>
+            <button class="btn-link-type" onclick="resetToHome()">File another report</button>
+          </div>
         </div>
 
       </div>
     </div>
 
-    <!-- Developer Drawer -->
-    <div id="devDrawer">
+    <!-- Technical case drawer — light editorial, matches site -->
+    <div id="devDrawer" aria-label="Technical case details">
       <div class="drawer-top">
-        <span style="color: #38bdf8; font-weight: 700; font-size: 0.85rem;">⚡ DEVELOPER CAP TRACE</span>
-        <button style="background:none;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer;" onclick="toggleDevDrawer()">×</button>
+        <div>
+          <div class="drawer-kicker">Behind the scenes</div>
+          <h2 class="drawer-title">Case &amp; CAP trace</h2>
+        </div>
+        <button type="button" class="drawer-close" onclick="toggleDevDrawer()" aria-label="Close">×</button>
       </div>
-      <div style="margin-bottom: 1rem;">
-        <div style="color: #94a3b8; font-size: 0.72rem; text-transform: uppercase;">Active Incident ID</div>
-        <div style="font-weight: 700; font-size: 0.95rem; color: #38bdf8;" id="devIncId">None</div>
+      <p class="drawer-intro">What happened on this case, in order. Technical event IDs stay off this screen.</p>
+      <div style="margin-bottom: 1.15rem;">
+        <div class="drawer-label">Active incident</div>
+        <div class="drawer-incident" id="devIncId">None yet</div>
       </div>
-      <div style="margin-bottom: 1rem;">
-        <div style="color: #94a3b8; font-size: 0.72rem; text-transform: uppercase; margin-bottom: 0.35rem;">Live Event Ledger</div>
-        <pre class="json-view" id="devJsonDump">[]</pre>
+      <div>
+        <div class="drawer-label" style="margin-bottom: 0.45rem;">Status</div>
+        <div class="status-list" id="devJsonDump">
+          <div class="status-step"><span class="status-step-label">No case yet. Start a report to see progress here.</span></div>
+        </div>
       </div>
     </div>
     </div>
@@ -754,6 +1392,8 @@ const bodyContent = `
     <script>
       const CORE_URL = "${coreUrl}";
       const CAP_URL = "${capUrl}";
+      const PORTAL_A_URL = ${JSON.stringify(portalAUrl)};
+      const PORTAL_B_URL = ${JSON.stringify(portalBUrl)};
       const ELEVENLABS_AGENT_ID = ${JSON.stringify(elevenLabsAgentId)};
 
       function showProtocolWarming(show, detail) {
@@ -778,6 +1418,7 @@ const bodyContent = `
 
       let currentIncidentId = null;
       let currentIncident = null;
+      let startFreshCase = true;
       let currentLanguage = "en";
       // Demo citizen identity — pre-filled for the Ramesh Kumar mentor demo.
       // The user can override via the mobile input field rendered in the idle card.
@@ -793,58 +1434,63 @@ const bodyContent = `
       /** Dedup Core process calls when SDK emits duplicate user transcripts. */
       let lastVoiceTurnText = "";
       let lastVoiceTurnAt = 0;
+      let sessionConnecting = false;
+      /** True after ElevenLabs reports speaking mode at least once (audio path alive). */
+      let elevenLabsAudioHeard = false;
+      let earlyDisconnectTimer = null;
+      /** Mic stream opened on the language-click gesture; kept until call ends. */
+      let permissionMicStream = null;
+      /** Citizen confirmed dossier; waiting for screenshot before CAP file. */
+      let proofPending = false;
 
       (function initFluidOrb() {
         var canvas = document.getElementById("callFluidOrb");
         var host = document.getElementById("callDiyaOrb");
         if (!canvas || !host) return;
-        var gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
+        var gl = canvas.getContext("webgl", { antialias: true, alpha: true });
         if (!gl) return;
 
         var VERT = "attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0.0,1.0);}";
         var FRAG = [
+          "#ifdef GL_FRAGMENT_PRECISION_HIGH",
           "precision highp float;",
+          "#else",
+          "precision mediump float;",
+          "#endif",
           "uniform vec2 u_resolution;",
           "uniform float u_time;",
-          "uniform float u_hue;",
-          "uniform float u_hover;",
-          "uniform float u_rot;",
-          "uniform float u_hoverIntensity;",
-          "vec3 rgb2yiq(vec3 c){float y=dot(c,vec3(0.299,0.587,0.114));float i=dot(c,vec3(0.596,-0.274,-0.322));float q=dot(c,vec3(0.211,-0.523,0.312));return vec3(y,i,q);}",
-          "vec3 yiq2rgb(vec3 c){float r=c.x+0.956*c.y+0.621*c.z;float g=c.x-0.272*c.y-0.647*c.z;float b=c.x-1.106*c.y+1.703*c.z;return vec3(r,g,b);}",
-          "vec3 adjustHue(vec3 color,float hueDeg){float hueRad=hueDeg*3.14159265/180.0;vec3 yiq=rgb2yiq(color);float cosA=cos(hueRad);float sinA=sin(hueRad);float ii=yiq.y*cosA-yiq.z*sinA;float qq=yiq.y*sinA+yiq.z*cosA;yiq.y=ii;yiq.z=qq;return yiq2rgb(yiq);}",
-          "vec3 hash33(vec3 p3){p3=fract(p3*vec3(0.1031,0.11369,0.13787));p3+=dot(p3,p3.yxz+19.19);return -1.0+2.0*fract(vec3(p3.x+p3.y,p3.x+p3.z,p3.y+p3.z)*p3.zyx);}",
-          "float snoise3(vec3 p){const float K1=0.333333333;const float K2=0.166666667;vec3 i=floor(p+(p.x+p.y+p.z)*K1);vec3 d0=p-(i-(i.x+i.y+i.z)*K2);vec3 e=step(vec3(0.0),d0-d0.yzx);vec3 i1=e*(1.0-e.zxy);vec3 i2=1.0-e.zxy*(1.0-e);vec3 d1=d0-(i1-K2);vec3 d2=d0-(i2-K1);vec3 d3=d0-0.5;vec4 h=max(0.6-vec4(dot(d0,d0),dot(d1,d1),dot(d2,d2),dot(d3,d3)),0.0);vec4 n=h*h*h*h*vec4(dot(d0,hash33(i)),dot(d1,hash33(i+i1)),dot(d2,hash33(i+i2)),dot(d3,hash33(i+1.0)));return dot(vec4(31.316),n);}",
-          "vec4 extractAlpha(vec3 colorIn){float a=max(max(colorIn.r,colorIn.g),colorIn.b);return vec4(colorIn.rgb/(a+1e-5),a);}",
-          "float light1(float intensity,float attenuation,float dist){return intensity/(1.0+dist*attenuation);}",
-          "float light2(float intensity,float attenuation,float dist){return intensity/(1.0+dist*dist*attenuation);}",
-          "vec4 draw(vec2 uv){",
-          "vec3 color1=adjustHue(vec3(0.611765,0.262745,0.996078),u_hue);",
-          "vec3 color2=adjustHue(vec3(0.298039,0.760784,0.913725),u_hue);",
-          "vec3 color3=adjustHue(vec3(0.062745,0.078431,0.600000),u_hue);",
-          "float ang=atan(uv.y,uv.x);float len=length(uv);float invLen=len>0.0?1.0/len:0.0;",
-          "float n0=snoise3(vec3(uv*0.65,u_time*0.5))*0.5+0.5;",
-          "float r0=mix(mix(0.6,1.0,0.4),mix(0.6,1.0,0.6),n0);",
-          "float d0=distance(uv,(r0*invLen)*uv);",
-          "float v0=light1(1.0,10.0,d0);v0*=smoothstep(r0*1.05,r0,len);",
-          "float cl=cos(ang+u_time*2.0)*0.5+0.5;",
-          "float a=u_time*-1.0;vec2 pos=vec2(cos(a),sin(a))*r0;",
-          "float d=distance(uv,pos);float v1=light2(1.5,5.0,d);v1*=light1(1.0,50.0,d0);",
-          "float v2=smoothstep(1.0,mix(0.6,1.0,n0*0.5),len);",
-          "float v3=smoothstep(0.6,mix(0.6,1.0,0.5),len);",
-          "vec3 col=mix(color1,color2,cl);col=mix(color3,col,v0);col=(col+v1)*v2*v3;col=clamp(col,0.0,1.0);",
-          "return extractAlpha(col);}",
+          "uniform vec3 u_color;",
+          "float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}",
+          "float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),u.x),mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),u.x),u.y);}",
+          "float fbm(vec2 p){float v=0.0;float a=0.6;for(int i=0;i<3;i++){v+=a*noise(p);p*=2.0;a*=0.5;}return v;}",
           "void main(){",
-          "vec2 center=u_resolution*0.5;float size=min(u_resolution.x,u_resolution.y);",
-          "vec2 uv=(gl_FragCoord.xy-center)/size*2.0;",
-          "float s=sin(u_rot);float c=cos(u_rot);",
-          "uv=vec2(c*uv.x-s*uv.y,s*uv.x+c*uv.y);",
-          "uv.x+=u_hover*u_hoverIntensity*0.1*sin(uv.y*10.0+u_time);",
-          "uv.y+=u_hover*u_hoverIntensity*0.1*sin(uv.x*10.0+u_time);",
-          "vec4 col=draw(uv);",
-          "gl_FragColor=vec4(col.rgb*col.a,col.a);",
+          "vec2 uv=gl_FragCoord.xy/u_resolution.xy;",
+          "float t=u_time*0.22;",
+          "vec2 drift=vec2(sin(t)+0.6*sin(t*1.7+1.3),cos(t*0.8)+0.6*cos(t*1.3+2.1));",
+          "vec2 p=vec2(uv.x*1.8,uv.y*1.0)+drift*0.7;",
+          "vec2 q=vec2(fbm(p+drift),fbm(p+vec2(3.2,1.5)-drift));",
+          "float f=fbm(p+1.2*q);",
+          "float g=clamp(1.0-uv.y,0.0,1.0);",
+          "float anchor=smoothstep(0.0,0.3,uv.y);",
+          "float shade=clamp(g+(f-0.5)*0.8*anchor,0.0,1.0);",
+          "vec3 white=vec3(0.99,1.0,1.0);",
+          "vec3 light=mix(white,u_color,0.5);",
+          "vec3 dark=u_color;",
+          "vec3 col=white;",
+          "col=mix(col,light,smoothstep(0.28,0.52,shade));",
+          "col=mix(col,dark,smoothstep(0.58,0.88,shade));",
+          "float edge=smoothstep(0.5,0.49,distance(uv,vec2(0.5)));",
+          "gl_FragColor=vec4(col*edge,edge);",
           "}"
         ].join("\\n");
+
+        function hexToRgb(hex) {
+          var h = String(hex || "#ea580c").replace("#", "").trim();
+          if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+          var n = parseInt(h, 16);
+          if (h.length !== 6 || Number.isNaN(n)) return [0.918, 0.345, 0.047];
+          return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+        }
 
         function compile(type, src) {
           var sh = gl.createShader(type);
@@ -874,17 +1520,12 @@ const bodyContent = `
         var aPos = gl.getAttribLocation(program, "a_pos");
         gl.enableVertexAttribArray(aPos);
         gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-        gl.clearColor(0, 0, 0, 0);
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         var locRes = gl.getUniformLocation(program, "u_resolution");
         var locTime = gl.getUniformLocation(program, "u_time");
-        var locHue = gl.getUniformLocation(program, "u_hue");
-        var locHover = gl.getUniformLocation(program, "u_hover");
-        var locRot = gl.getUniformLocation(program, "u_rot");
-        var locHoverI = gl.getUniformLocation(program, "u_hoverIntensity");
-        gl.uniform1f(locHue, 0.0);
+        var locColor = gl.getUniformLocation(program, "u_color");
+        var rgb = hexToRgb(host.getAttribute("data-color") || "#ea580c");
+        gl.uniform3f(locColor, rgb[0], rgb[1], rgb[2]);
 
         function updateSize() {
           var dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -905,9 +1546,8 @@ const bodyContent = `
           new ResizeObserver(updateSize).observe(host);
         }
 
-        var rotSpeeds = { IDLE: 0.18, CONNECTING: 0.35, LISTENING: 0.55, SPEAKING: 0.95, PROCESSING: 0.42, ERROR: 0.12 };
-        var hoverAmt = { IDLE: 0.12, CONNECTING: 0.28, LISTENING: 0.45, SPEAKING: 0.72, PROCESSING: 0.38, ERROR: 0.08 };
-        var currentRot = 0;
+        var speedFactors = { IDLE: 0.15, CONNECTING: 0.2, LISTENING: 0.5, SPEAKING: 0.85, PROCESSING: 0.35, ERROR: 0.12 };
+        var accumulated = 0;
         var last = performance.now();
         var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -916,14 +1556,8 @@ const bodyContent = `
           last = now;
           if (document.visibilityState === "visible" && canvas.width) {
             var state = host.getAttribute("data-state") || "IDLE";
-            if (!reduce) currentRot += dt * (rotSpeeds[state] || 0.35);
-            var pulse = reduce ? 0.2 : 0.18 + Math.sin(now * 0.002) * 0.08;
-            var hover = Math.min(1, (hoverAmt[state] || 0.25) + pulse);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-            gl.uniform1f(locTime, now * 0.001);
-            gl.uniform1f(locHover, hover);
-            gl.uniform1f(locRot, currentRot);
-            gl.uniform1f(locHoverI, 0.55);
+            if (!reduce) accumulated += dt * (speedFactors[state] || 0.5);
+            gl.uniform1f(locTime, reduce ? 0 : accumulated);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
           }
           requestAnimationFrame(render);
@@ -1000,7 +1634,7 @@ const bodyContent = `
 
         if ('speechSynthesis' in window) {
           const u = new SpeechSynthesisUtterance(text);
-          u.lang = 'hi-IN';
+          u.lang = currentLanguage === "hi" ? "hi-IN" : currentLanguage === "ta" ? "ta-IN" : "en-IN";
           u.rate = 0.95;
           u.onend = () => setOrbState("LISTENING");
           window.speechSynthesis.speak(u);
@@ -1012,9 +1646,13 @@ const bodyContent = `
       function resetLiveCallDisplay() {
         currentIncidentId = null;
         currentIncident = null;
+        startFreshCase = true;
         lastVoiceTurnText = "";
         lastVoiceTurnAt = 0;
         elevenLabsSessionLive = false;
+        sessionConnecting = false;
+        proofPending = false;
+        hideCallOutcome();
         
         if (currentAudio) {
           try { currentAudio.pause(); } catch {}
@@ -1037,11 +1675,8 @@ const bodyContent = `
         const capsuleId = document.getElementById("capsuleCaseId");
         if (capsuleId) capsuleId.innerText = "—";
 
-        const prompt = document.getElementById("agentTurnPrompt");
-        if (prompt) prompt.innerText = "“Tap Start speaking to begin a live Raksha session.”";
-        
-        const userSpeech = document.getElementById("userTurnSpeech");
-        if (userSpeech) userSpeech.innerText = "";
+        resetTranscriptFeed();
+        resetDossierPanel();
 
         const btnStart = document.getElementById("btnStartSpeaking");
         const btnEnd = document.getElementById("btnEndConversation");
@@ -1050,7 +1685,96 @@ const bodyContent = `
         if (btnEnd) btnEnd.style.display = "none";
         if (btnConfirm) btnConfirm.style.display = "none";
 
+        document.querySelectorAll(".call-lang-option").forEach(function (btn) {
+          btn.setAttribute("aria-pressed", "false");
+        });
+        showLanguageGate(true);
         setOrbState("IDLE");
+      }
+
+      function escapeHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function resetTranscriptFeed() {
+        const feed = document.getElementById("liveTranscriptFeed");
+        if (!feed) return;
+        feed.innerHTML = '<div class="transcript-empty" id="transcriptEmpty">Raksha’s replies appear here. What you say shows underneath.</div>';
+        const prompt = document.getElementById("agentTurnPrompt");
+        if (prompt) prompt.innerText = "";
+        const userSpeech = document.getElementById("userTurnSpeech");
+        if (userSpeech) userSpeech.innerText = "";
+      }
+
+      function appendTranscript(role, text) {
+        const clean = String(text || "").trim();
+        if (!clean) return;
+        const feed = document.getElementById("liveTranscriptFeed");
+        if (!feed) return;
+        const empty = document.getElementById("transcriptEmpty");
+        if (empty) empty.remove();
+
+        const last = feed.lastElementChild;
+        if (last && last.getAttribute("data-role") === role && last.getAttribute("data-text") === clean) {
+          return;
+        }
+
+        const bubble = document.createElement("div");
+        bubble.className = "transcript-bubble " + (role === "user" ? "user" : "agent");
+        bubble.setAttribute("data-role", role);
+        bubble.setAttribute("data-text", clean);
+        bubble.innerHTML =
+          '<div class="transcript-who">' + (role === "user" ? "You" : "Raksha") + "</div>" +
+          '<div class="transcript-text">' + escapeHtml(clean) + "</div>";
+        feed.appendChild(bubble);
+        feed.scrollTop = feed.scrollHeight;
+
+        if (role === "user") {
+          const u = document.getElementById("userTurnSpeech");
+          if (u) u.innerText = clean;
+        } else {
+          const a = document.getElementById("agentTurnPrompt");
+          if (a) a.innerText = clean;
+        }
+      }
+
+      function resetDossierPanel() {
+        const body = document.getElementById("callDossierBody");
+        const actions = document.getElementById("callDossierActions");
+        if (body) {
+          body.innerHTML = '<p class="dossier-empty" id="dossierEmpty">As Raksha understands your report, amount, bank, UTR, and other details will appear here for you to confirm.</p>';
+        }
+        if (actions) {
+          actions.innerHTML = "";
+          actions.hidden = true;
+        }
+      }
+
+      function filingLinkCardsHtml(bankName, refNumber) {
+        const bank = bankName || "Bank";
+        const ref = refNumber ? '<div class="dossier-ref" style="margin-bottom:0.35rem;">' + escapeHtml(refNumber) + "</div>" : "";
+        return (
+          ref +
+          '<a class="dossier-link" href="' + escapeHtml(PORTAL_A_URL) + '" target="_blank" rel="noopener">' +
+            '<div class="dossier-link-title">1930 cyber cell desk</div>' +
+            '<div class="dossier-link-sub">Open the simulated Portal A intake for this case</div>' +
+          "</a>" +
+          '<a class="dossier-link" href="' + escapeHtml(PORTAL_B_URL) + '" target="_blank" rel="noopener">' +
+            '<div class="dossier-link-title">' + escapeHtml(bank) + " freeze desk</div>" +
+            '<div class="dossier-link-sub">Open the simulated Portal B bank response console</div>' +
+          "</a>"
+        );
+      }
+
+      function renderWsFilingLinks(inc, refNumber) {
+        const box = document.getElementById("wsFilingLinks");
+        if (!box) return;
+        const bank = inc?.transaction?.debitInstitution || "Bank";
+        box.innerHTML = filingLinkCardsHtml(bank, refNumber);
       }
 
       function syncReadyPanelFromIncident(inc) {
@@ -1060,7 +1784,18 @@ const bodyContent = `
         const utr = document.getElementById("repUtr");
         const bank = document.getElementById("repBank");
         if (amt) amt.innerText = inc.transaction.amount ? "₹" + Number(inc.transaction.amount).toLocaleString() : "—";
-        if (ch) ch.innerText = inc.transaction.application || inc.transaction.channel || "—";
+        if (ch) {
+          const app = inc.transaction.application;
+          const rawCh = inc.transaction.channel;
+          const chLabel =
+            app ||
+            (rawCh === "BANK_TRANSFER" ? "Bank transfer" :
+             rawCh === "UPI" ? "UPI" :
+             rawCh === "CARD" ? "Card" :
+             rawCh === "WALLET" ? "Wallet" :
+             rawCh && rawCh !== "OTHER" ? rawCh : "—");
+          ch.innerText = chLabel;
+        }
         if (utr) utr.innerText = inc.transaction.transactionId || "—";
         if (bank) bank.innerText = inc.transaction.debitInstitution || "—";
       }
@@ -1070,83 +1805,233 @@ const bodyContent = `
         if (btnConfirm) btnConfirm.style.display = visible ? "inline-flex" : "none";
       }
 
+      function scamCategoryLabel(cat) {
+        const map = {
+          ELECTRICITY_BILL_SCAM: "Electricity / utility bill scam",
+          DIGITAL_ARREST: "Digital arrest scam",
+          UPI_PAYMENT_FRAUD: "UPI payment fraud",
+          TASK_SCAM: "Task / job scam",
+          KYC_UPDATE_FRAUD: "KYC update fraud",
+          LOTTERY_PHISHING: "Lottery / prize phishing",
+          CUSTOMER_CARE_IMPERSONATION: "Fake customer care",
+          OTHER: "Other cyber fraud"
+        };
+        return map[cat] || (cat ? String(cat) : "");
+      }
+
+      function setCallProofVisible(visible) {
+        const btn = document.getElementById("btnCallProof");
+        if (btn) btn.style.display = visible ? "block" : "none";
+      }
+
+      function showCallOutcome(inc, refNumber) {
+        const outcome = document.getElementById("callOutcome");
+        const session = document.getElementById("callSessionBody");
+        const langGate = document.getElementById("callLangGate");
+        if (langGate) langGate.hidden = true;
+        if (session) session.hidden = true;
+        if (outcome) outcome.classList.add("active");
+
+        const bank = inc?.transaction?.debitInstitution || "Bank";
+        const ref = refNumber || inc?.handoff?.externalReference || "Pending";
+        const refEl = document.getElementById("callOutcomeRef");
+        if (refEl) refEl.innerText = ref;
+        const copy = document.getElementById("callOutcomeCopy");
+        if (copy) {
+          copy.innerText =
+            "We sent your verified report to the 1930 cyber cell desk and the " +
+            bank +
+            " freeze desk. You can open both desks below to see the simulated handoff.";
+        }
+        const links = document.getElementById("callOutcomeLinks");
+        if (links) links.innerHTML = filingLinkCardsHtml(bank, ref);
+
+        const badge = document.getElementById("callStatusBadge");
+        if (badge) badge.innerText = "Filed — nothing else to do";
+        setOrbState("IDLE");
+      }
+
+      function hideCallOutcome() {
+        const outcome = document.getElementById("callOutcome");
+        if (outcome) outcome.classList.remove("active");
+      }
+
+      function updateDossierFromIncident(inc, state, externalRef) {
+        const body = document.getElementById("callDossierBody");
+        const actions = document.getElementById("callDossierActions");
+        if (!body) return;
+
+        const effectiveState = state || inc?.state || "INTAKE";
+        const handoffRef = externalRef || inc?.handoff?.externalReference || "";
+        const tx = inc?.transaction || {};
+        const factsConfirmed = !!(inc?.validation?.factsConfirmed || proofPending);
+        const proofVerified = !!inc?.validation?.proofVerified;
+        const rows = [];
+
+        function pushRow(label, value, muted) {
+          if (value == null || value === "") return;
+          rows.push({ label: label, value: String(value), muted: !!muted });
+        }
+
+        pushRow("Scam type", scamCategoryLabel(inc?.fraudCategory));
+        if (tx.amount != null && tx.amount !== "") {
+          pushRow("Amount", "₹" + Number(tx.amount).toLocaleString());
+        }
+        pushRow(
+          "Channel",
+          tx.application ||
+            (tx.channel === "BANK_TRANSFER"
+              ? "Bank transfer"
+              : tx.channel === "UPI"
+                ? "UPI"
+                : tx.channel === "CARD"
+                  ? "Card"
+                  : tx.channel === "WALLET"
+                    ? "Wallet"
+                    : "")
+        );
+        pushRow("Bank", tx.debitInstitution);
+        pushRow("UTR", tx.transactionId);
+        if (tx.timestamp) {
+          try {
+            pushRow("When", new Date(tx.timestamp).toLocaleString());
+          } catch (_) {
+            pushRow("When", tx.timestamp);
+          }
+        }
+        pushRow("Beneficiary", tx.beneficiaryIdentifier);
+        const story = inc?.scamSummary || inc?.narrative?.text;
+        if (story) {
+          const n = String(story);
+          pushRow("What happened", n.length > 180 ? n.slice(0, 177) + "…" : n);
+        }
+
+        const hasFacts = rows.length > 0;
+        const isReady =
+          effectiveState === "READY" || effectiveState === "USER_CONFIRMATION";
+        const isFiled =
+          effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED";
+        const needsProof = isReady && factsConfirmed && !proofVerified && !isFiled;
+
+        let statusHtml = "";
+        if (isFiled) {
+          statusHtml = '<div class="dossier-status filed">Filed with 1930 / bank</div>';
+        } else if (needsProof) {
+          statusHtml = '<div class="dossier-status proof">Proof needed</div>';
+        } else if (isReady) {
+          statusHtml = '<div class="dossier-status ready">Ready — please confirm</div>';
+        } else if (hasFacts) {
+          statusHtml = '<div class="dossier-status">Gathering details</div>';
+        }
+
+        if (!hasFacts && !isFiled) {
+          body.innerHTML =
+            statusHtml +
+            '<p class="dossier-empty" id="dossierEmpty">As Raksha understands your report, scam type, amount, bank, UTR, and other details will appear here for you to confirm.</p>';
+        } else {
+          const caseId =
+            hasFacts || isReady || isFiled
+              ? (inc?.id || currentIncidentId || "")
+              : "";
+          let html = statusHtml;
+          if (caseId && String(caseId).startsWith("RKS-") && (hasFacts || isReady || isFiled)) {
+            html +=
+              '<div class="dossier-row"><div class="dossier-k">Case</div><div class="dossier-v">' +
+              escapeHtml(caseId) +
+              "</div></div>";
+          }
+          rows.forEach(function (r) {
+            html +=
+              '<div class="dossier-row"><div class="dossier-k">' +
+              escapeHtml(r.label) +
+              '</div><div class="dossier-v' +
+              (r.muted ? " muted" : "") +
+              '">' +
+              escapeHtml(r.value) +
+              "</div></div>";
+          });
+          if (isFiled && handoffRef) {
+            html +=
+              '<div class="dossier-row"><div class="dossier-k">Tracking</div><div class="dossier-v"><span class="dossier-ref">' +
+              escapeHtml(handoffRef) +
+              "</span></div></div>";
+          }
+          body.innerHTML = html;
+        }
+
+        if (actions) {
+          if (needsProof) {
+            actions.hidden = false;
+            actions.innerHTML =
+              '<p class="dossier-confirm-note">Details confirmed. Attach a payment receipt or scam chat screenshot so we can verify before filing.</p>';
+            setCallConfirmVisible(false);
+            setCallProofVisible(true);
+          } else if (isReady && !factsConfirmed) {
+            actions.hidden = false;
+            actions.innerHTML =
+              '<p class="dossier-confirm-note">Please verify every detail on the right is correct, then confirm.</p>';
+            setCallConfirmVisible(true);
+            setCallProofVisible(false);
+          } else if (isFiled) {
+            actions.hidden = false;
+            const bank = tx.debitInstitution || "Bank";
+            actions.innerHTML =
+              '<p class="dossier-confirm-note">Case filed (simulated). Open the desks below.</p>' +
+              filingLinkCardsHtml(bank, handoffRef);
+            setCallConfirmVisible(false);
+            setCallProofVisible(false);
+          } else {
+            actions.innerHTML = "";
+            actions.hidden = true;
+            setCallConfirmVisible(false);
+            setCallProofVisible(false);
+          }
+        }
+      }
+
       function updateIncidentUI(inc, state, externalRef) {
         if (!inc && !currentIncidentId) return;
 
         const effectiveId = inc?.id || currentIncidentId;
         const capsule = document.getElementById("callCaseCapsule");
-        const capsuleId = document.getElementById("capsuleCaseId");
-        const capsuleFacts = document.getElementById("capsuleFacts");
-        const capsuleState = document.getElementById("capsuleState");
-
-        // Never show a capsule until Core has actually assigned an RKS-* id.
-        if (!effectiveId || !String(effectiveId).startsWith("RKS-")) {
-          if (capsule) capsule.style.display = "none";
-          setCallConfirmVisible(false);
-          return;
-        }
-
-        if (capsule) {
-          capsule.style.display = "inline-flex";
-          if (capsuleId) capsuleId.innerText = effectiveId;
-
-          const facts = [];
-          if (inc?.transaction?.amount != null && inc.transaction.amount !== "") {
-            facts.push("₹" + Number(inc.transaction.amount).toLocaleString());
-          }
-          if (inc?.transaction?.application) {
-            facts.push(inc.transaction.application);
-          }
-          if (inc?.transaction?.debitInstitution) {
-            facts.push(inc.transaction.debitInstitution);
-          }
-          if (inc?.transaction?.transactionId) {
-            facts.push("UTR " + inc.transaction.transactionId);
-          }
-
-          if (capsuleFacts) {
-            capsuleFacts.innerText = facts.length > 0 ? facts.join(" · ") : "Gathering details…";
-          }
-
-          const effectiveState = state || inc?.state || "INTAKE";
-          const badge = document.getElementById("callStatusBadge");
-          const handoffRef =
-            externalRef ||
-            inc?.handoff?.externalReference ||
-            "";
-
-          if (capsuleState) {
-            if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
-              capsuleState.innerHTML = " · <span style='color:#d97706;font-weight:700;'>Ready for confirmation</span>";
-              if (badge && currentOrbState !== "SPEAKING" && currentOrbState !== "PROCESSING") {
-                badge.innerText = "Awaiting citizen confirmation";
-              }
-              setCallConfirmVisible(true);
-              syncReadyPanelFromIncident(inc);
-            } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
-              const refLabel = handoffRef ? handoffRef : "Pending reference";
-              capsuleState.innerHTML = " · <span style='color:#16a34a;font-weight:700;'>Submitted (" + refLabel + ")</span>";
-              if (badge) badge.innerText = "✓ CAP action dispatched";
-              setCallConfirmVisible(false);
-              if (handoffRef) {
-                const refEl = document.getElementById("repRefNum");
-                if (refEl) refEl.innerText = handoffRef;
-              }
-            } else if (effectiveState === "QUESTION_PENDING") {
-              capsuleState.innerHTML = " · <span style='color:#3b82f6;font-weight:700;'>Gathering info</span>";
-              if (badge && currentOrbState !== "SPEAKING" && currentOrbState !== "PROCESSING") {
-                badge.innerText = "Gathering missing information";
-              }
-              setCallConfirmVisible(false);
-            } else {
-              capsuleState.innerText = "";
-              setCallConfirmVisible(false);
-            }
-          }
-        }
+        const badge = document.getElementById("callStatusBadge");
+        const effectiveState = state || inc?.state || "INTAKE";
+        const handoffRef =
+          externalRef ||
+          inc?.handoff?.externalReference ||
+          "";
 
         const devIncId = document.getElementById("devIncId");
         if (devIncId && effectiveId) devIncId.innerText = effectiveId;
+
+        // Capsule stays hidden — dossier is the citizen-facing fact surface.
+        if (capsule) capsule.style.display = "none";
+
+        updateDossierFromIncident(inc, effectiveState, handoffRef);
+
+        if (badge && currentOrbState !== "SPEAKING" && currentOrbState !== "PROCESSING") {
+          if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
+            if (inc?.validation?.factsConfirmed || proofPending) {
+              if (inc?.validation?.proofVerified) {
+                badge.innerText = "Proof verified — filing…";
+              } else {
+                badge.innerText = "Attach payment or scam proof";
+              }
+            } else {
+              badge.innerText = "Awaiting your confirmation";
+            }
+            syncReadyPanelFromIncident(inc);
+          } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
+            badge.innerText = "Case filed — see outcome";
+            if (handoffRef) {
+              const refEl = document.getElementById("repRefNum");
+              if (refEl) refEl.innerText = handoffRef;
+            }
+            renderWsFilingLinks(inc, handoffRef);
+          } else if (effectiveState === "QUESTION_PENDING" || effectiveState === "INTAKE") {
+            badge.innerText = "Gathering details…";
+          }
+        }
       }
 
       async function sendVoiceTurnToBackend(speechText) {
@@ -1164,7 +2049,8 @@ const bodyContent = `
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              incidentId: currentIncidentId || undefined,
+              incidentId: startFreshCase ? undefined : (currentIncidentId || undefined),
+              forceNew: startFreshCase,
               source: "web",
               modality: "voice",
               content: text,
@@ -1176,6 +2062,7 @@ const bodyContent = `
             const data = await res.json();
             currentIncidentId = data.incidentId;
             currentIncident = data.incident;
+            startFreshCase = false;
             updateIncidentUI(
               data.incident,
               data.state,
@@ -1183,18 +2070,19 @@ const bodyContent = `
             );
             fetchDevEvents();
 
-            const prompt = document.getElementById("agentTurnPrompt");
+            const coreQuestion = data.question || data.nextAction?.prompt;
+
             // ElevenLabs owns spoken audio when live — UI text only; Core owns facts.
-            if (data.question) {
-              if (prompt) prompt.innerText = "“" + data.question + "”";
-              if (elevenLabsSessionLive && activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
+            if (coreQuestion && data.state === "QUESTION_PENDING") {
+              if (!elevenLabsSessionLive) {
+                appendTranscript("agent", coreQuestion);
+                playRakshaSpeech(coreQuestion);
+              } else if (activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
                 try {
                   activeConversation.sendContextualUpdate(
-                    "Raksha Core needs this clarification from the citizen: " + data.question
+                    "Raksha Core needs this clarification from the citizen: " + coreQuestion
                   );
                 } catch (_) {}
-              } else if (!elevenLabsSessionLive) {
-                playRakshaSpeech(data.question);
               }
             } else if (data.state === "READY" || data.state === "USER_CONFIRMATION") {
               const isHi = currentLanguage === "hi";
@@ -1209,9 +2097,10 @@ const bodyContent = `
               const reply = isHi
                 ? "मैंने विवरण दर्ज कर लिया है: " + detail + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
                 : "I have recorded " + detail + ". Shall I dispatch this to 1930 and the bank?";
-              if (prompt) prompt.innerText = "“" + reply + "”";
-              if (!elevenLabsSessionLive) playRakshaSpeech(reply);
-              else if (activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
+              if (!elevenLabsSessionLive) {
+                appendTranscript("agent", reply);
+                playRakshaSpeech(reply);
+              } else if (activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
                 try {
                   activeConversation.sendContextualUpdate(
                     "Raksha Core marked the incident READY for citizen confirmation. Ask them to confirm dispatch."
@@ -1221,14 +2110,21 @@ const bodyContent = `
             } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
               const trackingRef = data.incident?.handoff?.externalReference || "";
               const reply = trackingRef
-                ? "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है! ट्रैकिंग नंबर " + trackingRef + " है।"
-                : "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है।";
-              if (prompt) prompt.innerText = "“" + reply + "”";
-              if (!elevenLabsSessionLive) playRakshaSpeech(reply);
+                ? "Your emergency report is accepted. Tracking number " + trackingRef + "."
+                : "Your emergency report has been accepted.";
+              if (!elevenLabsSessionLive) {
+                appendTranscript("agent", reply);
+                playRakshaSpeech(reply);
+              }
             }
 
-            if (!elevenLabsSessionLive && currentOrbState === "PROCESSING") {
-              setOrbState("LISTENING");
+            if (!elevenLabsSessionLive) {
+              if (currentOrbState === "PROCESSING") setOrbState("LISTENING");
+            } else if (currentOrbState === "PROCESSING") {
+              // Core finished; wait for agent mode, but don't stay stuck on Understanding.
+              setTimeout(function () {
+                if (currentOrbState === "PROCESSING") setOrbState("LISTENING");
+              }, 1200);
             }
           } else {
             setOrbState("ERROR");
@@ -1244,7 +2140,9 @@ const bodyContent = `
         if (mobileEl && mobileEl.value) currentReporterMobile = mobileEl.value.trim();
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
+        hideCallOutcome();
         resetLiveCallDisplay();
+        showLanguageGate(true);
         setOrbState("IDLE");
         if (typeof fluidOrbResize === "function") {
           requestAnimationFrame(function () {
@@ -1253,14 +2151,159 @@ const bodyContent = `
         }
       }
 
-      async function loadElevenLabsConversation() {
-        try {
-          const mod = await import("https://esm.sh/@11labs/client");
-          return mod.Conversation;
-        } catch (_) {
-          const mod2 = await import("https://cdn.jsdelivr.net/npm/@11labs/client/+esm");
-          return mod2.Conversation;
+      function showLanguageGate(show) {
+        const gate = document.getElementById("callLangGate");
+        const body = document.getElementById("callSessionBody");
+        if (gate) {
+          if (show) gate.removeAttribute("hidden");
+          else gate.setAttribute("hidden", "");
         }
+        if (body) {
+          if (show) body.setAttribute("hidden", "");
+          else body.removeAttribute("hidden");
+        }
+        const ind = document.getElementById("callLangIndicator");
+        if (show && ind) ind.innerText = "Choose language";
+      }
+
+      function languageLabel(lang) {
+        if (lang === "hi") return "हिंदी";
+        if (lang === "ta") return "தமிழ்";
+        return "English";
+      }
+
+      function greetingForLanguage(lang) {
+        if (lang === "hi") {
+          return "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?";
+        }
+        if (lang === "ta") {
+          return "வணக்கம், ரக்ஷா அவசர சைபர் உதவி மையம். கவலைப்பட வேண்டாம். என்ன நடந்தது என்று சொல்லுங்கள்?";
+        }
+        return "Hello, welcome to the Raksha emergency cyber helpline. Please don't worry — tell me what happened.";
+      }
+
+      function isIdleNudgeMessage(message) {
+        const m = String(message || "").toLowerCase();
+        return /still there|are you there|are you still|hello\?|can you hear me\??\s*$|क्या आप अभी भी|நீங்கள் இன்னும்/.test(m);
+      }
+
+      function languagePromptAddon(lang) {
+        if (lang === "hi") {
+          return "CRITICAL SESSION RULE (locked for entire call): Speak ONLY in Hindi (or natural Hinglish). Never switch to English or Tamil. After asking a question, wait patiently — do not say 'are you still there' quickly.";
+        }
+        if (lang === "ta") {
+          return "CRITICAL SESSION RULE (locked for entire call): Speak ONLY in Tamil. Never switch to English or Hindi. After asking a question, wait patiently — do not nudge too quickly.";
+        }
+        return "CRITICAL SESSION RULE (locked for entire call): Speak ONLY in clear English. Never greet or reply in Hindi or Tamil. Stay in English for the whole conversation. After asking a question, wait patiently for the citizen to finish — do not say 'Are you still there?' quickly.";
+      }
+
+      /** Full prompt for overrides — must include base duties; EL replaces prompt.prompt entirely. */
+      function sessionPromptForLanguage(lang) {
+        const lock = languagePromptAddon(lang);
+        const base =
+          "You are Raksha — an emergency first-responder for Indian financial cyber-fraud reporting. " +
+          "Be calm, brief, and empathetic. Collect missing facts (amount, bank, UPI app, UTR). " +
+          "Never ask for OTP/PIN/passwords. Never claim the bank is already frozen. " +
+          "Never say the report is already submitted. After they confirm, ask them to review the dossier on the right and attach a payment screenshot. " +
+          "Do not invent amounts, banks, UTRs, or names that the citizen did not say. Keep sentences short.";
+        if (lang === "en") {
+          return (
+            base +
+            " " +
+            lock +
+            " All questions and confirmations must be in English only — even if the citizen uses a Hindi word."
+          );
+        }
+        if (lang === "ta") {
+          return base + " " + lock + " Reply only in Tamil for the entire call.";
+        }
+        return base + " " + lock + " Reply only in Hindi/Hinglish for the entire call.";
+      }
+
+      /** Session overrides — language is locked for the full call (agent platform allows these). */
+      function buildLanguageOverrides(lang, firstMessage) {
+        const overrides = {
+          agent: {
+            firstMessage: firstMessage,
+            language: lang === "ta" ? "ta" : lang === "hi" ? "hi" : "en",
+            prompt: { prompt: sessionPromptForLanguage(lang) }
+          }
+        };
+        // English agents require turbo/flash v2 (not multilingual v2_5).
+        if (lang === "en") {
+          overrides.tts = { modelId: "eleven_turbo_v2" };
+        }
+        return overrides;
+      }
+
+      function ensureHtmlAudioPlaying() {
+        try {
+          document.querySelectorAll("audio").forEach(function (el) {
+            el.muted = false;
+            el.volume = 1;
+            var p = el.play();
+            if (p && typeof p.catch === "function") p.catch(function () {});
+          });
+        } catch (_) {}
+      }
+
+      function selectCallLanguage(lang) {
+        currentLanguage = lang === "hi" || lang === "ta" ? lang : "en";
+        // Prime audio SYNCHRONOUSLY on the click gesture (before any await).
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) {
+            if (!window.__rakshaAudioCtx) window.__rakshaAudioCtx = new Ctx();
+            window.__rakshaAudioCtx.resume();
+            const ctx = window.__rakshaAudioCtx;
+            const buf = ctx.createBuffer(1, 1, 22050);
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            src.connect(ctx.destination);
+            src.start(0);
+          }
+        } catch (_) {}
+        if (typeof window.switchLang === "function") window.switchLang(currentLanguage);
+        document.querySelectorAll(".call-lang-option").forEach(function (btn) {
+          btn.setAttribute("aria-pressed", btn.getAttribute("data-lang") === currentLanguage ? "true" : "false");
+        });
+        const ind = document.getElementById("callLangIndicator");
+        if (ind) ind.innerText = languageLabel(currentLanguage);
+        showLanguageGate(false);
+        connectAndStartSpeaking();
+      }
+
+      async function loadElevenLabsConversation() {
+        // Pin a version with WebRTC first-message audio fixes.
+        const urls = [
+          "https://esm.sh/@elevenlabs/client@1.8.1",
+          "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.8.1/+esm",
+          "https://esm.sh/@elevenlabs/client@latest",
+          "https://cdn.jsdelivr.net/npm/@elevenlabs/client/+esm"
+        ];
+        let lastErr = null;
+        for (const url of urls) {
+          try {
+            const mod = await import(url);
+            if (mod && mod.Conversation) return mod.Conversation;
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+        throw lastErr || new Error("ElevenLabs Conversation SDK unavailable");
+      }
+
+      async function fetchElevenLabsConversationToken(agentId) {
+        const q = agentId ? ("?agentId=" + encodeURIComponent(agentId)) : "";
+        const res = await fetch("/app/elevenlabs/conversation-token" + q);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || ("conversation-token HTTP " + res.status));
+        }
+        const data = await res.json();
+        const token = data.token || data.conversation_token || data.conversationToken;
+        if (!token) throw new Error("No conversation token in ElevenLabs response");
+        return token;
       }
 
       async function fetchElevenLabsSignedUrl(agentId) {
@@ -1299,7 +2342,8 @@ const bodyContent = `
             const narrative = String(params?.narrative || params?.text || "").trim();
             if (!narrative) return JSON.stringify({ ok: false, error: "narrative required" });
             const u = document.getElementById("userTurnSpeech");
-            if (u) u.innerText = "“" + narrative + "”";
+            if (u) u.innerText = narrative;
+            appendTranscript("user", narrative);
             await sendVoiceTurnToBackend(narrative);
             return JSON.stringify({
               ok: true,
@@ -1317,8 +2361,7 @@ const bodyContent = `
               currentIncidentId = String(params.incidentId);
             }
             if (!speech) return JSON.stringify({ ok: false, error: "userSpeech required" });
-            const u = document.getElementById("userTurnSpeech");
-            if (u) u.innerText = "“" + speech + "”";
+            appendTranscript("user", speech);
             await sendVoiceTurnToBackend(speech);
             return JSON.stringify({
               ok: true,
@@ -1354,8 +2397,7 @@ const bodyContent = `
         const greeting = currentLanguage === "hi"
           ? "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?"
           : "Hello, welcome to the Raksha emergency cyber helpline. Please tell me what happened.";
-        const prompt = document.getElementById("agentTurnPrompt");
-        if (prompt) prompt.innerText = "“" + greeting + "”";
+        appendTranscript("agent", greeting);
         await playRakshaSpeech(greeting);
 
         try {
@@ -1378,9 +2420,8 @@ const bodyContent = `
             }
             const transcript = final || interim;
             if (transcript) {
-              const u = document.getElementById("userTurnSpeech");
-              if (u) u.innerText = "“" + transcript + "”";
               if (final) {
+                appendTranscript("user", final);
                 setOrbState("PROCESSING");
                 sendVoiceTurnToBackend(final);
               }
@@ -1401,68 +2442,187 @@ const bodyContent = `
         }
       }
 
+      async function unlockBrowserAudio() {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          if (!window.__rakshaAudioCtx) window.__rakshaAudioCtx = new Ctx();
+          if (window.__rakshaAudioCtx.state === "suspended") {
+            await window.__rakshaAudioCtx.resume();
+          }
+          // Short silent buffer forces autoplay permission on this user gesture.
+          const ctx = window.__rakshaAudioCtx;
+          const buf = ctx.createBuffer(1, 1, 22050);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          src.start(0);
+        } catch (e) {
+          console.warn("[Audio] unlock failed:", e);
+        }
+      }
+
       async function connectAndStartSpeaking() {
+        if (sessionConnecting || elevenLabsSessionLive) {
+          console.warn("[ElevenLabs] Session already starting/live — ignoring duplicate start");
+          return;
+        }
+        sessionConnecting = true;
+        elevenLabsAudioHeard = false;
+
         const btnStart = document.getElementById("btnStartSpeaking");
         const btnEnd = document.getElementById("btnEndConversation");
         if (btnStart) btnStart.style.display = "none";
         if (btnEnd) btnEnd.style.display = "inline-flex";
 
+        showLanguageGate(false);
         setOrbState("CONNECTING");
 
         const agentId = await resolveElevenLabsAgentId();
         if (!agentId) {
           console.warn("[ElevenLabs] No ELEVENLABS_INTAKE_AGENT_ID configured — using mic fallback");
+          sessionConnecting = false;
           await startFallbackVoicePath();
           return;
         }
 
+        const firstMessage = greetingForLanguage(currentLanguage);
+        appendTranscript("agent", firstMessage);
+
+        let micStream = null;
         try {
+          // User-gesture unlock: mic + AudioContext (needed for EL playback).
+          await unlockBrowserAudio();
+          micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+          permissionMicStream = micStream;
+
           const Conversation = await loadElevenLabsConversation();
           if (!Conversation) throw new Error("Conversation SDK unavailable");
 
-          console.log("[ElevenLabs] Starting session with intake agent", agentId);
-          const signedUrl = await fetchElevenLabsSignedUrl(agentId);
+          if (activeConversation) {
+            try { await activeConversation.endSession(); } catch (_) {}
+            activeConversation = null;
+          }
 
-          activeConversation = await Conversation.startSession({
-            signedUrl,
-            clientTools: buildRakshaClientTools(),
+          let greetingDone = false;
+          let lastAgentSpoken = "";
+          const sessionOpts = {
+            overrides: buildLanguageOverrides(currentLanguage, firstMessage),
             onConnect: () => {
-              console.log("[ElevenLabs] Connected to", agentId);
+              console.log("[ElevenLabs] Connected to", agentId, "lang=", currentLanguage);
               elevenLabsSessionLive = true;
+              sessionConnecting = false;
               startIncidentPoll();
-              // Agent greeting is owned by the ElevenLabs session (speaking → listening).
-              if (currentOrbState === "CONNECTING") setOrbState("LISTENING");
+              if (currentOrbState === "CONNECTING") setOrbState("SPEAKING");
+              // Mute LiveKit/WebRTC remote audio — playback is via Core /v1/tts (reliable).
+              try {
+                if (activeConversation && typeof activeConversation.setVolume === "function") {
+                  activeConversation.setVolume({ volume: 0 });
+                }
+              } catch (_) {}
+              try {
+                if (activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
+                  activeConversation.sendContextualUpdate(languagePromptAddon(currentLanguage));
+                }
+              } catch (_) {}
+              // Speak greeting via Core TTS so the citizen always hears it.
+              playRakshaSpeech(firstMessage);
             },
-            onDisconnect: () => {
-              console.log("[ElevenLabs] Disconnected");
+            onDisconnect: (details) => {
+              console.warn("[ElevenLabs] Disconnected", details || "");
               elevenLabsSessionLive = false;
+              sessionConnecting = false;
               stopIncidentPoll();
+              if (currentOrbState !== "IDLE" && currentOrbState !== "ERROR") {
+                setOrbState("IDLE");
+                const badge = document.getElementById("callStatusBadge");
+                if (badge) badge.innerText = "Session ended — Exit and try again";
+              }
             },
             onError: (err) => {
               console.warn("[ElevenLabs] session error:", err);
               setOrbState("ERROR");
             },
             onModeChange: ({ mode }) => {
-              if (mode === "speaking") setOrbState("SPEAKING");
-              else if (mode === "listening") setOrbState("LISTENING");
+              if (mode === "speaking") {
+                elevenLabsAudioHeard = true;
+                setOrbState("SPEAKING");
+              } else if (mode === "listening") {
+                setOrbState("LISTENING");
+                if (!greetingDone && activeConversation) {
+                  greetingDone = true;
+                  try {
+                    if (typeof activeConversation.sendContextualUpdate === "function") {
+                      activeConversation.sendContextualUpdate(languagePromptAddon(currentLanguage));
+                    }
+                  } catch (_) {}
+                }
+              }
             },
             onMessage: ({ message, source }) => {
               if (source === "user") {
-                const u = document.getElementById("userTurnSpeech");
-                if (u) u.innerText = "“" + message + "”";
+                appendTranscript("user", message);
                 setOrbState("PROCESSING");
-                // Transcript → Core (primary when agent does not invoke client tools).
                 sendVoiceTurnToBackend(message);
-              } else {
-                const a = document.getElementById("agentTurnPrompt");
-                if (a && message) a.innerText = "“" + message + "”";
-                // Do not re-TTS — ElevenLabs already speaks agent turns.
+              } else if (message) {
+                // Drop premature idle nudges while Core TTS is still playing the last question,
+                // or when the citizen spoke recently (turn_timeout races with TTS playback).
+                if (isIdleNudgeMessage(message)) {
+                  const ttsBusy = currentAudio && !currentAudio.paused;
+                  const spokeRecently = Date.now() - lastVoiceTurnAt < 25000;
+                  if (ttsBusy || spokeRecently) {
+                    console.log("[ElevenLabs] Suppressed early idle nudge:", message);
+                    return;
+                  }
+                }
+                appendTranscript("agent", message);
+                // Play agent turns through Core TTS (WebRTC agent audio is muted).
+                if (message !== firstMessage && message !== lastAgentSpoken) {
+                  lastAgentSpoken = message;
+                  playRakshaSpeech(message);
+                }
               }
             }
-          });
+          };
+
+          // WebRTC first — browser playback is reliable here; earlier disconnects were
+          // from blocked first_message overrides (now enabled), not WebRTC itself.
+          let mode = "webrtc";
+          try {
+            sessionOpts.conversationToken = await fetchElevenLabsConversationToken(agentId);
+            sessionOpts.connectionType = "webrtc";
+            console.log("[ElevenLabs] Starting WebRTC session", agentId, "lang=", currentLanguage);
+            activeConversation = await Conversation.startSession(sessionOpts);
+          } catch (webrtcErr) {
+            console.warn("[ElevenLabs] WebRTC failed, trying signed-url:", webrtcErr);
+            delete sessionOpts.conversationToken;
+            delete sessionOpts.connectionType;
+            mode = "signed-url";
+            sessionOpts.signedUrl = await fetchElevenLabsSignedUrl(agentId);
+            activeConversation = await Conversation.startSession(sessionOpts);
+          }
+
+          elevenLabsSessionLive = true;
+          sessionConnecting = false;
+
+          // Keep LiveKit silent; citizen hears Core /v1/tts of agent text (language-locked).
+          try {
+            if (typeof activeConversation.setVolume === "function") {
+              activeConversation.setVolume({ volume: 0 });
+            }
+          } catch (_) {}
+
+          console.log("[ElevenLabs] Session live via", mode, "lang=", currentLanguage, "— Core TTS for agent speech");
         } catch (err) {
           console.warn("[ElevenLabs] session failed, falling back to mic path:", err);
           elevenLabsSessionLive = false;
+          sessionConnecting = false;
           await startFallbackVoicePath();
         }
       }
@@ -1471,19 +2631,125 @@ const bodyContent = `
         if (!currentIncidentId || !currentIncident) return;
         const state = currentIncident.state;
         if (state !== "READY" && state !== "USER_CONFIRMATION") return;
-        await dispatchEmergencyReport();
-        if (activeConversation) {
-          try { await activeConversation.endSession(); } catch (_) {}
-          activeConversation = null;
+
+        // Step 1: confirm dossier facts — do NOT CAP-file yet.
+        try {
+          const res = await protocolFetch(CORE_URL + "/v1/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              incidentId: currentIncidentId,
+              source: "web",
+              modality: "text",
+              content: "Citizen confirmed the gathered details.",
+              confirmFacts: true,
+              language: currentLanguage,
+              reporter: { mobile: currentReporterMobile }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentIncident = data.incident || currentIncident;
+          }
+        } catch (_) {}
+
+        proofPending = true;
+        if (currentIncident) {
+          currentIncident = {
+            ...currentIncident,
+            validation: {
+              ...(currentIncident.validation || { status: "READY", missingFields: [], conflicts: [] }),
+              factsConfirmed: true
+            }
+          };
         }
-        elevenLabsSessionLive = false;
-        stopIncidentPoll();
-        document.getElementById("rakshaCallModal").classList.remove("active");
+        updateIncidentUI(currentIncident, currentIncident.state, currentIncident.handoff?.externalReference);
+        appendTranscript(
+          "agent",
+          "Thank you. Please attach a payment receipt or scam screenshot so I can verify before filing."
+        );
+        playRakshaSpeech(
+          "Thank you. Please attach a payment receipt or scam screenshot so I can verify before filing."
+        );
+        const badge = document.getElementById("callStatusBadge");
+        if (badge) badge.innerText = "Attach payment or scam proof";
+      }
+
+      async function handleCallProofUpload(e) {
+        const file = e.target && e.target.files && e.target.files[0];
+        if (!file || !currentIncidentId) return;
+        setOrbState("PROCESSING");
+        const badge = document.getElementById("callStatusBadge");
+        if (badge) badge.innerText = "Verifying proof…";
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const base64 = String(reader.result || "").split(",")[1] || "";
+            const res = await protocolFetch(CORE_URL + "/v1/process", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                incidentId: currentIncidentId,
+                source: "web",
+                modality: "image",
+                content: base64,
+                language: currentLanguage,
+                reporter: { mobile: currentReporterMobile }
+              })
+            });
+            if (!res.ok) {
+              if (badge) badge.innerText = "Could not read proof — try another image";
+              setOrbState("LISTENING");
+              return;
+            }
+            const data = await res.json();
+            currentIncident = data.incident || currentIncident;
+            updateIncidentUI(
+              currentIncident,
+              data.state || currentIncident.state,
+              currentIncident.handoff?.externalReference
+            );
+
+            const verified =
+              currentIncident?.validation?.proofVerified ||
+              !!(currentIncident?.transaction?.amount && currentIncident?.transaction?.transactionId);
+
+            if (!verified) {
+              appendTranscript(
+                "agent",
+                "I could not fully verify that image. Please upload a clearer payment receipt showing amount and UTR."
+              );
+              playRakshaSpeech(
+                "I could not fully verify that image. Please upload a clearer payment receipt showing amount and UTR."
+              );
+              if (badge) badge.innerText = "Need a clearer proof image";
+              setCallProofVisible(true);
+              setOrbState("LISTENING");
+              return;
+            }
+
+            // Mark proof locally if Core set it; then CAP-file and show outcome.
+            proofPending = false;
+            appendTranscript("agent", "Proof verified. Filing your emergency freeze request now.");
+            await dispatchEmergencyReport({ stayInCall: true, showOutcome: true });
+          } catch (err) {
+            console.warn("[Proof upload]", err);
+            if (badge) badge.innerText = "Proof upload failed — try again";
+            setOrbState("ERROR");
+          }
+        };
+        reader.readAsDataURL(file);
       }
 
       async function endLiveVoiceCall() {
         setOrbState("IDLE");
         elevenLabsSessionLive = false;
+        sessionConnecting = false;
+        if (permissionMicStream) {
+          try { permissionMicStream.getTracks().forEach(function (t) { t.stop(); }); } catch (_) {}
+          permissionMicStream = null;
+        }
         if (currentAudio) {
           try { currentAudio.pause(); } catch {}
           currentAudio = null;
@@ -1563,7 +2829,8 @@ const bodyContent = `
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                incidentId: currentIncidentId || undefined,
+                incidentId: startFreshCase ? undefined : (currentIncidentId || undefined),
+                forceNew: startFreshCase || !currentIncidentId,
                 source: "web",
                 modality: "image",
                 content: base64,
@@ -1584,6 +2851,7 @@ const bodyContent = `
             const data = await res.json();
             currentIncidentId = data.incidentId;
             currentIncident = data.incident;
+            startFreshCase = false;
             handleServerResponse(data);
           } catch (err) {
             showError(
@@ -1606,7 +2874,8 @@ const bodyContent = `
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              incidentId: currentIncidentId || undefined,
+              incidentId: startFreshCase ? undefined : (currentIncidentId || undefined),
+              forceNew: startFreshCase || !currentIncidentId,
               source: "web",
               modality: "text",
               content: text,
@@ -1622,6 +2891,7 @@ const bodyContent = `
           const data = await res.json();
           currentIncidentId = data.incidentId;
           currentIncident = data.incident;
+          startFreshCase = false;
           handleServerResponse(data);
         } catch (err) {
           showError("Connection error", "Could not reach the Raksha server. Please check your connection and try again.", () => showWsView("IDLE"));
@@ -1679,12 +2949,14 @@ const bodyContent = `
         }
       }
 
-      async function dispatchEmergencyReport() {
+      async function dispatchEmergencyReport(opts) {
         if (!currentIncidentId || !currentIncident) return;
+        const stayInCall = !!(opts && opts.stayInCall);
+        const showOutcome = !!(opts && opts.showOutcome);
 
         // Prevent duplicate submissions — use deterministic idempotency key
         const idemKey = "web-cap-" + currentIncidentId;
-        showWsView("PROCESSING");
+        if (!stayInCall) showWsView("PROCESSING");
 
         try {
           const res = await protocolFetch(CAP_URL + "/cap/actions/execute", {
@@ -1702,11 +2974,17 @@ const bodyContent = `
 
           if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
-            showError(
-              "Report could not be dispatched",
-              errData.error || "The action could not be completed. Your incident has not been lost.",
-              () => showWsView("READY")
-            );
+            if (stayInCall) {
+              const badge = document.getElementById("callStatusBadge");
+              if (badge) badge.innerText = "Dispatch failed — try again";
+              setCallProofVisible(true);
+            } else {
+              showError(
+                "Report could not be dispatched",
+                errData.error || "The action could not be completed. Your incident has not been lost.",
+                () => showWsView("READY")
+              );
+            }
             return;
           }
 
@@ -1714,15 +2992,50 @@ const bodyContent = `
           // Only use actual reference from server — never guess a fallback
           const refNumber = data.externalReference || data.data?.externalReference || "Pending";
           document.getElementById("repRefNum").innerText = refNumber;
+          if (currentIncident) {
+            currentIncident = {
+              ...currentIncident,
+              state: "SUBMITTED",
+              handoff: {
+                ...(currentIncident.handoff || {}),
+                status: "ACCEPTED",
+                externalReference: refNumber,
+                target: (currentIncident.handoff && currentIncident.handoff.target) || "portal-a"
+              }
+            };
+          }
+          renderWsFilingLinks(currentIncident, refNumber);
+          updateIncidentUI(currentIncident, "SUBMITTED", refNumber);
           fetchTimeline();
-          showWsView("SUBMITTED");
           fetchDevEvents();
+
+          if (activeConversation) {
+            try { await activeConversation.endSession(); } catch (_) {}
+            activeConversation = null;
+          }
+          elevenLabsSessionLive = false;
+          stopIncidentPoll();
+          proofPending = false;
+          setCallProofVisible(false);
+          setCallConfirmVisible(false);
+
+          if (showOutcome || stayInCall) {
+            showCallOutcome(currentIncident, refNumber);
+          } else {
+            showWsView("SUBMITTED");
+          }
         } catch (err) {
-          showError(
-            "Report could not be dispatched",
-            "The action could not be completed. Your incident has not been lost. Retry when ready.",
-            () => showWsView("READY")
-          );
+          if (stayInCall) {
+            const badge = document.getElementById("callStatusBadge");
+            if (badge) badge.innerText = "Dispatch failed — try again";
+            setCallProofVisible(true);
+          } else {
+            showError(
+              "Report could not be dispatched",
+              "The action could not be completed. Your incident has not been lost. Retry when ready.",
+              () => showWsView("READY")
+            );
+          }
         }
       }
 
@@ -1731,7 +3044,8 @@ const bodyContent = `
         const state = data.state;
 
         if (state === "QUESTION_PENDING") {
-          document.getElementById("qPromptText").innerText = data.question || "Please provide the missing details:";
+          document.getElementById("qPromptText").innerText =
+            data.question || data.nextAction?.prompt || "Please provide the missing details:";
           document.getElementById("qInputVal").value = "";
           showWsView("QUESTION");
         } else if (state === "CONFLICT_RESOLUTION") {
@@ -1761,6 +3075,7 @@ const bodyContent = `
             const refEl = document.getElementById("repRefNum");
             if (refEl) refEl.innerText = ref;
           }
+          renderWsFilingLinks(data.incident || currentIncident, ref);
           showWsView("SUBMITTED");
         } else {
           showWsView("IDLE");
@@ -1801,25 +3116,56 @@ const bodyContent = `
         }
       }
 
+      function humanStatusSteps(events) {
+        const steps = [];
+        const seen = new Set();
+        (events || []).forEach(function (evt) {
+          const evType = String(evt.type || "");
+          const evState = evt.payload && evt.payload.state;
+          const evEvidence = evt.payload && evt.payload.type;
+          let label = "";
+          if (evType === "incident.created") label = "Report started";
+          else if (evType === "evidence.sealed" && evEvidence === "VOICE_STATEMENT") label = "Voice statement recorded";
+          else if (evType === "evidence.sealed" && evEvidence === "TRANSACTION_SCREENSHOT") label = "Payment proof attached";
+          else if (evType === "evidence.sealed") label = "Evidence sealed";
+          else if (evType === "incident.accepted" || evState === "SUBMITTED" || evState === "ACKNOWLEDGED") label = "Filed with 1930 and bank";
+          else if (evState === "READY") label = "Details ready to confirm";
+          else if (evState === "QUESTION_PENDING") label = "Asking for a missing detail";
+          else if (evState === "USER_CONFIRMATION") label = "Waiting for your confirmation";
+          else return;
+          if (seen.has(label)) return;
+          seen.add(label);
+          steps.push({
+            label: label,
+            time: evt.timestamp ? String(evt.timestamp).slice(11, 19) : ""
+          });
+        });
+        return steps.slice(-6);
+      }
+
+      function renderStatusList(el, events, emptyText) {
+        if (!el) return;
+        const steps = humanStatusSteps(events);
+        if (!steps.length) {
+          el.innerHTML = '<div class="status-step"><span class="status-step-label">' + (emptyText || "No updates yet.") + "</span></div>";
+          return;
+        }
+        el.innerHTML = steps.map(function (s) {
+          return (
+            '<div class="status-step">' +
+              '<span class="status-step-label">' + escapeHtml(s.label) + "</span>" +
+              (s.time ? '<span class="status-step-time">' + escapeHtml(s.time) + "</span>" : "") +
+            "</div>"
+          );
+        }).join("");
+      }
+
       async function fetchTimeline() {
         if (!currentIncidentId) return;
         try {
           const res = await protocolFetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
           const data = await res.json();
-          const tl = document.getElementById("liveTimeline");
-          if (!tl) return;
-          tl.innerHTML = "";
-          (data.events || []).forEach(evt => {
-            const div = document.createElement("div");
-            div.style.background = "#fafaf9";
-            div.style.border = "1px solid var(--border)";
-            div.style.padding = "0.6rem 0.85rem";
-            div.style.borderRadius = "8px";
-            div.style.display = "flex";
-            div.style.justifyContent = "space-between";
-            div.innerHTML = '<span style="color:var(--green);font-weight:700;">✓ ' + evt.type + '</span><span style="font-family:var(--mono);font-size:0.75rem;color:var(--text-muted);">' + evt.timestamp.slice(11, 19) + '</span>';
-            tl.appendChild(div);
-          });
+          renderStatusList(document.getElementById("liveTimeline"), data.events || [], "No status yet.");
         } catch {}
       }
 
@@ -1828,14 +3174,18 @@ const bodyContent = `
         try {
           const res = await protocolFetch(CORE_URL + "/v1/incidents/" + currentIncidentId + "/events");
           const data = await res.json();
-          const dump = document.getElementById("devJsonDump");
-          if (dump) dump.innerText = JSON.stringify(data.events || [], null, 2);
+          renderStatusList(
+            document.getElementById("devJsonDump"),
+            data.events || [],
+            "No case yet. Start a report to see progress here."
+          );
         } catch {}
       }
 
       function resetToHome() {
         currentIncidentId = null;
         currentIncident = null;
+        startFreshCase = true;
         lastVoiceTurnText = "";
         lastVoiceTurnAt = 0;
         document.getElementById("narrativeText").value = "";
@@ -1885,9 +3235,11 @@ const bodyContent = `
 
       // Export globally on window immediately
       window.startLiveVoiceCall = startLiveVoiceCall;
+      window.selectCallLanguage = selectCallLanguage;
       window.connectAndStartSpeaking = connectAndStartSpeaking;
       window.endLiveVoiceCall = endLiveVoiceCall;
       window.confirmFromLiveCall = confirmFromLiveCall;
+      window.handleCallProofUpload = handleCallProofUpload;
       window.toggleDevDrawer = toggleDevDrawer;
       window.toggleTypeArea = toggleTypeArea;
       window.handleImageAction = handleImageAction;

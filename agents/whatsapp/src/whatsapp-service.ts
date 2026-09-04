@@ -227,7 +227,20 @@ export class WhatsAppService {
     } else if (processData.state === "USER_CONFIRMATION") {
       replyText = `⚠️ *Difference in Transaction Found*\n\n${processData.nextAction.prompt || "Which amount is correct?"}\n\nReply with the correct number:\n1️⃣ ₹5,000\n2️⃣ ₹50,000`;
     } else if (processData.state === "READY") {
-      replyText = `✅ *Payment Identified*\n\n• Amount: *₹${incident.transaction.amount ? incident.transaction.amount.toLocaleString() : "—"}*\n• Mode: *${incident.transaction.channel || "—"}*\n• Bank: *${incident.transaction.debitInstitution || "—"}*\n• UTR: *${incident.transaction.transactionId || "—"}*\n\nIs this the fraudulent transaction?\nReply *YES* to dispatch emergency freeze report.`;
+      const amt = incident.transaction?.amount
+        ? `₹${Number(incident.transaction.amount).toLocaleString()}`
+        : "—";
+      replyText =
+        `✅ *Payment Identified*\n\n` +
+        `Please confirm these details are correct:\n` +
+        `• Amount: *${amt}*\n` +
+        `• Mode: *${incident.transaction?.channel || "—"}*\n` +
+        `• Bank: *${incident.transaction?.debitInstitution || "—"}*\n` +
+        `• UTR: *${incident.transaction?.transactionId || "—"}*\n` +
+        (incident.narrative?.text
+          ? `• What happened: ${String(incident.narrative.text).slice(0, 160)}\n`
+          : "") +
+        `\nReply *YES* to dispatch the emergency freeze to 1930 and the bank.`;
     } else if (processData.state === "SUBMITTED" || processData.state === "ACKNOWLEDGED") {
       replyText = `🛡️ *Emergency Report Accepted*\n\nIncident ID: *${incident.id}*\nStatus: *${processData.state}*\nYour emergency freeze request has been dispatched for simulated 1930 / bank response.`;
     } else {
@@ -306,7 +319,24 @@ export class WhatsAppService {
 
     this.store.bindIncident(senderPhone, incidentId, "SUBMITTED");
 
-    const replyText = `🛡️ *Raksha Emergency Report Accepted*\n\nTracking Reference: *${refNumber}*\nIncident ID: *${incidentId}*\n\nYour emergency fraud packet has been handed over for simulated 1930 / bank response.\n\nNext step: Complete official follow-up using this reference.`;
+    const portalA = process.env.PORTAL_A_BASE_URL || "http://localhost:3003";
+    const portalB = process.env.PORTAL_B_BASE_URL || "http://localhost:3004";
+    const bank = incident.transaction?.debitInstitution || "your bank";
+
+    const replyText =
+      `🛡️ *Raksha Emergency Report Accepted*\n\n` +
+      `Tracking Reference: *${refNumber}*\n` +
+      `Incident ID: *${incidentId}*\n\n` +
+      `• Amount: *₹${incident.transaction?.amount ? Number(incident.transaction.amount).toLocaleString() : "—"}*\n` +
+      `• Mode: *${incident.transaction?.channel || "—"}*\n` +
+      `• Bank: *${bank}*\n` +
+      `• UTR: *${incident.transaction?.transactionId || "—"}*\n\n` +
+      `Your emergency fraud packet has been handed over for simulated 1930 / bank response.\n\n` +
+      `Open desks (simulated):\n` +
+      `• 1930 cyber cell: ${portalA}\n` +
+      `• ${bank} freeze desk: ${portalB}\n\n` +
+      `Nothing else you need to do here.\n` +
+      `Reply *STATUS* anytime for an update.`;
 
     this.store.cacheReply(messageId, {
       messageId,
@@ -341,7 +371,24 @@ export class WhatsAppService {
     const bank = params.bank || "State Bank of India";
     const utr = params.utr || "Verified";
 
-    const replyText = `🛡️ *Raksha Emergency Freeze Confirmation*\n\nDear Citizen,\nYour Raksha emergency report has been submitted to the simulated 1930 / bank response layer.\n\n• Tracking Reference: *${params.referenceNumber}*\n• Case ID: *${params.incidentId}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${utr}*\n• Status: *ACCEPTED — SIMULATED RESPONSE*\n\nYou can check real-time status anytime by replying *STATUS* to this WhatsApp number.`;
+    const portalA = process.env.PORTAL_A_BASE_URL || "http://localhost:3003";
+    const portalB = process.env.PORTAL_B_BASE_URL || "http://localhost:3004";
+
+    const replyText =
+      `🛡️ *Raksha Emergency Freeze Confirmation*\n\n` +
+      `Dear Citizen,\nYour Raksha emergency report has been submitted to the simulated 1930 / bank response layer.\n\n` +
+      `• Tracking Reference: *${params.referenceNumber}*\n` +
+      `• Case ID: *${params.incidentId}*\n` +
+      `• Amount: *₹${amt}*\n` +
+      `• Channel: *${channel}*\n` +
+      `• Bank: *${bank}*\n` +
+      `• UTR: *${utr}*\n` +
+      `• Status: *ACCEPTED — SIMULATED RESPONSE*\n\n` +
+      `Open desks (simulated):\n` +
+      `• 1930 cyber cell: ${portalA}\n` +
+      `• ${bank} freeze desk: ${portalB}\n\n` +
+      `Nothing else you need to do here.\n\n` +
+      `You can check real-time status anytime by replying *STATUS* to this WhatsApp number.`;
 
     this.store.bindIncident(cleanPhone, params.incidentId, "SUBMITTED");
     this.store.cacheReply(`notif-${Date.now()}`, {

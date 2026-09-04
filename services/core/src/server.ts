@@ -162,8 +162,8 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
       // 3. Unified Multimodal Process Orchestration Endpoint
       if (pathname === "/v1/process" && method === "POST") {
         const body = await parseJsonBody<ProcessInput>(req);
-        if (!body.content && !body.userClarificationAnswer) {
-          sendJson(res, 400, { error: "Missing content or userClarificationAnswer in body" });
+        if (!body.content && !body.userClarificationAnswer && !body.confirmFacts) {
+          sendJson(res, 400, { error: "Missing content, userClarificationAnswer, or confirmFacts in body" });
           return;
         }
         // Identity guard: every request must supply reporter.mobile or an incidentId

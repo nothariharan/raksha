@@ -36,8 +36,18 @@ writePage("/", renderHomePageHtml());
 writePage("/how", renderHowPageHtml());
 writePage("/agents", renderAgentsPageHtml());
 writePage("/cap", renderCapPageHtml());
-writePage("/app", renderAppPageHtml({ coreUrl: protocolOrigin, capUrl: protocolOrigin }));
-writePage("/demo", renderAppPageHtml({ coreUrl: protocolOrigin, capUrl: protocolOrigin }));
+writePage("/app", renderAppPageHtml({
+  coreUrl: protocolOrigin,
+  capUrl: protocolOrigin,
+  portalAUrl: process.env.PORTAL_A_BASE_URL || `${protocolOrigin}/portal-a`,
+  portalBUrl: process.env.PORTAL_B_BASE_URL || `${protocolOrigin}/portal-b`,
+}));
+writePage("/demo", renderAppPageHtml({
+  coreUrl: protocolOrigin,
+  capUrl: protocolOrigin,
+  portalAUrl: process.env.PORTAL_A_BASE_URL || `${protocolOrigin}/portal-a`,
+  portalBUrl: process.env.PORTAL_B_BASE_URL || `${protocolOrigin}/portal-b`,
+}));
 
 const publicDir = join(root, "apps", "web", "public");
 if (existsSync(publicDir)) {
