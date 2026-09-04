@@ -136,6 +136,16 @@ export class IncidentService {
     return this.incidentRepo.findOpenByMobile(normalized);
   }
 
+  /**
+   * Latest incident for a mobile across all states (including SUBMITTED / ACKNOWLEDGED).
+   * Used by STATUS / tracking after civic handoff.
+   */
+  async findLatestByMobile(mobile: string): Promise<FraudIncident | null> {
+    const normalized = normalizeMobile(mobile);
+    if (!normalized) return null;
+    return this.incidentRepo.findLatestByMobile(normalized);
+  }
+
   async getIncident(id: string): Promise<FraudIncident | null> {
     const incident = await this.incidentRepo.findById(id);
     if (!incident) return null;

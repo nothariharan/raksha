@@ -1,4 +1,12 @@
-﻿import fs from "node:fs";
+﻿/**
+ * Developer utility — NOT part of the product happy path.
+ *
+ * Citizen confirmation → CAP → event bus → WhatsApp handoff subscriber
+ * already sends the acceptance notification automatically.
+ *
+ * Use this script only for ad-hoc Twilio smoke tests outside the protocol.
+ */
+import fs from "node:fs";
 
 const envLocal = fs.readFileSync(".env.local", "utf-8");
 function getEnv(k) {

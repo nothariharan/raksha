@@ -107,8 +107,10 @@ export class WhatsAppService {
         let lookupId = activeIncidentId;
         if (!lookupId) {
           const normPhone = normalizeMobile(senderPhone);
+          // Prefer open case; fall back to latest (covers SUBMITTED / ACKNOWLEDGED after CAP)
           const openInc = await incidentService.findOpenByMobile(normPhone);
-          lookupId = openInc?.id ?? null;
+          const latest = openInc || (await incidentService.findLatestByMobile(normPhone));
+          lookupId = latest?.id ?? null;
         }
         if (lookupId) {
           const existingInc = await this.getIncidentStatus(lookupId);
@@ -116,7 +118,12 @@ export class WhatsAppService {
             const amt = (existingInc.transaction?.amount || 0).toLocaleString();
             const channel = existingInc.transaction?.channel || "UPI";
             const bank = existingInc.transaction?.debitInstitution || "State Bank of India";
-            const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*\n\nYour emergency fraud report is active in the Civic Action Protocol.`;
+            const handoffRef = existingInc.handoff?.externalReference;
+            const handoffStatus = existingInc.handoff?.status;
+            const institutional = handoffRef
+              ? `\n• Tracking Ref: *${handoffRef}*\n• Institutional: *${handoffStatus || "SUBMITTED"}*`
+              : "";
+            const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*${institutional}\n\nYour emergency fraud report is active in the Civic Action Protocol.\n_SIMULATED DEMONSTRATION — 1930 / bank systems are simulated._`;
             return {
               success: true,
               replyText,

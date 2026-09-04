@@ -5,6 +5,7 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { CAPActionName, FraudIncident } from "@raksha/schemas";
 import { defaultEventRepository } from "@raksha/core";
+import { globalEventBus } from "@raksha/shared";
 import { capabilityRegistry } from "./capability-registry.js";
 import { actionRouter } from "./action-router.js";
 import { CAP_GOVERNMENT_MANIFEST } from "./manifest.js";
@@ -136,7 +137,7 @@ export async function handleCapRequest(req: IncomingMessage, res: ServerResponse
         return;
       }
 
-      // 7. POST /cap/events
+      // 7. POST /cap/events — persist AND fan-out on the EventBus so subscribers react
       if (pathname === "/cap/events" && method === "POST") {
         const body = await parseJsonBody<{
           type: string;
@@ -146,15 +147,14 @@ export async function handleCapRequest(req: IncomingMessage, res: ServerResponse
           payload: unknown;
         }>(req);
 
-        const event = await defaultEventRepository.append({
-          id: `EVT-${Date.now()}`,
+        const event = await globalEventBus.emit({
           type: body.type,
           caseId: body.caseId,
           incidentId: body.incidentId,
-          source: body.source,
+          source: body.source || "cap",
           payload: body.payload,
-          timestamp: new Date().toISOString(),
         });
+        await defaultEventRepository.append(event);
         sendJson(res, 201, event);
         return;
       }

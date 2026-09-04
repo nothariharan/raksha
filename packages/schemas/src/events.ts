@@ -7,6 +7,7 @@ export type CAPEventType =
   | "incident.ready"
   | "incident.submitted"
   | "incident.accepted"
+  | "service.accepted"
   | "response.acknowledged"
   | "evidence.sealed"
   | "case.updated";
@@ -44,6 +45,21 @@ export interface IncidentAcceptedEventPayload {
   caseId: string;
   externalReference: string;
   targetPortal: string;
+  status?: string;
+  /** Snapshot of the incident at handoff time (for Portal A ingest without re-calling CAP). */
+  incident?: unknown;
+  /** Visible simulation boundary for demos/audits. */
+  simulationBoundary?: string;
+}
+
+export interface ServiceAcceptedEventPayload {
+  incidentId: string;
+  caseId: string;
+  portalCaseId: string;
+  externalReference: string;
+  portal: "portal-a";
+  lifecycle: string;
+  simulationBoundary?: string;
 }
 
 export interface ResponseAcknowledgedEventPayload {
