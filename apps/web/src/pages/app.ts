@@ -4,9 +4,14 @@
 
 import { renderPageLayout } from "./layout.js";
 
-export function renderAppPageHtml(config?: { coreUrl?: string; capUrl?: string }): string {
+export function renderAppPageHtml(config?: {
+  coreUrl?: string;
+  capUrl?: string;
+  elevenLabsAgentId?: string;
+}): string {
   const coreUrl = config?.coreUrl ?? "http://localhost:3001";
   const capUrl = config?.capUrl ?? "http://localhost:3002";
+  const elevenLabsAgentId = config?.elevenLabsAgentId ?? "";
 
   const extraStyles = `
     .app-shell {
@@ -560,19 +565,19 @@ const bodyContent = `
           <!-- Realtime State Indicator -->
           <div class="call-state-pill" id="callStatePillWrap" aria-live="polite">
             <span class="dot"></span>
-            <span id="callStatusBadge">Connecting to Raksha…</span>
+            <span id="callStatusBadge">Tap below to start speaking</span>
           </div>
 
           <!-- Minimal Focused Conversation Turns -->
           <div class="call-transcript-focus" id="liveTranscriptBox" aria-live="polite">
-            <div class="turn-prompt" id="agentTurnPrompt">“नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। बताइए क्या हुआ?”</div>
+            <div class="turn-prompt" id="agentTurnPrompt">“Tap Start speaking to begin a live Raksha session.”</div>
             <div class="turn-user" id="userTurnSpeech"></div>
           </div>
 
-          <!-- Dynamic Progressive Incident Capsule (Hidden until facts exist) -->
+          <!-- Dynamic Progressive Incident Capsule (Hidden until Core returns facts) -->
           <div class="call-case-capsule" id="callCaseCapsule" style="display: none;">
             <span class="capsule-id" id="capsuleCaseId">—</span>
-            <span id="capsuleFacts" class="capsule-facts">Gathering details…</span>
+            <span id="capsuleFacts" class="capsule-facts"></span>
             <span id="capsuleState" class="capsule-state"></span>
           </div>
 
@@ -586,6 +591,10 @@ const bodyContent = `
             <button class="btn-end-conversation" id="btnEndConversation" style="display: none;" onclick="endLiveVoiceCall()">
               <span class="end-dot"></span>
               <span>End conversation</span>
+            </button>
+
+            <button class="btn-submit-narrative" id="btnCallConfirm" style="display: none;" onclick="confirmFromLiveCall()">
+              Confirm &amp; dispatch to 1930 / bank
             </button>
 
             <button class="btn-view-technical" onclick="toggleDevDrawer()">
@@ -640,7 +649,7 @@ const bodyContent = `
           <button class="btn-link-type" onclick="toggleTypeArea()">Type details instead</button>
 
           <div class="type-box" id="typeArea" style="display: none;">
-            <textarea class="narrative-input" id="narrativeText" placeholder="e.g. Someone called pretending to be electricity department and made me transfer ₹5,000 via PhonePe..."></textarea>
+            <textarea class="narrative-input" id="narrativeText" placeholder="Describe what happened in your own words…"></textarea>
             <button class="btn-submit-narrative" onclick="submitTypedNarrative()">Understand Incident</button>
           </div>
         </div>
@@ -714,7 +723,7 @@ const bodyContent = `
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
             Report handed off to the simulated 1930 / bank response layer.<br>
             <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">SIMULATED DEMONSTRATION — not a real government filing</span>
-            Reference: <strong id="repRefNum" style="color: var(--text);">1930-SYN-XXXXXX</strong>
+            Reference: <strong id="repRefNum" style="color: var(--text);">—</strong>
           </p>
           <div id="liveTimeline" style="text-align: left; display: flex; flex-direction: column; gap: 0.5rem;"></div>
           <button class="btn-link-type" style="margin-top: 1.5rem;" onclick="resetToHome()">File another report</button>
@@ -745,6 +754,7 @@ const bodyContent = `
     <script>
       const CORE_URL = "${coreUrl}";
       const CAP_URL = "${capUrl}";
+      const ELEVENLABS_AGENT_ID = ${JSON.stringify(elevenLabsAgentId)};
 
       function showProtocolWarming(show, detail) {
         var el = document.getElementById("protocolWarming");
@@ -778,6 +788,11 @@ const bodyContent = `
       let conversationPollInterval = null;
       let currentOrbState = "IDLE";
       let fluidOrbResize = null;
+      /** True while a live ElevenLabs ConvAI session owns mic/speaker. */
+      let elevenLabsSessionLive = false;
+      /** Dedup Core process calls when SDK emits duplicate user transcripts. */
+      let lastVoiceTurnText = "";
+      let lastVoiceTurnAt = 0;
 
       (function initFluidOrb() {
         var canvas = document.getElementById("callFluidOrb");
@@ -890,8 +905,8 @@ const bodyContent = `
           new ResizeObserver(updateSize).observe(host);
         }
 
-        var rotSpeeds = { IDLE: 0.18, CONNECTING: 0.35, LISTENING: 0.55, SPEAKING: 0.95, PROCESSING: 0.42 };
-        var hoverAmt = { IDLE: 0.12, CONNECTING: 0.28, LISTENING: 0.45, SPEAKING: 0.72, PROCESSING: 0.38 };
+        var rotSpeeds = { IDLE: 0.18, CONNECTING: 0.35, LISTENING: 0.55, SPEAKING: 0.95, PROCESSING: 0.42, ERROR: 0.12 };
+        var hoverAmt = { IDLE: 0.12, CONNECTING: 0.28, LISTENING: 0.45, SPEAKING: 0.72, PROCESSING: 0.38, ERROR: 0.08 };
         var currentRot = 0;
         var last = performance.now();
         var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -936,8 +951,11 @@ const bodyContent = `
           case "PROCESSING":
             badge.innerText = "Understanding…";
             break;
+          case "ERROR":
+            badge.innerText = "Connection issue — try again";
+            break;
           case "IDLE":
-            badge.innerText = "Call ended";
+            badge.innerText = "Tap below to start speaking";
             break;
           default:
             badge.innerText = "Raksha is active";
@@ -994,6 +1012,9 @@ const bodyContent = `
       function resetLiveCallDisplay() {
         currentIncidentId = null;
         currentIncident = null;
+        lastVoiceTurnText = "";
+        lastVoiceTurnAt = 0;
+        elevenLabsSessionLive = false;
         
         if (currentAudio) {
           try { currentAudio.pause(); } catch {}
@@ -1013,20 +1034,40 @@ const bodyContent = `
         const stateEl = document.getElementById("capsuleState");
         if (stateEl) stateEl.innerText = "";
 
+        const capsuleId = document.getElementById("capsuleCaseId");
+        if (capsuleId) capsuleId.innerText = "—";
+
         const prompt = document.getElementById("agentTurnPrompt");
-        if (prompt) prompt.innerText = "“नमस्ते, रक्षा आपातकालीन हेल्पलाइन में आपका स्वागत है। बोलना शुरू करने के लिए नीचे दिए गए बटन पर क्लिक करें।”";
+        if (prompt) prompt.innerText = "“Tap Start speaking to begin a live Raksha session.”";
         
         const userSpeech = document.getElementById("userTurnSpeech");
         if (userSpeech) userSpeech.innerText = "";
 
         const btnStart = document.getElementById("btnStartSpeaking");
         const btnEnd = document.getElementById("btnEndConversation");
+        const btnConfirm = document.getElementById("btnCallConfirm");
         if (btnStart) btnStart.style.display = "inline-flex";
         if (btnEnd) btnEnd.style.display = "none";
+        if (btnConfirm) btnConfirm.style.display = "none";
 
         setOrbState("IDLE");
-        const badge = document.getElementById("callStatusBadge");
-        if (badge) badge.innerText = "Tap below to start speaking";
+      }
+
+      function syncReadyPanelFromIncident(inc) {
+        if (!inc || !inc.transaction) return;
+        const amt = document.getElementById("repAmount");
+        const ch = document.getElementById("repChannel");
+        const utr = document.getElementById("repUtr");
+        const bank = document.getElementById("repBank");
+        if (amt) amt.innerText = inc.transaction.amount ? "₹" + Number(inc.transaction.amount).toLocaleString() : "—";
+        if (ch) ch.innerText = inc.transaction.application || inc.transaction.channel || "—";
+        if (utr) utr.innerText = inc.transaction.transactionId || "—";
+        if (bank) bank.innerText = inc.transaction.debitInstitution || "—";
+      }
+
+      function setCallConfirmVisible(visible) {
+        const btnConfirm = document.getElementById("btnCallConfirm");
+        if (btnConfirm) btnConfirm.style.display = visible ? "inline-flex" : "none";
       }
 
       function updateIncidentUI(inc, state, externalRef) {
@@ -1038,13 +1079,20 @@ const bodyContent = `
         const capsuleFacts = document.getElementById("capsuleFacts");
         const capsuleState = document.getElementById("capsuleState");
 
-        if (effectiveId && capsule) {
+        // Never show a capsule until Core has actually assigned an RKS-* id.
+        if (!effectiveId || !String(effectiveId).startsWith("RKS-")) {
+          if (capsule) capsule.style.display = "none";
+          setCallConfirmVisible(false);
+          return;
+        }
+
+        if (capsule) {
           capsule.style.display = "inline-flex";
           if (capsuleId) capsuleId.innerText = effectiveId;
 
           const facts = [];
-          if (inc?.transaction?.amount) {
-            facts.push("₹" + inc.transaction.amount.toLocaleString());
+          if (inc?.transaction?.amount != null && inc.transaction.amount !== "") {
+            facts.push("₹" + Number(inc.transaction.amount).toLocaleString());
           }
           if (inc?.transaction?.application) {
             facts.push(inc.transaction.application);
@@ -1057,45 +1105,70 @@ const bodyContent = `
           }
 
           if (capsuleFacts) {
-            capsuleFacts.innerText = facts.length > 0 ? facts.join(" · ") : "Preparing your report…";
+            capsuleFacts.innerText = facts.length > 0 ? facts.join(" · ") : "Gathering details…";
           }
 
           const effectiveState = state || inc?.state || "INTAKE";
           const badge = document.getElementById("callStatusBadge");
+          const handoffRef =
+            externalRef ||
+            inc?.handoff?.externalReference ||
+            "";
+
           if (capsuleState) {
             if (effectiveState === "READY" || effectiveState === "USER_CONFIRMATION") {
               capsuleState.innerHTML = " · <span style='color:#d97706;font-weight:700;'>Ready for confirmation</span>";
-              if (badge) badge.innerText = "Awaiting citizen confirmation";
+              if (badge && currentOrbState !== "SPEAKING" && currentOrbState !== "PROCESSING") {
+                badge.innerText = "Awaiting citizen confirmation";
+              }
+              setCallConfirmVisible(true);
+              syncReadyPanelFromIncident(inc);
             } else if (effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED") {
-              const ref = externalRef || (effectiveId ? "1930-SYN-" + effectiveId.replace("RKS-", "") : "Pending");
-              capsuleState.innerHTML = " · <span style='color:#16a34a;font-weight:700;'>Submitted (" + ref + ")</span>";
+              const refLabel = handoffRef ? handoffRef : "Pending reference";
+              capsuleState.innerHTML = " · <span style='color:#16a34a;font-weight:700;'>Submitted (" + refLabel + ")</span>";
               if (badge) badge.innerText = "✓ CAP action dispatched";
+              setCallConfirmVisible(false);
+              if (handoffRef) {
+                const refEl = document.getElementById("repRefNum");
+                if (refEl) refEl.innerText = handoffRef;
+              }
             } else if (effectiveState === "QUESTION_PENDING") {
               capsuleState.innerHTML = " · <span style='color:#3b82f6;font-weight:700;'>Gathering info</span>";
-              if (badge) badge.innerText = "Gathering missing information";
+              if (badge && currentOrbState !== "SPEAKING" && currentOrbState !== "PROCESSING") {
+                badge.innerText = "Gathering missing information";
+              }
+              setCallConfirmVisible(false);
             } else {
               capsuleState.innerText = "";
-              if (badge) badge.innerText = "Listening for details…";
+              setCallConfirmVisible(false);
             }
           }
         }
 
-        // Sync to Developer Drawer
         const devIncId = document.getElementById("devIncId");
         if (devIncId && effectiveId) devIncId.innerText = effectiveId;
       }
 
       async function sendVoiceTurnToBackend(speechText) {
+        const text = (speechText || "").trim();
+        if (!text) return;
+
+        const now = Date.now();
+        if (text === lastVoiceTurnText && now - lastVoiceTurnAt < 2500) return;
+        lastVoiceTurnText = text;
+        lastVoiceTurnAt = now;
+
         try {
+          setOrbState("PROCESSING");
           const res = await protocolFetch(CORE_URL + "/v1/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               incidentId: currentIncidentId || undefined,
-              source: "phone",
+              source: "web",
               modality: "voice",
-              content: speechText,
-              language: "hi",
+              content: text,
+              language: currentLanguage === "hi" ? "hi" : currentLanguage === "ta" ? "ta" : "en",
               reporter: { mobile: currentReporterMobile }
             })
           });
@@ -1103,49 +1176,155 @@ const bodyContent = `
             const data = await res.json();
             currentIncidentId = data.incidentId;
             currentIncident = data.incident;
-            updateIncidentUI(data.incident, data.state);
+            updateIncidentUI(
+              data.incident,
+              data.state,
+              data.incident?.handoff?.externalReference
+            );
             fetchDevEvents();
 
             const prompt = document.getElementById("agentTurnPrompt");
+            // ElevenLabs owns spoken audio when live — UI text only; Core owns facts.
             if (data.question) {
               if (prompt) prompt.innerText = "“" + data.question + "”";
-              playRakshaSpeech(data.question);
+              if (elevenLabsSessionLive && activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
+                try {
+                  activeConversation.sendContextualUpdate(
+                    "Raksha Core needs this clarification from the citizen: " + data.question
+                  );
+                } catch (_) {}
+              } else if (!elevenLabsSessionLive) {
+                playRakshaSpeech(data.question);
+              }
             } else if (data.state === "READY" || data.state === "USER_CONFIRMATION") {
               const isHi = currentLanguage === "hi";
-              const amt = data.incident.transaction.amount || "—";
-              const bank = data.incident.transaction.debitInstitution || "—";
-              const utr = data.incident.transaction.transactionId || "—";
+              const amt = data.incident?.transaction?.amount;
+              const bank = data.incident?.transaction?.debitInstitution;
+              const utr = data.incident?.transaction?.transactionId;
+              const parts = [];
+              if (amt != null && amt !== "") parts.push("₹" + amt);
+              if (bank) parts.push(bank);
+              if (utr) parts.push("UTR " + utr);
+              const detail = parts.length ? parts.join(" ") : "the details we gathered";
               const reply = isHi
-                ? "मैंने विवरण दर्ज कर लिया है: ₹" + amt + " " + bank + " UTR " + utr + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
-                : "I have recorded the details: ₹" + amt + " " + bank + " UTR " + utr + ". Shall I dispatch this to 1930 and the bank?";
+                ? "मैंने विवरण दर्ज कर लिया है: " + detail + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
+                : "I have recorded " + detail + ". Shall I dispatch this to 1930 and the bank?";
               if (prompt) prompt.innerText = "“" + reply + "”";
-              playRakshaSpeech(reply);
+              if (!elevenLabsSessionLive) playRakshaSpeech(reply);
+              else if (activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
+                try {
+                  activeConversation.sendContextualUpdate(
+                    "Raksha Core marked the incident READY for citizen confirmation. Ask them to confirm dispatch."
+                  );
+                } catch (_) {}
+              }
             } else if (data.state === "SUBMITTED" || data.state === "ACKNOWLEDGED") {
               const trackingRef = data.incident?.handoff?.externalReference || "";
-              const refDisplay = trackingRef ? trackingRef : "";
-              const reply = refDisplay
-                ? "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है! ट्रैकिंग नंबर " + refDisplay + " है।"
+              const reply = trackingRef
+                ? "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है! ट्रैकिंग नंबर " + trackingRef + " है।"
                 : "आपकी आपातकालीन रिपोर्ट स्वीकार कर ली गई है।";
               if (prompt) prompt.innerText = "“" + reply + "”";
-              playRakshaSpeech(reply);
+              if (!elevenLabsSessionLive) playRakshaSpeech(reply);
             }
+
+            if (!elevenLabsSessionLive && currentOrbState === "PROCESSING") {
+              setOrbState("LISTENING");
+            }
+          } else {
+            setOrbState("ERROR");
           }
         } catch (e) {
           console.warn("[Voice] Backend sync failed:", e);
-          const badge = document.getElementById("callStatusBadge");
-          if (badge) badge.innerText = "Connection issue — try again";
+          setOrbState("ERROR");
         }
       }
 
       function startLiveVoiceCall() {
+        const mobileEl = document.getElementById("reporterMobile");
+        if (mobileEl && mobileEl.value) currentReporterMobile = mobileEl.value.trim();
         const modal = document.getElementById("rakshaCallModal");
         modal.classList.add("active");
         resetLiveCallDisplay();
-        setOrbState("CONNECTING");
+        setOrbState("IDLE");
         if (typeof fluidOrbResize === "function") {
           requestAnimationFrame(function () {
             requestAnimationFrame(fluidOrbResize);
           });
+        }
+      }
+
+      async function loadElevenLabsConversation() {
+        try {
+          const mod = await import("https://esm.sh/@11labs/client");
+          return mod.Conversation;
+        } catch (_) {
+          const mod2 = await import("https://cdn.jsdelivr.net/npm/@11labs/client/+esm");
+          return mod2.Conversation;
+        }
+      }
+
+      async function fetchElevenLabsSignedUrl(agentId) {
+        const q = agentId ? ("?agentId=" + encodeURIComponent(agentId)) : "";
+        const res = await fetch("/app/elevenlabs/signed-url" + q);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || ("signed-url HTTP " + res.status));
+        }
+        const data = await res.json();
+        const signedUrl = data.signed_url || data.signedUrl;
+        if (!signedUrl) throw new Error("No signed_url in ElevenLabs response");
+        return signedUrl;
+      }
+
+      async function startFallbackVoicePath() {
+        elevenLabsSessionLive = false;
+        const greeting = currentLanguage === "hi"
+          ? "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?"
+          : "Hello, welcome to the Raksha emergency cyber helpline. Please tell me what happened.";
+        const prompt = document.getElementById("agentTurnPrompt");
+        if (prompt) prompt.innerText = "“" + greeting + "”";
+        await playRakshaSpeech(greeting);
+
+        try {
+          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SpeechRec) {
+            setOrbState("ERROR");
+            return;
+          }
+          speechRecognizer = new SpeechRec();
+          speechRecognizer.lang = currentLanguage === "hi" ? "hi-IN" : currentLanguage === "ta" ? "ta-IN" : "en-IN";
+          speechRecognizer.continuous = true;
+          speechRecognizer.interimResults = true;
+
+          speechRecognizer.onresult = (event) => {
+            let interim = "";
+            let final = "";
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) final += event.results[i][0].transcript;
+              else interim += event.results[i][0].transcript;
+            }
+            const transcript = final || interim;
+            if (transcript) {
+              const u = document.getElementById("userTurnSpeech");
+              if (u) u.innerText = "“" + transcript + "”";
+              if (final) {
+                setOrbState("PROCESSING");
+                sendVoiceTurnToBackend(final);
+              }
+            }
+          };
+
+          speechRecognizer.onerror = (e) => {
+            if (e.error === "no-speech" || e.error === "aborted") return;
+            console.warn("[SpeechRecognition]:", e.error);
+            setOrbState("LISTENING");
+          };
+
+          speechRecognizer.start();
+          setOrbState("LISTENING");
+        } catch (recErr) {
+          console.warn("SpeechRec start:", recErr);
+          setOrbState("ERROR");
         }
       }
 
@@ -1155,106 +1334,80 @@ const bodyContent = `
         if (btnStart) btnStart.style.display = "none";
         if (btnEnd) btnEnd.style.display = "inline-flex";
 
-        setOrbState("SPEAKING");
+        setOrbState("CONNECTING");
 
-        // 1. Play immediate ElevenLabs studio audio greeting
-        const greeting = "नमस्ते, रक्षा आपातकालीन साइबर हेल्पलाइन में आपका स्वागत है। आप बिल्कुल चिंता मत कीजिए। मुझे बताइए क्या हुआ?";
-        const prompt = document.getElementById("agentTurnPrompt");
-        if (prompt) prompt.innerText = "“" + greeting + "”";
-        await playRakshaSpeech(greeting);
+        const agentId = ELEVENLABS_AGENT_ID;
+        if (!agentId) {
+          console.warn("[ElevenLabs] No agent id configured — using mic fallback");
+          await startFallbackVoicePath();
+          return;
+        }
 
-        // 2. Start Speech Recognition listener
         try {
-          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-          if (SpeechRec) {
-            speechRecognizer = new SpeechRec();
-            speechRecognizer.lang = 'hi-IN';
-            speechRecognizer.continuous = true;
-            speechRecognizer.interimResults = true;
+          const Conversation = await loadElevenLabsConversation();
+          if (!Conversation) throw new Error("Conversation SDK unavailable");
 
-            speechRecognizer.onresult = (event) => {
-              let interim = '';
-              let final = '';
-              for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                  final += event.results[i][0].transcript;
-                } else {
-                  interim += event.results[i][0].transcript;
-                }
-              }
-              const transcript = final || interim;
-              if (transcript) {
+          const signedUrl = await fetchElevenLabsSignedUrl(agentId);
+
+          activeConversation = await Conversation.startSession({
+            signedUrl,
+            onConnect: () => {
+              console.log("[ElevenLabs] Connected");
+              elevenLabsSessionLive = true;
+              startIncidentPoll();
+              // Agent greeting is owned by the ElevenLabs session (speaking → listening).
+              if (currentOrbState === "CONNECTING") setOrbState("LISTENING");
+            },
+            onDisconnect: () => {
+              console.log("[ElevenLabs] Disconnected");
+              elevenLabsSessionLive = false;
+              stopIncidentPoll();
+            },
+            onError: (err) => {
+              console.warn("[ElevenLabs] session error:", err);
+              setOrbState("ERROR");
+            },
+            onModeChange: ({ mode }) => {
+              if (mode === "speaking") setOrbState("SPEAKING");
+              else if (mode === "listening") setOrbState("LISTENING");
+            },
+            onMessage: ({ message, source }) => {
+              if (source === "user") {
                 const u = document.getElementById("userTurnSpeech");
-                if (u) u.innerText = "“" + transcript + "”";
-                if (final) {
-                  setOrbState("PROCESSING");
-                  sendVoiceTurnToBackend(final);
-                }
+                if (u) u.innerText = "“" + message + "”";
+                setOrbState("PROCESSING");
+                sendVoiceTurnToBackend(message);
+              } else {
+                const a = document.getElementById("agentTurnPrompt");
+                if (a && message) a.innerText = "“" + message + "”";
+                // Do not re-TTS — ElevenLabs already speaks agent turns.
               }
-            };
-
-            speechRecognizer.onerror = (e) => {
-              if (e.error === 'no-speech' || e.error === 'aborted') return;
-              console.warn("[SpeechRecognition info]:", e.error);
-              setOrbState("LISTENING");
-            };
-
-            speechRecognizer.start();
-          }
-        } catch (recErr) {
-          console.warn("SpeechRec start:", recErr);
-        }
-
-        // 3. Connect ElevenLabs WebRTC session in parallel
-        try {
-          let Conversation;
-          try {
-            const mod = await import("https://esm.sh/@11labs/client");
-            Conversation = mod.Conversation;
-          } catch (e1) {
-            const mod2 = await import("https://cdn.jsdelivr.net/npm/@11labs/client/+esm");
-            Conversation = mod2.Conversation;
-          }
-
-          if (Conversation) {
-            activeConversation = await Conversation.startSession({
-              agentId: "agent_1201kxw5b2fvearadb4p3brmtya9",
-              onConnect: () => {
-                console.log("[ElevenLabs] Connected successfully");
-                startIncidentPoll();
-              },
-              onDisconnect: () => {
-                console.log("[ElevenLabs] Disconnected");
-                stopIncidentPoll();
-              },
-              onModeChange: ({ mode }) => {
-                if (mode === "speaking") {
-                  setOrbState("SPEAKING");
-                } else {
-                  setOrbState("LISTENING");
-                }
-              },
-              onMessage: ({ message, source }) => {
-                if (source === "user") {
-                  const u = document.getElementById("userTurnSpeech");
-                  if (u) u.innerText = "“" + message + "”";
-                  setOrbState("PROCESSING");
-                  sendVoiceTurnToBackend(message);
-                } else {
-                  const a = document.getElementById("agentTurnPrompt");
-                  if (a) a.innerText = "“" + message + "”";
-                  playRakshaSpeech(message);
-                }
-              }
-            });
-          }
+            }
+          });
         } catch (err) {
-          console.warn("ElevenLabs WebRTC direct session fallback:", err);
+          console.warn("[ElevenLabs] session failed, falling back to mic path:", err);
+          elevenLabsSessionLive = false;
+          await startFallbackVoicePath();
         }
+      }
+
+      async function confirmFromLiveCall() {
+        if (!currentIncidentId || !currentIncident) return;
+        const state = currentIncident.state;
+        if (state !== "READY" && state !== "USER_CONFIRMATION") return;
+        await dispatchEmergencyReport();
+        if (activeConversation) {
+          try { await activeConversation.endSession(); } catch (_) {}
+          activeConversation = null;
+        }
+        elevenLabsSessionLive = false;
+        stopIncidentPoll();
+        document.getElementById("rakshaCallModal").classList.remove("active");
       }
 
       async function endLiveVoiceCall() {
         setOrbState("IDLE");
+        elevenLabsSessionLive = false;
         if (currentAudio) {
           try { currentAudio.pause(); } catch {}
           currentAudio = null;
@@ -1269,7 +1422,25 @@ const bodyContent = `
         }
         stopIncidentPoll();
         document.getElementById("rakshaCallModal").classList.remove("active");
-        fetchLatestIncidentSync();
+
+        // Surface Core facts on the main card only after they exist.
+        if (currentIncidentId && currentIncident) {
+          const st = currentIncident.state;
+          if (st === "READY" || st === "USER_CONFIRMATION") {
+            syncReadyPanelFromIncident(currentIncident);
+            showWsView("READY");
+          } else if (st === "SUBMITTED" || st === "ACKNOWLEDGED") {
+            const ref = currentIncident.handoff?.externalReference;
+            if (ref) {
+              const refEl = document.getElementById("repRefNum");
+              if (refEl) refEl.innerText = ref;
+            }
+            showWsView("SUBMITTED");
+          } else if (st === "QUESTION_PENDING") {
+            handleServerResponse({ state: st, question: currentIncident.clarification?.question, incident: currentIncident });
+          }
+        }
+        await fetchLatestIncidentSync();
       }
 
       function startIncidentPoll() {
@@ -1291,7 +1462,7 @@ const bodyContent = `
           if (res.ok) {
             const data = await res.json();
             currentIncident = data;
-            updateIncidentUI(data, data.state);
+            updateIncidentUI(data, data.state, data.handoff?.externalReference);
             fetchDevEvents();
           }
         } catch {}
@@ -1503,15 +1674,17 @@ const bodyContent = `
           }
           showWsView("CONFLICT");
         } else if (state === "READY" || state === "USER_CONFIRMATION") {
-          const inc = data.incident;
-          if (inc && inc.transaction) {
-            document.getElementById("repAmount").innerText = inc.transaction.amount ? "₹" + inc.transaction.amount.toLocaleString() : "—";
-            document.getElementById("repChannel").innerText = inc.transaction.application || inc.transaction.channel || "—";
-            document.getElementById("repUtr").innerText = inc.transaction.transactionId || "—";
-            document.getElementById("repBank").innerText = inc.transaction.debitInstitution || "—";
-          }
+          syncReadyPanelFromIncident(data.incident);
           showWsView("READY");
         } else if (state === "SUBMITTED" || state === "ACKNOWLEDGED") {
+          const ref =
+            data.incident?.handoff?.externalReference ||
+            data.externalReference ||
+            "";
+          if (ref) {
+            const refEl = document.getElementById("repRefNum");
+            if (refEl) refEl.innerText = ref;
+          }
           showWsView("SUBMITTED");
         } else {
           showWsView("IDLE");
@@ -1587,11 +1760,19 @@ const bodyContent = `
       function resetToHome() {
         currentIncidentId = null;
         currentIncident = null;
+        lastVoiceTurnText = "";
+        lastVoiceTurnAt = 0;
         document.getElementById("narrativeText").value = "";
         document.getElementById("repAmount").innerText = "—";
         document.getElementById("repChannel").innerText = "—";
         document.getElementById("repUtr").innerText = "—";
         document.getElementById("repBank").innerText = "—";
+        const refEl = document.getElementById("repRefNum");
+        if (refEl) refEl.innerText = "—";
+        const capsule = document.getElementById("callCaseCapsule");
+        if (capsule) capsule.style.display = "none";
+        const devIncId = document.getElementById("devIncId");
+        if (devIncId) devIncId.innerText = "None";
         showWsView("IDLE");
       }
 
@@ -1630,6 +1811,7 @@ const bodyContent = `
       window.startLiveVoiceCall = startLiveVoiceCall;
       window.connectAndStartSpeaking = connectAndStartSpeaking;
       window.endLiveVoiceCall = endLiveVoiceCall;
+      window.confirmFromLiveCall = confirmFromLiveCall;
       window.toggleDevDrawer = toggleDevDrawer;
       window.toggleTypeArea = toggleTypeArea;
       window.handleImageAction = handleImageAction;
@@ -1638,24 +1820,9 @@ const bodyContent = `
       window.dispatchEmergencyReport = dispatchEmergencyReport;
       window.resetToHome = resetToHome;
 
-      // Session recovery: on page load, check if the citizen already has an open incident.
-      // This lets the web tab rejoin the same case after a page refresh.
-      (async function recoverSession() {
-        try {
-          const mobile = (document.getElementById("reporterMobile"))?.value || DEMO_MOBILE;
-          const res = await protocolFetch(CORE_URL + "/v1/incidents/open?mobile=" + encodeURIComponent(mobile));
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.found && data.incident && data.incident.id) {
-            currentIncidentId = data.incident.id;
-            currentIncident = data.incident;
-            updateIncidentUI(data.incident, data.incident.state);
-            console.log("[Raksha] Recovered open session:", data.incident.id);
-          }
-        } catch (e) {
-          // Non-fatal — fresh session
-        }
-      })();
+      // Intentionally no load-time open-incident recovery.
+      // Fresh /app must render with empty incident facts; Core populates only after live turns.
+      // Cross-channel resume still works via mobile on process / open APIs when the citizen speaks.
     </script>
   `;
 
