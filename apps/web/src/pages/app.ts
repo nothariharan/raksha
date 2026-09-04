@@ -1276,6 +1276,79 @@ const bodyContent = `
         return signedUrl;
       }
 
+      async function resolveElevenLabsAgentId() {
+        if (ELEVENLABS_AGENT_ID) return ELEVENLABS_AGENT_ID;
+        try {
+          const res = await fetch("/app/elevenlabs/config");
+          if (!res.ok) return "";
+          const data = await res.json();
+          return data.agentId || "";
+        } catch (_) {
+          return "";
+        }
+      }
+
+      /**
+       * Client tools registered on the historical Raksha intake agent
+       * (see scripts/configure-elevenlabs.mjs). Agent calls these; we route to Core/CAP.
+       */
+      function buildRakshaClientTools() {
+        return {
+          raksha_start_incident: async (params) => {
+            setOrbState("PROCESSING");
+            const narrative = String(params?.narrative || params?.text || "").trim();
+            if (!narrative) return JSON.stringify({ ok: false, error: "narrative required" });
+            const u = document.getElementById("userTurnSpeech");
+            if (u) u.innerText = "“" + narrative + "”";
+            await sendVoiceTurnToBackend(narrative);
+            return JSON.stringify({
+              ok: true,
+              incidentId: currentIncidentId,
+              state: currentIncident?.state || null,
+              question: currentIncident?.clarification?.question || null
+            });
+          },
+          raksha_process_input: async (params) => {
+            setOrbState("PROCESSING");
+            const speech = String(
+              params?.userSpeech || params?.speech || params?.text || ""
+            ).trim();
+            if (params?.incidentId && !currentIncidentId) {
+              currentIncidentId = String(params.incidentId);
+            }
+            if (!speech) return JSON.stringify({ ok: false, error: "userSpeech required" });
+            const u = document.getElementById("userTurnSpeech");
+            if (u) u.innerText = "“" + speech + "”";
+            await sendVoiceTurnToBackend(speech);
+            return JSON.stringify({
+              ok: true,
+              incidentId: currentIncidentId,
+              state: currentIncident?.state || null
+            });
+          },
+          raksha_submit_incident: async (params) => {
+            const confirmed = params?.confirmedByCitizen === true || params?.confirmedByCitizen === "true";
+            if (!confirmed) {
+              return JSON.stringify({ ok: false, error: "Citizen confirmation required" });
+            }
+            if (params?.incidentId) currentIncidentId = String(params.incidentId);
+            if (!currentIncidentId || !currentIncident) {
+              return JSON.stringify({ ok: false, error: "No active incident" });
+            }
+            const st = currentIncident.state;
+            if (st !== "READY" && st !== "USER_CONFIRMATION") {
+              return JSON.stringify({ ok: false, error: "Incident not READY", state: st });
+            }
+            await confirmFromLiveCall();
+            return JSON.stringify({
+              ok: true,
+              incidentId: currentIncidentId,
+              externalReference: document.getElementById("repRefNum")?.innerText || null
+            });
+          }
+        };
+      }
+
       async function startFallbackVoicePath() {
         elevenLabsSessionLive = false;
         const greeting = currentLanguage === "hi"
@@ -1336,9 +1409,9 @@ const bodyContent = `
 
         setOrbState("CONNECTING");
 
-        const agentId = ELEVENLABS_AGENT_ID;
+        const agentId = await resolveElevenLabsAgentId();
         if (!agentId) {
-          console.warn("[ElevenLabs] No agent id configured — using mic fallback");
+          console.warn("[ElevenLabs] No ELEVENLABS_INTAKE_AGENT_ID configured — using mic fallback");
           await startFallbackVoicePath();
           return;
         }
@@ -1347,12 +1420,14 @@ const bodyContent = `
           const Conversation = await loadElevenLabsConversation();
           if (!Conversation) throw new Error("Conversation SDK unavailable");
 
+          console.log("[ElevenLabs] Starting session with intake agent", agentId);
           const signedUrl = await fetchElevenLabsSignedUrl(agentId);
 
           activeConversation = await Conversation.startSession({
             signedUrl,
+            clientTools: buildRakshaClientTools(),
             onConnect: () => {
-              console.log("[ElevenLabs] Connected");
+              console.log("[ElevenLabs] Connected to", agentId);
               elevenLabsSessionLive = true;
               startIncidentPoll();
               // Agent greeting is owned by the ElevenLabs session (speaking → listening).
@@ -1376,6 +1451,7 @@ const bodyContent = `
                 const u = document.getElementById("userTurnSpeech");
                 if (u) u.innerText = "“" + message + "”";
                 setOrbState("PROCESSING");
+                // Transcript → Core (primary when agent does not invoke client tools).
                 sendVoiceTurnToBackend(message);
               } else {
                 const a = document.getElementById("agentTurnPrompt");

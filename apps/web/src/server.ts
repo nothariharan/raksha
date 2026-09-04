@@ -23,7 +23,10 @@ export function handleWebRequest(
   const coreUrl = config?.coreUrl !== undefined ? config.coreUrl : (process.env.CORE_BASE_URL || "");
   const capUrl = config?.capUrl !== undefined ? config.capUrl : (process.env.CAP_PUBLIC_BASE_URL || "");
   const elevenLabsAgentId =
-    process.env.ELEVENLABS_INTAKE_AGENT_ID || process.env.ELEVENLABS_AGENT_ID || "";
+    process.env.ELEVENLABS_WEB_AGENT_ID ||
+    process.env.ELEVENLABS_INTAKE_AGENT_ID ||
+    process.env.ELEVENLABS_AGENT_ID ||
+    "";
 
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   const pathname = url.pathname;
@@ -36,9 +39,13 @@ export function handleWebRequest(
   }
 
   // Signed URL for private ElevenLabs ConvAI agents — API key never reaches the browser.
+  // Uses ELEVENLABS_INTAKE_AGENT_ID from .env.local (the historical Raksha intake agent).
   if (pathname === "/app/elevenlabs/signed-url" && method === "GET") {
     const apiKey = process.env.ELEVENLABS_API_KEY || "";
-    const agentId = url.searchParams.get("agentId") || elevenLabsAgentId;
+    const agentId =
+      url.searchParams.get("agentId") ||
+      process.env.ELEVENLABS_WEB_AGENT_ID ||
+      elevenLabsAgentId;
     if (!apiKey || apiKey.startsWith("synthetic_")) {
       res.writeHead(503, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "ELEVENLABS_API_KEY not configured" }));
@@ -46,7 +53,11 @@ export function handleWebRequest(
     }
     if (!agentId || agentId.includes("synthetic")) {
       res.writeHead(503, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "ELEVENLABS_INTAKE_AGENT_ID not configured" }));
+      res.end(
+        JSON.stringify({
+          error: "ELEVENLABS_INTAKE_AGENT_ID not configured (set a real agent id in .env.local)",
+        })
+      );
       return;
     }
 
@@ -71,11 +82,24 @@ export function handleWebRequest(
   }
 
   if (pathname === "/app/elevenlabs/config" && method === "GET") {
-    res.writeHead(200, { "Content-Type": "application/json" });
+    const resolved =
+      process.env.ELEVENLABS_WEB_AGENT_ID ||
+      elevenLabsAgentId;
+    const live =
+      resolved && !resolved.includes("synthetic") ? resolved : null;
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    });
     res.end(
       JSON.stringify({
-        agentId: elevenLabsAgentId && !elevenLabsAgentId.includes("synthetic") ? elevenLabsAgentId : null,
+        agentId: live,
         signedUrlPath: "/app/elevenlabs/signed-url",
+        source: live
+          ? process.env.ELEVENLABS_WEB_AGENT_ID
+            ? "ELEVENLABS_WEB_AGENT_ID"
+            : "ELEVENLABS_INTAKE_AGENT_ID"
+          : null,
       })
     );
     return;
