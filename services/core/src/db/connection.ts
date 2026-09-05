@@ -43,6 +43,8 @@ export class DatabaseClient {
   private filePath: string;
   private memoryData: DatabaseStoreData;
   private isConnectedToPg = false;
+  /** Serialize schema bootstrap (constructor + wirePersistentIdentity + repo calls). */
+  private schemaReady: Promise<void> | null = null;
 
   constructor(customStoragePath?: string) {
     this.filePath = customStoragePath || join(process.cwd(), ".data", "raksha-db.json");
@@ -72,9 +74,8 @@ export class DatabaseClient {
         });
         this.isConnectedToPg = true;
         console.log("[DatabaseClient] Connected to PostgreSQL / Supabase pool.");
-        this.ensureSchema().catch((err) => {
-          console.warn("[DatabaseClient] Postgres schema bootstrap notice:", err.message);
-        });
+        // Do not fire-and-forget ensureSchema here — overlapping DDL with
+        // wirePersistentIdentity() deadlocks on AccessExclusiveLock (Render deploy).
         return;
       } catch (err) {
         console.warn("[DatabaseClient] Failed to initialize PostgreSQL pool, falling back to disk persistence:", err);
@@ -144,8 +145,23 @@ export class DatabaseClient {
   }
 
   public async ensureSchema(): Promise<void> {
+    if (this.schemaReady) return this.schemaReady;
+    this.schemaReady = this.runEnsureSchema().catch((err) => {
+      this.schemaReady = null;
+      throw err;
+    });
+    return this.schemaReady;
+  }
+
+  private async runEnsureSchema(): Promise<void> {
     if (this.isPg() && this.pool) {
-      const schemaSql = `
+      // Cross-process lock: old + new Render instances must not DDL concurrently.
+      const SCHEMA_LOCK_KEY = 87201401;
+      const client = await this.pool.connect();
+      try {
+        await client.query("SELECT pg_advisory_lock($1)", [SCHEMA_LOCK_KEY]);
+        try {
+          const schemaSql = `
       CREATE TABLE IF NOT EXISTS incidents (
         id VARCHAR(64) PRIMARY KEY,
         protocol_version VARCHAR(32) NOT NULL DEFAULT 'raksha/0.1',
@@ -242,8 +258,14 @@ export class DatabaseClient {
       CREATE SEQUENCE IF NOT EXISTS raksha_evidence_seq;
       CREATE SEQUENCE IF NOT EXISTS raksha_event_seq;
     `;
-      await this.pool.query(schemaSql);
-      console.log("[DatabaseClient] PostgreSQL database tables, sequences, and indexes verified.");
+          await client.query(schemaSql);
+          console.log("[DatabaseClient] PostgreSQL database tables, sequences, and indexes verified.");
+        } finally {
+          await client.query("SELECT pg_advisory_unlock($1)", [SCHEMA_LOCK_KEY]);
+        }
+      } finally {
+        client.release();
+      }
     }
 
     // File and Postgres: align identity sequences past existing row suffixes.
