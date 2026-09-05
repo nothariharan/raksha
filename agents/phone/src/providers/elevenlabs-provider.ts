@@ -65,14 +65,14 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
     }
 
     if (toolName === "process_input" || toolName === "process_user_input" || toolName === "raksha_process_input") {
-      const incidentId = String(parameters.incidentId || session.activeIncidentId);
+      const incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
       const userSpeech = String(parameters.userSpeech || parameters.speech || parameters.text || "");
       const isConfirmation = Boolean(parameters.isConfirmation);
       const confirmedField = parameters.confirmedField as string | undefined;
       const confirmedValue = parameters.confirmedValue;
 
       const res = await this.tools.processUserInput({
-        incidentId,
+        incidentId: incidentId || undefined,
         userSpeech,
         isConfirmation,
         confirmedField,
@@ -91,7 +91,19 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
     }
 
     if (toolName === "submit_incident" || toolName === "raksha_submit_incident") {
-      const incidentId = String(parameters.incidentId || session.activeIncidentId);
+      let incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
+      if (!incidentId && context.callerNumber) {
+        const lookedUp = await this.tools.getIncidentStatus({ callerPhone: context.callerNumber });
+        incidentId = String((lookedUp as { incident?: { id?: string } }).incident?.id || "");
+      }
+      if (!incidentId) {
+        return {
+          toolCallId,
+          result: { success: false },
+          speechResponse:
+            "I do not have a report on this number yet. Please tell me what happened, including the amount and 12-digit UTR.",
+        };
+      }
       const res = await this.tools.submitIncident({
         incidentId,
         language: session.language,
@@ -111,11 +123,22 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
     }
 
     if (toolName === "get_incident_status" || toolName === "raksha_get_status") {
-      const incidentId = String(parameters.incidentId || session.activeIncidentId);
-      const res = await this.tools.getIncidentStatus({ incidentId });
+      const incidentId = String(parameters.incidentId || session.activeIncidentId || "");
+      const res = await this.tools.getIncidentStatus({
+        incidentId: incidentId || undefined,
+        callerPhone: context.callerNumber || session.callerNumber,
+      });
+      const incident = (res as { incident?: { id?: string; state?: string; handoff?: { externalReference?: string } } }).incident;
+      const ref = incident?.handoff?.externalReference;
+      const speech = incident
+        ? ref
+          ? `Your case ${incident.id} is ${incident.state}. Tracking reference ${ref}.`
+          : `Your case ${incident.id} is ${incident.state}.`
+        : "I do not have an open report on this number yet. Please tell me what happened.";
       return {
         toolCallId,
         result: res,
+        speechResponse: speech,
       };
     }
 

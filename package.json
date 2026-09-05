@@ -23,6 +23,7 @@
     "test:thesis": "tsx test/raksha-thesis.test.ts",
     "test:whatsapp-edge": "tsx test/whatsapp-edge.test.ts",
     "test:voice-edge": "tsx test/voice-edge.test.ts",
+    "test:elevenlabs-webhook": "tsx test/elevenlabs-webhook.test.ts",
     "test:e2e:cap": "tsx test/run-e2e.ts",
     "verify:prod": "tsx scripts/verify-prod-persistence.ts",
     "demo": "tsx scripts/demo-start.ts",

@@ -6,6 +6,9 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { PhoneService, defaultPhoneService } from "./phone-service.js";
 import { TelephonyCallContext, VoiceToolCall } from "./providers/interface.js";
+import { normalizeElevenLabsToolRequest } from "./elevenlabs-webhook.js";
+import { incidentService } from "@raksha/core";
+import { normalizeMobile } from "@raksha/shared";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -70,33 +73,71 @@ export async function handlePhoneRequest(
       return;
     }
 
-    // 2. ElevenLabs Conversational Tool Webhook
-    if (pathname === "/phone/elevenlabs/tool" && method === "POST") {
-      const body = await parseJsonBody<{
-        tool_name: string;
-        tool_call_id: string;
-        parameters: Record<string, unknown>;
-        caller_id?: string;
-        conversation_id?: string;
-        language?: string;
-      }>(req);
+    // 2. ElevenLabs Conversational Tool Webhook (PSTN + workspace webhook tools)
+    if (
+      (pathname === "/phone/elevenlabs/tool" || pathname.startsWith("/phone/elevenlabs/tool/")) &&
+      method === "POST"
+    ) {
+      const raw = await parseJsonBody<Record<string, unknown>>(req);
+      const pathTool = pathname.replace("/phone/elevenlabs/tool/", "").replace("/phone/elevenlabs/tool", "");
+      if (pathTool && pathTool !== pathname && !raw.tool_name && !raw.toolName) {
+        raw.tool_name = pathTool;
+      }
+      const headerBag: Record<string, string | string[] | undefined> = {};
+      for (const [key, value] of Object.entries(req.headers)) headerBag[key] = value;
+      const parsed = normalizeElevenLabsToolRequest({
+        body: raw,
+        query: url.searchParams,
+        headers: headerBag,
+      });
 
       const context: TelephonyCallContext = {
-        callSid: body.conversation_id || `eleven-${Date.now()}`,
-        callerNumber: body.caller_id || "+919876543210",
+        callSid: parsed.conversationId,
+        callerNumber: parsed.callerNumber,
         provider: "elevenlabs",
-        language: body.language || "hi",
+        language: parsed.language || "en",
         startTime: new Date().toISOString(),
       };
 
       const toolCall: VoiceToolCall = {
-        toolName: body.tool_name,
-        toolCallId: body.tool_call_id,
-        parameters: body.parameters || {},
+        toolName: parsed.toolName,
+        toolCallId: parsed.toolCallId,
+        parameters: parsed.parameters,
       };
 
       const result = await ps.handleToolCall(toolCall, context);
-      sendJson(res, 200, result);
+      const spoken =
+        result.speechResponse ||
+        (typeof (result.result as { promptForCaller?: string })?.promptForCaller === "string"
+          ? (result.result as { promptForCaller: string }).promptForCaller
+          : undefined) ||
+        (typeof (result.result as { confirmationSpeech?: string })?.confirmationSpeech === "string"
+          ? (result.result as { confirmationSpeech: string }).confirmationSpeech
+          : undefined);
+      sendJson(res, 200, {
+        ...((result.result && typeof result.result === "object") ? result.result : { result: result.result }),
+        speech: spoken,
+        speechResponse: spoken,
+        toolCallId: result.toolCallId,
+      });
+      return;
+    }
+
+    if (pathname === "/phone/elevenlabs/init" && method === "POST") {
+      const body = await parseJsonBody<{ caller_id?: string; conversation_id?: string }>(req);
+      const caller = normalizeMobile(body.caller_id || "");
+      const open = caller ? await incidentService.findOpenByMobile(caller) : null;
+      const latest = caller && !open ? await incidentService.findLatestByMobile(caller) : null;
+      const incident = open || latest;
+      sendJson(res, 200, {
+        conversation_initiation_client_data: {
+          dynamic_variables: {
+            incident_id: incident?.id || "",
+            incident_state: incident?.state || "",
+            tracking_ref: incident?.handoff?.externalReference || "",
+          },
+        },
+      });
       return;
     }
 

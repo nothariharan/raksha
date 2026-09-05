@@ -167,7 +167,7 @@ export class PhoneToolsHandler {
   }
 
   async processUserInput(params: {
-    incidentId: string;
+    incidentId?: string;
     userSpeech: string;
     isConfirmation?: boolean;
     confirmedField?: string;
@@ -373,22 +373,29 @@ export class PhoneToolsHandler {
     };
   }
 
-  async getIncidentStatus(params: { incidentId: string }) {
-    if (this.incidentLookup) {
+  async getIncidentStatus(params: { incidentId?: string; callerPhone?: string }) {
+    if (params.incidentId && this.incidentLookup) {
       const incident = await this.incidentLookup(params.incidentId);
       if (!incident) return { error: "Incident not found" };
       return { incident };
     }
-    try {
-      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
-        const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
-        if (res.ok) return await res.json();
-      }
-    } catch {}
-
-    const incident = await incidentService.getIncident(params.incidentId);
-    if (!incident) return { error: "Incident not found" };
-    return { incident };
+    if (params.incidentId) {
+      try {
+        if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+          const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
+          if (res.ok) return await res.json();
+        }
+      } catch {}
+      const incident = await incidentService.getIncident(params.incidentId);
+      if (incident) return { incident };
+    }
+    if (params.callerPhone) {
+      const mobile = normalizeMobile(params.callerPhone);
+      const open = await incidentService.findOpenByMobile(mobile);
+      const latest = open || (await incidentService.findLatestByMobile(mobile));
+      if (latest) return { incident: latest };
+    }
+    return { error: "Incident not found" };
   }
 }
 

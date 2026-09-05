@@ -121,23 +121,27 @@ Webhook is http://localhost:3005. Local demo may need the WhatsApp simulator or 
 **Fail**
 - YES does nothing, or a new unrelated incident is created.
 
-## 8. Phone / calling agent (human)
+## 8. Real international voice call (human)
 
-Phone tools live on http://localhost:3006.
+Dial **+1 605 599 9677** from your phone (US number — international from India).
 
-1. Real ElevenLabs inbound call **or** the phone simulate UI if you use it.
-2. Tell amount, bank, and a **12-digit** UTR.
-3. Confirm when she reads back.
-4. Let `submit_incident` run.
+Use the **same mobile** you put on `/app` or WhatsApp if you want STATUS to resume that `RKS-*`. The caller ID is the shared case key.
+
+1. Wake the protocol first: open https://raksha-protocol.onrender.com/health (Render free tier sleeps).
+2. Call the number. Speak English (or Hindi).
+3. Tell amount, bank, and a **12-digit** UTR, then confirm.
+4. Or say **status** if you already filed on the website or WhatsApp.
 
 **Pass**
-- She asks to send to 1930 and the bank, then files.
-- Spoken copy includes both desk URLs.
-- No screenshot step. Submit without a 12-digit UTR is refused.
+- She collects facts, asks for the 12-digit UTR, then files after confirm.
+- You get a tracking reference (`1930-SYN-…`).
+- STATUS on WhatsApp or `/app` with that same mobile shows the same `RKS-*`.
+- No screenshot step.
 
 **Fail**
+- She only chats and never files (tools not reaching Core).
 - She files from “I got scammed” alone.
-- Desk URLs are localhost when `PROTOCOL_PUBLIC_ORIGIN` is set.
+- She opens a new unrelated case when this number already has an open report.
 
 ## 9. Case drawer (human)
 

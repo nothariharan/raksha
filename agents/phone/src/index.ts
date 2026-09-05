@@ -6,6 +6,7 @@ export * from "./providers/twilio-provider.js";
 export * from "./providers/exotel-provider.js";
 export * from "./session-manager.js";
 export * from "./phone-tools.js";
+export * from "./elevenlabs-webhook.js";
 export * from "./phone-service.js";
 export * from "./webhook.js";
 
