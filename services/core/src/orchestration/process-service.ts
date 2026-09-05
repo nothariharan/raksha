@@ -6,6 +6,7 @@
 import { FraudIncident, IncidentState, InputSource } from "@raksha/schemas";
 import { normalizeMobile } from "@raksha/shared";
 import { MultimodalExtractor, ExtractedFraudCandidate, ModalityType } from "../extraction/extractor.js";
+import { LLMExtractor } from "../extraction/llm-extractor.js";
 import { VisionFireworksExtractor } from "../extraction/vision-fireworks.js";
 import { ReconciliationEngine, ReconciliationResult } from "../reconciliation/reconciler.js";
 import { ClarificationEngine, ClarificationDecision } from "../clarification/clarification-engine.js";
@@ -360,6 +361,13 @@ export class ProcessService {
         });
         incident = (await this.incidentService.getIncident(incident.id)) || incident;
       }
+    } else if (input.modality === "text" && LLMExtractor.isEnabled()) {
+      candidate = await LLMExtractor.extract({
+        modality: input.modality,
+        content: input.content,
+        language: lang,
+        sourceId: `${input.modality}#${Date.now()}`,
+      });
     } else {
       candidate = MultimodalExtractor.extractCandidate({
         modality: input.modality,

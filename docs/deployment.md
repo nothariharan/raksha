@@ -69,5 +69,6 @@ On the Render service, set live `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`. Bl
 - `TWILIO_WEBHOOK_URL=https://raksha-protocol.onrender.com/whatsapp/webhook`
 - `TWILIO_VALIDATE_SIGNATURE=true`
 - `TWILIO_FROM_NUMBER=+14155238886` (sandbox people actually message)
+- `GEMINI_MODEL=gemini-3.5-flash-lite` (WhatsApp reply brain; set `GEMINI_API_KEY` on the service)
 
 In the Twilio console, the WhatsApp sandbox "When a message comes in" URL must be that same path (`HTTP POST`). Keep the webhook on Render, not Vercel.

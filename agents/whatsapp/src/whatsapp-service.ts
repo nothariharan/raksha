@@ -41,6 +41,7 @@ import {
   optionsFromNextAction,
 } from "./replies.js";
 import { sendTwilioWhatsApp, TwilioOutboundResult } from "./twilio.js";
+import { speakRakshaReply } from "./gemini-brain.js";
 
 export interface WhatsAppIncidentLookup {
   findOpenByMobile(mobile: string): Promise<FraudIncident | null>;
@@ -133,8 +134,34 @@ export class WhatsAppService {
     }
 
     const result = await this.routeTurn(session, inputEvent, senderPhone, messageId);
-    const outbound = await this.dispatchOutbound(senderPhone, result.replyText);
-    return { ...result, outbound };
+    const citizenMessage =
+      inputEvent.type === "TEXT"
+        ? inputEvent.text
+        : inputEvent.type === "CONFIRMATION"
+          ? String(inputEvent.value)
+          : inputEvent.type === "IMAGE"
+            ? "sent a screenshot"
+            : inputEvent.type === "VOICE"
+              ? "sent a voice note"
+              : "";
+    const replyText = await speakRakshaReply({
+      citizenMessage,
+      language: this.store.getSession(senderPhone).language,
+      draft: result.replyText,
+      incidentId: result.incidentId,
+      state: result.state,
+    });
+    if (replyText !== result.replyText) {
+      this.store.cacheReply(messageId, {
+        messageId,
+        replyText,
+        incidentId: result.incidentId,
+        state: result.state as never,
+        processedAt: new Date().toISOString(),
+      });
+    }
+    const outbound = await this.dispatchOutbound(senderPhone, replyText);
+    return { ...result, replyText, outbound };
   }
 
   private async routeTurn(

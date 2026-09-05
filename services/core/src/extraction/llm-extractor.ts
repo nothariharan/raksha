@@ -1,19 +1,38 @@
 /**
- * OpenAI LLM Extractor for Raksha Core
- * Uses OpenAI API (gpt-4o-mini / luna) for deep semantic extraction from citizen narratives,
- * with deterministic fallback to the local regex/heuristic engine.
+ * LLM Extractor for Raksha Core
+ * Prefers a current Gemini Flash Lite key, then OpenAI, then the local regex engine.
  */
 
+import { generateGeminiText, geminiApiKey } from "@raksha/shared";
 import { ExtractedFraudCandidate, ExtractionInput } from "./extraction-types.js";
 import { TextExtractor } from "./text-extractor.js";
 
+function liveOpenAiKey(): string {
+  const key = (process.env.OPENAI_API_KEY || "").trim();
+  if (!key || /synthetic/i.test(key)) return "";
+  return key;
+}
+
 export class LLMExtractor {
+  static isEnabled(): boolean {
+    return Boolean(geminiApiKey() || liveOpenAiKey());
+  }
+
   static async extract(input: ExtractionInput): Promise<ExtractedFraudCandidate> {
     const fallback = TextExtractor.extract(input);
-    const apiKey = process.env.OPENAI_API_KEY;
+    if (!input.content || input.content.trim().length === 0) {
+      return fallback;
+    }
+
+    if (geminiApiKey()) {
+      const fromGemini = await this.extractWithGemini(input, fallback);
+      if (fromGemini) return fromGemini;
+    }
+
+    const apiKey = liveOpenAiKey();
     const model = process.env.OPENAI_MODEL === "luna" ? "gpt-4o-mini" : (process.env.OPENAI_MODEL || "gpt-4o-mini");
 
-    if (!apiKey || !input.content || input.content.trim().length === 0) {
+    if (!apiKey) {
       return fallback;
     }
 
@@ -93,6 +112,54 @@ Citizen Text:
     } catch (err) {
       // Graceful fallback to deterministic local extractor
       return fallback;
+    }
+  }
+
+  private static async extractWithGemini(
+    input: ExtractionInput,
+    fallback: ExtractedFraudCandidate
+  ): Promise<ExtractedFraudCandidate | null> {
+    const raw = await generateGeminiText({
+      timeoutMs: 7000,
+      maxOutputTokens: 300,
+      system:
+        "Extract structured Indian financial cyber-fraud details. Respond with JSON only. No markdown.",
+      user: `Return ONLY valid JSON matching this schema:
+{
+  "amount": number or null,
+  "fraudCategory": "ELECTRICITY_BILL_SCAM" | "DIGITAL_ARREST" | "UPI_PAYMENT_FRAUD" | "TASK_SCAM" | "KYC_UPDATE_FRAUD" | "LOTTERY_PHISHING" | "CUSTOMER_CARE_IMPERSONATION" | "OTHER",
+  "channel": "UPI" | "CARD" | "BANK_TRANSFER" | "WALLET" | "OTHER",
+  "application": "PhonePe" | "Google Pay" | "Paytm" | "BHIM" | "CRED" | "NetBanking" | null,
+  "transactionId": string or null (12-digit UTR/RRN if found),
+  "debitInstitution": string or null,
+  "beneficiaryIdentifier": string or null
+}
+
+Citizen text:
+${input.content}`,
+    });
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim());
+      const sourceId = input.sourceId || "gemini#1";
+      return {
+        ...fallback,
+        amount: typeof parsed.amount === "number" && parsed.amount > 0 ? parsed.amount : fallback.amount,
+        fraudCategory: parsed.fraudCategory || fallback.fraudCategory,
+        channel: parsed.channel || fallback.channel,
+        application: parsed.application || fallback.application,
+        transactionId:
+          parsed.transactionId && /^\d{12}$/.test(parsed.transactionId)
+            ? parsed.transactionId
+            : fallback.transactionId,
+        debitInstitution: parsed.debitInstitution || fallback.debitInstitution,
+        beneficiaryIdentifier: parsed.beneficiaryIdentifier || fallback.beneficiaryIdentifier,
+        confidence: { ...fallback.confidence, llm_verified: 0.95 },
+        sourceRefs: { ...fallback.sourceRefs, llm: [sourceId] },
+        extractedAt: new Date().toISOString(),
+      };
+    } catch {
+      return null;
     }
   }
 }

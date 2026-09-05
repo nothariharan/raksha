@@ -39,6 +39,7 @@ const ROOT = join(process.cwd(), ".data", "whatsapp-edge");
 process.env.CAP_MODE = "in-memory";
 process.env.FORCE_FILE_DB = "true";
 process.env.TWILIO_VALIDATE_SIGNATURE = "false";
+delete process.env.GEMINI_API_KEY;
 
 function wipe(path: string): void {
   if (existsSync(path)) unlinkSync(path);
