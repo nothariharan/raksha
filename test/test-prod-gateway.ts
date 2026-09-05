@@ -86,6 +86,10 @@ async function runProdGatewayTest() {
       body: JSON.stringify({
         source: "web",
         modality: "text",
+        reporter: {
+          mobile: "919876543210",
+          name: "Ramesh Kumar",
+        },
         content: "I paid 5000 rupees via PhonePe from State Bank of India with UTR 423456789012 after an electricity scam call.",
         language: "en",
       }),
