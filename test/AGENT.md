@@ -103,7 +103,7 @@ Content-Type: application/json
   "forceNew": true,
   "language": "en",
   "reporter": { "mobile": "+919876543210" },
-  "content": "I got scammed on a medical government tax issue. I paid 5000 rupees from SBI Bank. The UTR number is 1234567890. I did not use PhonePe or any UPI app."
+  "content": "I got scammed on a medical government tax issue. I paid 5000 rupees from SBI Bank. The UTR number is 123456789012. I did not use PhonePe or any UPI app."
 }
 ```
 
@@ -111,7 +111,7 @@ Content-Type: application/json
 - New `incidentId` (not the leftover demo-proof case).
 - `transaction.amount` = `5000`
 - `transaction.debitInstitution` contains State Bank
-- `transaction.transactionId` = `1234567890`
+- `transaction.transactionId` = `123456789012`
 - `transaction.application` empty
 - `transaction.channel` = `BANK_TRANSFER` (denied UPI)
 - `narrative.text` / `scamSummary` is this medical/tax story
@@ -125,9 +125,11 @@ Without `forceNew`, a second long fraud narrative against the same mobile while 
 
 On the incident from §5 (state `READY`):
 
-1. `POST /v1/process` with `incidentId`, `confirmFacts: true`, `reporter.mobile` set.
+1. `POST /v1/process` with `incidentId`, `confirmFacts: true`, `modality: "text"`, `reporter.mobile` set.
 
-**Pass:** `validation.factsConfirmed === true`, `nextAction.nextActionType === "ASK_PROOF"`, `proofVerified === false`.
+**Pass (typed/web):** `validation.factsConfirmed === true`, `nextAction.nextActionType === "ASK_PROOF"`, `proofVerified === false`.
+
+**Pass (voice, 12-digit UTR already on the incident):** same confirm with `modality: "voice"` must return `READY_FOR_HANDOFF` and `proofVerified: true`. Do not ask for a screenshot. `pnpm test:voice-edge` covers this. A 10-digit reference is not enough to file on a call.
 
 2. `POST /v1/process` with same `incidentId`, `modality: "image"`, `content` = raw base64 of `demo-proof-upi-phonepe.png` (or data URL).
 
@@ -176,7 +178,7 @@ If Twilio signatures block you, run `pnpm test:thesis` / `pnpm test:cross-channe
 ## 10. Suggested agent order
 
 1. `pnpm build && pnpm typecheck`
-2. `pnpm test && pnpm test:cross-channel && pnpm test:cap-handoff && pnpm test:thesis && pnpm test:whatsapp-edge`
+2. `pnpm test && pnpm test:cross-channel && pnpm test:cap-handoff && pnpm test:thesis && pnpm test:whatsapp-edge && pnpm test:voice-edge`
 3. Start demo if not up
 4. `node scripts/test-fireworks-extractor.mjs`
 5. `node scripts/test-demo-proof-images.mjs`

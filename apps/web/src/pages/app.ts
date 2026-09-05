@@ -1308,7 +1308,7 @@ const bodyContent = `
                 Confirm these details
               </button>
 
-              <label class="btn-proof-upload" id="btnCallProof" style="display: none;">
+              <label class="btn-proof-upload" id="btnCallProof" style="display: none;" hidden>
                 Attach payment / scam proof
                 <input type="file" accept="image/*" style="display:none;" onchange="handleCallProofUpload(event)" />
               </label>
@@ -1585,7 +1585,7 @@ const bodyContent = `
       let earlyDisconnectTimer = null;
       /** Mic stream opened on the language-click gesture; kept until call ends. */
       let permissionMicStream = null;
-      /** Citizen confirmed dossier; waiting for screenshot before CAP file. */
+      /** Citizen confirmed dossier; waiting for spoken 12-digit UTR before CAP file. */
       let proofPending = false;
 
       (function initFluidOrb() {
@@ -1964,9 +1964,12 @@ const bodyContent = `
         return map[cat] || (cat ? String(cat) : "");
       }
 
-      function setCallProofVisible(visible) {
+      function setCallProofVisible(_visible) {
         const btn = document.getElementById("btnCallProof");
-        if (btn) btn.style.display = visible ? "block" : "none";
+        if (btn) {
+          btn.style.display = "none";
+          btn.hidden = true;
+        }
       }
 
       function showCallOutcome(inc, refNumber) {
@@ -3172,7 +3175,7 @@ const bodyContent = `
             if (stayInCall) {
               const badge = document.getElementById("callStatusBadge");
               if (badge) badge.innerText = "Dispatch failed — try again";
-              setCallProofVisible(true);
+              setCallProofVisible(false);
             } else {
               showError(
                 "Report could not be dispatched",
@@ -3223,7 +3226,7 @@ const bodyContent = `
           if (stayInCall) {
             const badge = document.getElementById("callStatusBadge");
             if (badge) badge.innerText = "Dispatch failed — try again";
-            setCallProofVisible(true);
+            setCallProofVisible(false);
           } else {
             showError(
               "Report could not be dispatched",
