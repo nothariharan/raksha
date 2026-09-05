@@ -151,6 +151,53 @@ async function testEnglishStoryDoesNotReaskContext(): Promise<void> {
   console.log("  ✓ English tax-scam story advances to UTR/bank, not a second story prompt");
 }
 
+async function testRestartDoesNotReaskLanguage(): Promise<void> {
+  const env = await isolated();
+  const mobile = "+919866677788";
+  const opened = await env.processService.processInput({
+    source: "whatsapp",
+    modality: "text",
+    content:
+      "so i was asked to pay 5000 ruppees to a person with regard to tax but then realised i got scammed",
+    language: "en",
+    reporter: { mobile },
+  });
+  assert.ok(opened.incidentId);
+  assert.equal(opened.incident.reporter.preferredLanguage, "en");
+
+  const coldStore = new WhatsAppConversationStore();
+  const cold = new WhatsAppService({
+    conversationStore: coldStore,
+    processInput: (input) => env.processService.processInput(input),
+    executeCap: (incident, key) => env.actionRouter.executeAction("report_financial_fraud", incident, key),
+    incidentLookup: {
+      findOpenByMobile: (m) => env.incidentService.findOpenByMobile(m),
+      findLatestByMobile: (m) => env.incidentService.findLatestByMobile(m),
+      getIncident: (id) => env.incidentService.getIncident(id),
+    },
+    sendOutbound: async (to, body) => {
+      env.outbound.push({ to, body });
+      return { attempted: true, sent: true, sid: `SM-COLD-${env.outbound.length}` };
+    },
+  });
+
+  const follow = await cold.handleIncomingMessage({
+    From: `whatsapp:${mobile}`,
+    Body: "my utr is 123456789012 from sbi bank scam",
+    MessageSid: "WA-COLD-UTR",
+  });
+  assert.doesNotMatch(
+    follow.replyText,
+    /choose your language|कृपया भाषा/i,
+    "a mid-case UTR after restart must not reset the language picker"
+  );
+  assert.equal(follow.incidentId, opened.incidentId);
+  assert.match(follow.replyText, /UTR|SBI|YES|confirm|bank|12/i);
+
+  env.cleanup();
+  console.log("  ✓ cold restart keeps English case and accepts UTR, no language picker");
+}
+
 async function testLanguageThenCapLoop(): Promise<void> {
   const env = await isolated();
   const from = "whatsapp:+919811122233";
@@ -373,6 +420,7 @@ async function run(): Promise<void> {
 
   await testHiDoesNotSelectHindi();
   await testEnglishStoryDoesNotReaskContext();
+  await testRestartDoesNotReaskLanguage();
   await testLanguageThenCapLoop();
   await testConflictFromCoreNotHardcoded();
   await testWebThenWhatsAppSameCase();

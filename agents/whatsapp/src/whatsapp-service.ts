@@ -268,6 +268,9 @@ export class WhatsAppService {
     textValue: string
   ): boolean {
     if (session.languageConfirmed) return false;
+    // An open Core case already passed language. Do not reset the picker
+    // after a Render restart wiped the in-memory session.
+    if (session.activeIncidentId) return false;
     if (session.lastState === "READY" && isYes(textValue)) return false;
     if (inputEvent.language && normalizeSupportedLanguage(inputEvent.language)) return false;
     return true;
@@ -401,7 +404,16 @@ export class WhatsAppService {
       this.store.setSession(phoneNumber, {
         hydratedFromCore: true,
         language: inherited,
-        languageConfirmed: inherited !== "en",
+        // Core "hi" is often a leftover default, not a citizen choice.
+        // A stored "en"/ta/te/... means they already picked a language.
+        languageConfirmed: Boolean(lang && lang !== "hi"),
+        lastPendingField: latest.validation?.missingFields?.includes("transaction.transactionId")
+          ? "transaction.transactionId"
+          : latest.validation?.missingFields?.includes("transaction.amount")
+            ? "transaction.amount"
+            : latest.validation?.missingFields?.includes("transaction.debitInstitution")
+              ? "transaction.debitInstitution"
+              : null,
         lastConflictOptions: options,
         lastConflictField: conflict?.field || null,
       });
