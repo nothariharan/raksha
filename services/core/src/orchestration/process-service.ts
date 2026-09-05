@@ -4,7 +4,7 @@
  */
 
 import { FraudIncident, IncidentState, InputSource } from "@raksha/schemas";
-import { normalizeMobile } from "@raksha/shared";
+import { normalizeMobile, speakRakshaVoice } from "@raksha/shared";
 import { MultimodalExtractor, ExtractedFraudCandidate, ModalityType } from "../extraction/extractor.js";
 import { LLMExtractor } from "../extraction/llm-extractor.js";
 import { VisionFireworksExtractor } from "../extraction/vision-fireworks.js";
@@ -17,6 +17,35 @@ import { EvidenceService, evidenceService as defaultEvidenceService } from "../e
  * States where the canonical incident is already complete enough that a channel
  * resume must NOT re-run initial extraction (avoids READY → QUESTION_PENDING demos).
  */
+function hasSpokenPaymentProof(amount?: number | null, transactionId?: string | null): boolean {
+  const utr = String(transactionId || "").replace(/\D/g, "");
+  return !!amount && amount > 0 && utr.length === 12;
+}
+
+function spokenUtrProofPrompt(lang: string): ClarificationDecision {
+  const promptEn =
+    "I still need the 12-digit UTR from your bank SMS or receipt before I can file. Please say it now.";
+  const promptHi =
+    "रिपोर्ट दर्ज करने से पहले बैंक SMS या रसीद से 12 अंकों का UTR बताइए।";
+  return {
+    type: "ASK_USER",
+    nextActionType: "ASK_USER",
+    field: "transaction.transactionId",
+    missingField: "transaction.transactionId",
+    prompt: lang === "hi" ? promptHi : promptEn,
+    localizedPrompts: {
+      en: promptEn,
+      hi: promptHi,
+      ta: "தயவுசெய்து உங்கள் வங்கி SMS-இல் உள்ள 12 இலக்க UTR-ஐச் சொல்லுங்கள்.",
+      te: "దయచేసి బ్యాంక్ SMSలోని 12 అంకెల UTR చెప్పండి.",
+      kn: "ದಯವಿಟ್ಟು ಬ್ಯಾಂಕ್ SMSನ 12 ಅಂಕಿಯ UTR ಹೇಳಿ.",
+      bn: "অনুগ্রহ করে ব্যাংক SMS-এর ১২ অঙ্কের UTR বলুন।",
+      mr: "कृपया बँक SMS मधील 12 अंकी UTR सांगा.",
+    },
+    isComplete: false,
+  };
+}
+
 export const STABLE_RESUME_STATES: IncidentState[] = [
   "READY",
   "EVIDENCE_SEALED",
@@ -285,7 +314,7 @@ export class ProcessService {
       incident = (await this.incidentService.getIncident(incident.id)) || incident;
       const candidate = this.candidateFromIncident(incident);
       const reconciliation = ReconciliationEngine.reconcile([candidate]);
-      const nextAction = ClarificationEngine.decideNextQuestion(reconciliation, lang, {
+      let nextAction = ClarificationEngine.decideNextQuestion(reconciliation, lang, {
         fraudCategory: incident.fraudCategory,
         narrativeText: incident.narrative?.text,
         contextCaptured: !!incident.validation?.contextCaptured,
@@ -293,6 +322,16 @@ export class ProcessService {
         proofVerified: !!incident.validation?.proofVerified,
         hasScreenshotEvidence: (incident.evidence || []).length > 0,
       });
+      if (input.modality === "voice" && nextAction.nextActionType === "ASK_PROOF") {
+        nextAction = spokenUtrProofPrompt(lang);
+      }
+      if (input.modality === "voice" && nextAction.prompt) {
+        nextAction.prompt = await speakRakshaVoice({
+          draft: nextAction.prompt,
+          language: lang,
+          citizenMessage: input.content,
+        });
+      }
       return {
         incidentId: incident.id,
         state: incident.state,
@@ -425,7 +464,21 @@ export class ProcessService {
     const reconciled = reconciliation.reconciledCandidate;
     const fraudCategory = reconciled.fraudCategory || incident.fraudCategory || "OTHER";
     const spokenStory = (incident.narrative?.text || "").trim();
-    const keepSpokenStory = input.modality === "image" && spokenStory.length >= 40;
+    const incoming = (input.content || "").trim();
+    const looksLikeFieldAnswer =
+      !!input.userClarificationAnswer ||
+      /^\d{12}$/.test(incoming) ||
+      /^(yes|haan|ha|confirm|हाँ)$/i.test(incoming) ||
+      incoming.length < 36;
+    const keepSpokenStory =
+      spokenStory.length >= 40 &&
+      (input.modality === "image" || (input.modality === "voice" && looksLikeFieldAnswer));
+    const spokenPaymentProof =
+      input.modality === "voice" &&
+      hasSpokenPaymentProof(
+        reconciled.amount || incident.transaction?.amount,
+        reconciled.transactionId || incident.transaction?.transactionId
+      );
     const scamSummary = keepSpokenStory
       ? incident.scamSummary || spokenStory.slice(0, 220)
       : (reconciled.narrative && reconciled.narrative.length <= 220
@@ -453,7 +506,7 @@ export class ProcessService {
       validation: {
         ...incident.validation,
         contextCaptured,
-        proofVerified: incident.validation?.proofVerified || false,
+        proofVerified: incident.validation?.proofVerified || spokenPaymentProof,
         factsConfirmed: incident.validation?.factsConfirmed || false,
         nextQuestion: undefined,
         missingFields: reconciliation.missingCrucialFields,
@@ -468,14 +521,24 @@ export class ProcessService {
     incident = (await this.incidentService.getIncident(incident.id)) || incident;
 
     // 7. Decide Next Clarification Action
-    const nextAction = ClarificationEngine.decideNextQuestion(reconciliation, lang, {
+    let nextAction = ClarificationEngine.decideNextQuestion(reconciliation, lang, {
       fraudCategory,
       narrativeText: incident.narrative?.text,
       contextCaptured,
       factsConfirmed: !!incident.validation?.factsConfirmed,
-      proofVerified: !!incident.validation?.proofVerified,
+      proofVerified: !!incident.validation?.proofVerified || spokenPaymentProof,
       hasScreenshotEvidence: (incident.evidence || []).length > 0,
     });
+    if (input.modality === "voice" && nextAction.nextActionType === "ASK_PROOF") {
+      nextAction = spokenUtrProofPrompt(lang);
+    }
+    if (input.modality === "voice" && nextAction.prompt) {
+      nextAction.prompt = await speakRakshaVoice({
+        draft: nextAction.prompt,
+        language: lang,
+        citizenMessage: input.content,
+      });
+    }
 
     // 8. Transition State Machine
     let nextState: IncidentState = "INTAKE";

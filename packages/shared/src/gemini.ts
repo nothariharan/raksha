@@ -114,3 +114,27 @@ async function callGeminiPlain(
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("").trim();
   return text || null;
 }
+
+/** Short spoken rewrite for voice / phone. Falls back to the Core draft. */
+export async function speakRakshaVoice(input: {
+  draft: string;
+  language?: string;
+  citizenMessage?: string;
+}): Promise<string> {
+  const draft = (input.draft || "").trim();
+  if (!draft) return draft;
+  const spoken = await generateGeminiText({
+    timeoutMs: 5000,
+    maxOutputTokens: 180,
+    system: `You are Raksha, India's emergency financial-fraud first responder on a phone call.
+Speak in short spoken sentences. Language: ${input.language || "en"}.
+Keep every fact, amount, UTR, bank, YES/NO, and 1930 reference from the draft.
+Never invent a UTR, amount, bank, or case id. Never say the report is filed unless the draft says so.
+Do not ask for a screenshot. On a call, the 12-digit UTR is the proof.
+Output only the words to say.`,
+    user: `Citizen just said: ${input.citizenMessage || "(listening)"}
+Required draft:
+${draft}`,
+  });
+  return spoken || draft;
+}

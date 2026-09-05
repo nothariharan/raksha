@@ -123,13 +123,18 @@ export class PhoneService {
         },
         context
       );
-      const res = toolRes.result as { officialReference: string; caseId: string; confirmationSpeech: string };
+      const res = toolRes.result as {
+        success?: boolean;
+        officialReference: string;
+        caseId: string;
+        confirmationSpeech: string;
+      };
       return {
         sessionId: params.callSid,
-        incidentId: null,
-        state: "SUBMITTED",
+        incidentId: this.sessions.getSessionByCallSid(params.callSid)?.activeIncidentId || null,
+        state: res.success === false ? "READY" : "SUBMITTED",
         spokenResponse: toolRes.speechResponse || res.confirmationSpeech,
-        isReady: true,
+        isReady: res.success !== false,
       };
     }
 

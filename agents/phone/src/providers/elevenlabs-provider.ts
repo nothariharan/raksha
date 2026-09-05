@@ -97,7 +97,11 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
         language: session.language,
       });
 
-      this.sessions.bindIncident(context.callSid, incidentId, "SUBMITTED");
+      this.sessions.bindIncident(
+        context.callSid,
+        incidentId,
+        res.success ? "SUBMITTED" : session.lastState || "READY"
+      );
 
       return {
         toolCallId,

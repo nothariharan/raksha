@@ -2056,13 +2056,17 @@ const bodyContent = `
           effectiveState === "READY" || effectiveState === "USER_CONFIRMATION";
         const isFiled =
           effectiveState === "SUBMITTED" || effectiveState === "ACKNOWLEDGED";
-        const needsProof = isReady && factsConfirmed && !proofVerified && !isFiled;
+        const spokenUtrOk =
+          Number(tx.amount || 0) > 0 &&
+          String(tx.transactionId || "").replace(/\D/g, "").length === 12;
+        const needsProof =
+          isReady && factsConfirmed && !proofVerified && !spokenUtrOk && !isFiled;
 
         let statusHtml = "";
         if (isFiled) {
           statusHtml = '<div class="dossier-status filed">Filed with 1930 / bank</div>';
         } else if (needsProof) {
-          statusHtml = '<div class="dossier-status proof">Proof needed</div>';
+          statusHtml = '<div class="dossier-status proof">Need 12-digit UTR</div>';
         } else if (isReady) {
           statusHtml = '<div class="dossier-status ready">Ready — please confirm</div>';
         } else if (hasFacts) {
@@ -2108,9 +2112,9 @@ const bodyContent = `
           if (needsProof) {
             actions.hidden = false;
             actions.innerHTML =
-              '<p class="dossier-confirm-note">Details confirmed. Attach a payment receipt or scam chat screenshot so we can verify before filing.</p>';
+              '<p class="dossier-confirm-note">Details confirmed. Say the 12-digit UTR from your bank SMS or receipt — that is the proof on a call. We cannot file from a spoken claim alone.</p>';
             setCallConfirmVisible(false);
-            setCallProofVisible(true);
+            setCallProofVisible(false);
           } else if (isReady && !factsConfirmed) {
             actions.hidden = false;
             actions.innerHTML =
@@ -2160,7 +2164,7 @@ const bodyContent = `
               if (inc?.validation?.proofVerified) {
                 badge.innerText = "Proof verified — filing…";
               } else {
-                badge.innerText = "Attach payment or scam proof";
+                badge.innerText = "Say the 12-digit UTR to file";
               }
             } else {
               badge.innerText = "Awaiting your confirmation";
@@ -2190,6 +2194,14 @@ const bodyContent = `
 
         try {
           setOrbState("PROCESSING");
+          const looksConfirm =
+            text.length < 48 &&
+            /^(yes|yep|yeah|haan|ha|confirm|confirmed|sahi|theek|हाँ|சரி)([.,!\s]|$)/i.test(text);
+          const canConfirmFacts =
+            looksConfirm &&
+            !startFreshCase &&
+            !!currentIncidentId &&
+            (currentIncident?.state === "READY" || currentIncident?.state === "USER_CONFIRMATION");
           const res = await protocolFetch(CORE_URL + "/v1/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -2200,7 +2212,8 @@ const bodyContent = `
               modality: "voice",
               content: text,
               language: currentLanguage === "hi" ? "hi" : currentLanguage === "ta" ? "ta" : "en",
-              reporter: { mobile: currentReporterMobile }
+              reporter: { mobile: currentReporterMobile },
+              confirmFacts: canConfirmFacts || undefined
             })
           });
           if (res.ok) {
@@ -2214,6 +2227,14 @@ const bodyContent = `
               data.incident?.handoff?.externalReference
             );
             fetchDevEvents();
+
+            const spokenUtr = String(data.incident?.transaction?.transactionId || "").replace(/\D/g, "");
+            const spokenAmount = Number(data.incident?.transaction?.amount || 0);
+            const hasSpokenProof = spokenAmount > 0 && spokenUtr.length === 12;
+            if (canConfirmFacts && hasSpokenProof) {
+              await confirmFromLiveCall();
+              return;
+            }
 
             const coreQuestion = data.question || data.nextAction?.prompt;
 
@@ -2239,16 +2260,23 @@ const bodyContent = `
               if (bank) parts.push(bank);
               if (utr) parts.push("UTR " + utr);
               const detail = parts.length ? parts.join(" ") : "the details we gathered";
-              const reply = isHi
-                ? "मैंने विवरण दर्ज कर लिया है: " + detail + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
-                : "I have recorded " + detail + ". Shall I dispatch this to 1930 and the bank?";
+              const missingUtr = String(utr || "").replace(/\D/g, "").length !== 12;
+              const reply = missingUtr
+                ? (isHi
+                    ? "मैंने विवरण दर्ज कर लिया है: " + detail + "। रिपोर्ट दर्ज करने से पहले बैंक SMS से 12 अंकों का UTR बताइए।"
+                    : "I have recorded " + detail + ". I still need the 12-digit UTR from your bank SMS before I can file.")
+                : (isHi
+                    ? "मैंने विवरण दर्ज कर लिया है: " + detail + "। क्या मैं इसे 1930 और बैंक को भेज दूँ?"
+                    : "I have recorded " + detail + ". Please confirm — shall I send this to 1930 and the bank?");
               if (!elevenLabsSessionLive) {
                 appendTranscript("agent", reply);
                 playRakshaSpeech(reply);
               } else if (activeConversation && typeof activeConversation.sendContextualUpdate === "function") {
                 try {
                   activeConversation.sendContextualUpdate(
-                    "Raksha Core marked the incident READY for citizen confirmation. Ask them to confirm dispatch."
+                    missingUtr
+                      ? "Raksha Core still needs the 12-digit UTR before filing. Ask for it. Do not ask for a screenshot."
+                      : "Raksha Core marked the incident READY for citizen confirmation. Ask them to confirm dispatch."
                   );
                 } catch (_) {}
               }
@@ -2347,9 +2375,10 @@ const bodyContent = `
         const lock = languagePromptAddon(lang);
         const base =
           "You are Raksha — an emergency first-responder for Indian financial cyber-fraud reporting. " +
-          "Be calm, brief, and empathetic. Collect missing facts (amount, bank, UPI app, UTR). " +
+          "Be calm, brief, and empathetic. Collect missing facts (amount, bank, 12-digit UTR). " +
           "Never ask for OTP/PIN/passwords. Never claim the bank is already frozen. " +
-          "Never say the report is already submitted. After they confirm, ask them to review the dossier on the right and attach a payment screenshot. " +
+          "Never say the report is already submitted. On a call, the 12-digit UTR is the proof — do not ask for a screenshot. " +
+          "After they confirm amount, bank, and UTR, ask them to confirm so we can file with 1930 and the bank. " +
           "Do not invent amounts, banks, UTRs, or names that the citizen did not say. Keep sentences short.";
         if (lang === "en") {
           return (
@@ -2798,26 +2827,47 @@ const bodyContent = `
           }
         } catch (_) {}
 
-        proofPending = true;
+        const spokenUtr = String(currentIncident.transaction?.transactionId || "").replace(/\D/g, "");
+        const spokenAmount = Number(currentIncident.transaction?.amount || 0);
+        const hasSpokenProof = spokenAmount > 0 && spokenUtr.length === 12;
+
         if (currentIncident) {
           currentIncident = {
             ...currentIncident,
             validation: {
               ...(currentIncident.validation || { status: "READY", missingFields: [], conflicts: [] }),
-              factsConfirmed: true
+              factsConfirmed: true,
+              proofVerified: !!(currentIncident.validation?.proofVerified || hasSpokenProof)
             }
           };
         }
         updateIncidentUI(currentIncident, currentIncident.state, currentIncident.handoff?.externalReference);
+
+        if (hasSpokenProof) {
+          proofPending = false;
+          appendTranscript(
+            "agent",
+            "Thank you. I have the amount and 12-digit UTR as confirmation. Filing the emergency freeze now."
+          );
+          playRakshaSpeech(
+            "Thank you. I have the amount and UTR as confirmation. Filing the emergency freeze now."
+          );
+          const badge = document.getElementById("callStatusBadge");
+          if (badge) badge.innerText = "Filing with 1930 and the bank…";
+          await dispatchEmergencyReport({ stayInCall: true, showOutcome: true });
+          return;
+        }
+
+        proofPending = true;
         appendTranscript(
           "agent",
-          "Thank you. Please attach a payment receipt or scam screenshot so I can verify before filing."
+          "I still need the 12-digit UTR from your bank SMS or receipt before I can file. Please say it now."
         );
         playRakshaSpeech(
-          "Thank you. Please attach a payment receipt or scam screenshot so I can verify before filing."
+          "I still need the 12-digit UTR from your bank SMS or receipt before I can file. Please say it now."
         );
         const badge = document.getElementById("callStatusBadge");
-        if (badge) badge.innerText = "Attach payment or scam proof";
+        if (badge) badge.innerText = "Say the 12-digit UTR to file";
       }
 
       async function handleCallProofUpload(e) {
