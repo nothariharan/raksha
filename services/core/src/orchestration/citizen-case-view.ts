@@ -58,6 +58,11 @@ const DEFAULT_FOLLOW_UP_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
 export function followUpThresholdMs(nowMs = Date.now()): number {
   const raw = process.env.RAKSHA_FOLLOW_UP_AFTER_MS;
   if (raw && /^\d+$/.test(raw.trim())) return Number(raw.trim());
+  // Live Render demos: offer follow-up after a short wait so Minute 2 works without a time-jump.
+  if (/^(1|true|yes)$/i.test(String(process.env.DEMO_MODE ?? "").trim())) {
+    void nowMs;
+    return 60 * 1000; // 1 minute
+  }
   void nowMs;
   return DEFAULT_FOLLOW_UP_AFTER_MS;
 }
