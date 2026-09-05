@@ -10,6 +10,7 @@ export type NextActionType =
   | "ASK_USER"
   | "CONFIRM"
   | "CONFIRM_CONFLICT"
+  | "ASK_PROOF"
   | "UPLOAD_EVIDENCE"
   | "SUBMIT"
   | "READY_FOR_HANDOFF";
