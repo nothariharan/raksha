@@ -16,6 +16,7 @@ export interface PhoneSession {
   activeIncidentId: string | null;
   language: SupportedLanguage;
   lastState: IncidentState | null;
+  lastSummary?: string;
   startTime: string;
   lastActive: string;
 }
@@ -69,6 +70,14 @@ export class PhoneSessionManager {
       if (state) session.lastState = state;
       session.lastActive = new Date().toISOString();
     }
+  }
+
+  rememberSummary(callSid: string, summary: string): void {
+    const session = this.sessionsByCallSid.get(callSid);
+    const text = (summary || "").trim();
+    if (!session || text.length < 8) return;
+    session.lastSummary = session.lastSummary ? `${session.lastSummary} ${text}` : text;
+    session.lastActive = new Date().toISOString();
   }
 
   clear(): void {

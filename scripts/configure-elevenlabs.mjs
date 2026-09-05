@@ -46,20 +46,20 @@ PACING:
 - Never cut them off. Ask one short question at a time.
 
 FLOW (only after language is set):
-1. Empathize briefly.
-2. If they ask for STATUS / tracking / meri report, call raksha_get_status first.
-3. Otherwise understand the scam, then collect only missing facts: amount, bank, 12-digit UTR.
-4. Read back facts and ask them to confirm.
-5. On a phone call the 12-digit UTR is the proof. Never ask for a screenshot. Never file from "I got scammed" alone.
-6. After they confirm amount + bank + 12-digit UTR, call raksha_submit_incident.
-7. Only then speak the tracking reference. Never invent a UTR, amount, bank, RKS id, or 1930 number.
+1. If they ask for STATUS / tracking / meri report, call raksha_get_status first, then speak the tool result.
+2. When they describe a scam, you MUST call raksha_start_incident in THAT SAME TURN with their full story. Do not ask the next question until the tool returns. Then speak only the tool result.
+3. When they give amount, bank, or UTR, call raksha_process_input in that same turn, then speak only the tool result.
+4. A UTR must be exactly 12 digits. If they give fewer or more, do not confirm it. Ask them to read all 12 digits from the bank SMS.
+5. Never ask for a screenshot. Never file from "I got scammed" alone.
+6. After they say yes/correct AND the last tool said the 12-digit UTR is recorded, call raksha_submit_incident with confirmedByCitizen=true, the incidentId from the tool if you have it, and a summary of what happened + amount + bank + the 12-digit UTR.
+7. After submit, speak the tool result word for word. That is the close — thank you, filed, official cyber crime portal, report number. Do not invent a reference number.
 
 TOOLS — you MUST call these; do not pretend you filed:
 - language_detection: only when switching away from English to Hindi or Tamil.
-- raksha_start_incident: first fraud story, never a language pick.
+- raksha_start_incident: first fraud story, in the same turn they tell it. Never a language pick.
 - raksha_process_input: follow-ups after a story exists (UTR, amount, yes). Never language picks.
 - raksha_get_status: status / tracking / continue an existing report.
-- raksha_submit_incident: only after explicit confirmation AND you have amount + 12-digit UTR.
+- raksha_submit_incident: only after explicit confirmation. Always pass a summary of the confirmed facts so the report can still be filed if an earlier tool was missed.
 
 Never ask for OTP, UPI PIN, or passwords. Never say the bank is already frozen.`;
 
@@ -83,7 +83,7 @@ function webhookTool(name, description, llmFields, required) {
     description,
     response_timeout_secs: 45,
     disable_interruptions: true,
-    force_pre_tool_speech: name === "raksha_start_incident",
+    force_pre_tool_speech: name === "raksha_start_incident" || name === "raksha_submit_incident",
     api_schema: {
       url: toolUrl,
       method: "POST",
@@ -100,7 +100,7 @@ function webhookTool(name, description, llmFields, required) {
 const webhookTools = [
   webhookTool(
     "raksha_start_incident",
-    "Start or resume the citizen's emergency fraud report from their spoken story. Always pass the full narrative. Uses the caller's phone number as the shared case key with website and WhatsApp.",
+    "Call this in the same turn as the first fraud story. Pass the full spoken narrative. Do not ask follow-up questions before this tool returns.",
     {
       narrative: { type: "string", description: "What the citizen said happened" },
       language: { type: "string", description: "en, hi, or ta" },
@@ -109,7 +109,7 @@ const webhookTools = [
   ),
   webhookTool(
     "raksha_process_input",
-    "Follow-up after a fraud story exists: UTR, amount, bank, yes/confirm, or more story. Never use this for language selection (English/Hindi/Tamil).",
+    "Call this in the same turn they give UTR, amount, bank, or yes/confirm. Never use this for language selection. A UTR must be exactly 12 digits.",
     {
       userSpeech: { type: "string", description: "Exactly what the citizen just said" },
       incidentId: { type: "string", description: "RKS-* if you already have it" },
@@ -128,13 +128,17 @@ const webhookTools = [
   ),
   webhookTool(
     "raksha_submit_incident",
-    "File the emergency freeze to 1930 and the bank after the citizen explicitly confirms AND amount + 12-digit UTR exist. Do not call this without confirmation.",
+    "File the emergency report after the citizen explicitly confirms. Always pass a summary of the story, amount, bank, and 12-digit UTR. Speak the tool result as the closing line.",
     {
       confirmedByCitizen: { type: "boolean", description: "Must be true" },
+      summary: {
+        type: "string",
+        description: "Confirmed story plus amount, bank, and 12-digit UTR so the report can still be filed",
+      },
       incidentId: { type: "string", description: "RKS-* if known" },
       language: { type: "string", description: "en, hi, or ta" },
     },
-    ["confirmedByCitizen"]
+    ["confirmedByCitizen", "summary"]
   ),
 ];
 

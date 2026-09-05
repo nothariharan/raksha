@@ -68,6 +68,30 @@ function looksLikeSpokenConfirmation(speech: string): boolean {
   );
 }
 
+function digitRuns(speech: string): string[] {
+  return (speech || "").match(/\d{8,}/g) || [];
+}
+
+function incompleteUtrPrompt(speech: string, lang: string): string | null {
+  const runs = digitRuns(speech);
+  if (runs.some((run) => run.length === 12)) return null;
+  const short = runs.find((run) => run.length >= 8 && run.length !== 12);
+  if (!short) return null;
+  return lang === "hi"
+    ? `मैंने ${short.length} अंक सुने। बैंक SMS से पूरे 12 अंकों का UTR पढ़िए।`
+    : `I heard ${short.length} digits. I need the full 12-digit UTR from your bank SMS. Please read all twelve digits.`;
+}
+
+function filedClosingSpeech(lang: string, refNum: string): string {
+  if (lang === "hi") {
+    return `आपके समय के लिए धन्यवाद। रिपोर्ट दर्ज हो गई है। आधिकारिक साइबर क्राइम पोर्टल पर रिपोर्ट नंबर ${refNum} से देख सकते हैं। बाद में स्टेटस चाहिए हो या इसे आगे बढ़ाना हो, रक्षा को स्टेटस कहकर बताइए।`;
+  }
+  if (lang === "ta") {
+    return `உங்கள் நேரத்திற்கு நன்றி. புகார் பதிவு செய்யப்பட்டது. அதிகாரப்பூர்வ சைபர் கிரைம் போர்ட்டலில் அறிக்கை எண் ${refNum} மூலம் பார்க்கலாம். நிலை தெரிய வேண்டும் அல்லது மேலும் நடவடிக்கை எடுக்க வேண்டும் என்றால் பின்னர் status என்று சொல்லுங்கள்.`;
+  }
+  return `Thank you for your time. The report is filed. You can find it on the official cyber crime portal under report number ${refNum}. If you want the status of this report later, or need to escalate it, contact Raksha and say status.`;
+}
+
 export class PhoneToolsHandler {
   private coreBaseUrl: string;
   private capBaseUrl: string;
@@ -161,8 +185,11 @@ export class PhoneToolsHandler {
     const hasSpokenProof = !!data.incident.transaction.amount && utr.length === 12;
     const isReady = data.state === "READY" && hasSpokenProof;
     let promptForCaller = data.nextAction.prompt || getTranslation(lang).askMissingUTR;
+    const shortUtr = incompleteUtrPrompt(params.narrative, lang);
 
-    if (data.state === "READY" && !hasSpokenProof) {
+    if (shortUtr && !hasSpokenProof) {
+      promptForCaller = shortUtr;
+    } else if (data.state === "READY" && !hasSpokenProof) {
       promptForCaller =
         lang === "hi"
           ? "रिपोर्ट दर्ज करने से पहले बैंक SMS या रसीद से 12 अंकों का UTR बताइए।"
@@ -277,8 +304,11 @@ export class PhoneToolsHandler {
     const hasSpokenProof = !!data.incident.transaction.amount && utr.length === 12;
     const isReady = data.state === "READY" && hasSpokenProof;
     let promptForCaller = data.nextAction.prompt || getTranslation(lang).askMissingUTR;
+    const shortUtr = incompleteUtrPrompt(params.userSpeech, lang);
 
-    if (data.state === "READY" && !hasSpokenProof) {
+    if (shortUtr && !hasSpokenProof) {
+      promptForCaller = shortUtr;
+    } else if (data.state === "READY" && !hasSpokenProof) {
       promptForCaller =
         lang === "hi"
           ? "रिपोर्ट दर्ज करने से पहले बैंक SMS या रसीद से 12 अंकों का UTR बताइए।"
@@ -376,18 +406,12 @@ export class PhoneToolsHandler {
     const desks = publicDeskUrls();
     const portalA = desks.portalA;
     const portalB = desks.portalB;
-    const bank = incident.transaction?.debitInstitution || "bank";
-
-    const confirmationSpeech =
-      lang === "hi"
-        ? `आपकी रिपोर्ट दर्ज हो गई है। संदर्भ नंबर ${refNum} है। सिम्युलेटेड 1930 डेस्क ${portalA} और ${bank} फ्रीज डेस्क ${portalB} पर देख सकते हैं। अब यहाँ और कुछ करने की जरूरत नहीं है।`
-        : `Your emergency fraud report is filed. Tracking reference ${refNum}. Open the simulated 1930 desk at ${portalA} and the ${bank} freeze desk at ${portalB}. Nothing else you need to do here.`;
 
     return {
       success: true,
       officialReference: refNum,
       caseId: capData.caseId,
-      confirmationSpeech,
+      confirmationSpeech: filedClosingSpeech(lang, refNum),
       portalAUrl: portalA,
       portalBUrl: portalB,
     };

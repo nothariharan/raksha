@@ -59,6 +59,7 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
       });
 
       if (res.incidentId) this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);
+      this.sessions.rememberSummary(context.callSid, narrative);
 
       return {
         toolCallId,
@@ -87,6 +88,7 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
       });
 
       if (res.incidentId) this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);
+      this.sessions.rememberSummary(context.callSid, userSpeech);
 
       return {
         toolCallId,
@@ -97,21 +99,42 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
 
     if (toolName === "submit_incident" || toolName === "raksha_submit_incident") {
       let incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
+      const summary = String(
+        parameters.summary || parameters.narrative || parameters.userSpeech || session.lastSummary || ""
+      ).trim();
       if (!incidentId && context.callerNumber) {
         const lookedUp = await this.tools.getIncidentStatus({ callerPhone: context.callerNumber });
         incidentId = String((lookedUp as { incident?: { id?: string } }).incident?.id || "");
+      }
+      if (!incidentId && summary) {
+        const started = await this.tools.startIncident({
+          narrative: summary,
+          callerPhone: context.callerNumber || session.callerNumber,
+          language: String(parameters.language || session.language || "en"),
+        });
+        if (started.incidentId) {
+          incidentId = started.incidentId;
+          this.sessions.bindIncident(context.callSid, started.incidentId, started.state as any);
+        }
+        if (!started.isReady) {
+          return {
+            toolCallId,
+            result: { success: false, ...started },
+            speechResponse: started.promptForCaller,
+          };
+        }
       }
       if (!incidentId) {
         return {
           toolCallId,
           result: { success: false },
           speechResponse:
-            "I do not have a report on this number yet. Please tell me what happened, including the amount and 12-digit UTR.",
+            "I still need the story, the amount, and the 12-digit UTR from your bank SMS before I can file.",
         };
       }
       const res = await this.tools.submitIncident({
         incidentId,
-        language: session.language,
+        language: String(parameters.language || session.language || "en"),
       });
 
       this.sessions.bindIncident(

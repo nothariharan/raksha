@@ -17,7 +17,7 @@ import {
   IncidentService,
   ProcessService,
 } from "@raksha/core";
-import { PhoneToolsHandler } from "@raksha/agent-phone";
+import { PhoneService, PhoneSessionManager, PhoneToolsHandler } from "@raksha/agent-phone";
 import { globalEventBus, resetCounters } from "@raksha/shared";
 
 const ROOT = join(process.cwd(), ".data", "voice-edge");
@@ -184,6 +184,9 @@ async function testPhoneSpokenYesConfirmsWhenUtrPresent(): Promise<void> {
   const filed = await phone.submitIncident({ incidentId: started.incidentId, language: "en" });
   assert.equal(filed.success, true);
   assert.match(filed.officialReference, /1930-SYN-/);
+  assert.match(filed.confirmationSpeech, /Thank you for your time/i);
+  assert.match(filed.confirmationSpeech, /official cyber crime portal/i);
+  assert.ok(filed.confirmationSpeech.includes(filed.officialReference));
   env.cleanup();
   console.log("  ✓ phone confirm + UTR can file; spoken yes reaches Core");
 }
@@ -216,6 +219,59 @@ async function testLanguagePickDoesNotOpenCase(): Promise<void> {
   console.log("  ✓ language pick does not open a Core incident");
 }
 
+async function testShortUtrIsRejected(): Promise<void> {
+  const env = await isolated();
+  const phone = new PhoneToolsHandler({
+    incidentLookup: (id) => env.incidentService.getIncident(id),
+    processInput: (input) => env.processService.processInput(input),
+  });
+  const started = await phone.startIncident({
+    narrative: "Satya scammed me out of 5000 rupees from SBI. UTR 5473219142",
+    callerPhone: "+919811100008",
+    language: "en",
+  });
+  assert.equal(started.isReady, false);
+  assert.match(started.promptForCaller, /12|twelve|digits/i);
+  env.cleanup();
+  console.log("  ✓ 10-digit UTR is not accepted as proof");
+}
+
+async function testSubmitRecoversFromSummary(): Promise<void> {
+  const env = await isolated();
+  const tools = new PhoneToolsHandler({
+    incidentLookup: (id) => env.incidentService.getIncident(id),
+    processInput: (input) => env.processService.processInput(input),
+  });
+  const sessions = new PhoneSessionManager();
+  const service = new PhoneService(sessions, tools);
+  const filed = await service.handleToolCall(
+    {
+      toolName: "raksha_submit_incident",
+      toolCallId: "tc-recover",
+      parameters: {
+        confirmedByCitizen: true,
+        summary:
+          "Satya loan pension scam. I paid 5000 rupees from SBI. UTR 123456789012",
+        language: "en",
+      },
+    },
+    {
+      callSid: "conv-recover-1",
+      callerNumber: "+919811100009",
+      provider: "elevenlabs",
+      language: "en",
+      startTime: new Date().toISOString(),
+    }
+  );
+  const res = filed.result as { success?: boolean; officialReference?: string };
+  assert.equal(res.success, true);
+  assert.match(filed.speechResponse || "", /Thank you for your time/i);
+  assert.match(filed.speechResponse || "", /official cyber crime portal/i);
+  assert.ok((filed.speechResponse || "").includes(res.officialReference || "1930-SYN-"));
+  env.cleanup();
+  console.log("  ✓ submit with summary files even if start_incident was skipped");
+}
+
 async function run(): Promise<void> {
   console.log("\n====================================================");
   console.log("  Voice / Phone Proof — Acceptance");
@@ -227,6 +283,8 @@ async function run(): Promise<void> {
   await testPhoneRefusesFileWithoutUtr();
   await testPhoneSpokenYesConfirmsWhenUtrPresent();
   await testLanguagePickDoesNotOpenCase();
+  await testShortUtrIsRejected();
+  await testSubmitRecoversFromSummary();
   console.log("\n====================================================");
   console.log("  ALL VOICE PROOF CHECKS PASSED");
   console.log("====================================================\n");
