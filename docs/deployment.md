@@ -58,7 +58,9 @@ pnpm export:web
 vercel --prod --yes
 ```
 
-Protocol: Render auto-deploys `chore/production-deployment` for `raksha-protocol`. After merging WhatsApp edge to `main`, fast-forward that branch (or retarget the service) so the live host serves `/whatsapp/webhook`.
+Protocol: Render auto-deploys `feat/real-whatsapp-edge` for `raksha-protocol` while the live WhatsApp webhook is being proven. Pin Node `22.16.0` (`NODE_VERSION` + `.node-version`). After the phone journey works, retarget the service to `main`.
+
+Vercel stays a static website (`pnpm export:web`). It does not run the WhatsApp/phone webhook. `/whatsapp/*` and `/phone/*` rewrite to Render. Set `PROTOCOL_PUBLIC_ORIGIN=https://raksha-protocol.onrender.com` on the Vercel project so `/app` is baked against the protocol host.
 
 ### Twilio WhatsApp (live pilot)
 
