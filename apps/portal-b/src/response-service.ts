@@ -133,8 +133,27 @@ export class PortalBResponseService {
     }
   }
 
+  private resolveCapBaseUrl(): string {
+    const configured = (process.env.CAP_PUBLIC_BASE_URL || "").replace(/\/$/, "");
+    if (configured && !/localhost|127\.0\.0\.1/i.test(configured)) return configured;
+    if (
+      process.env.RAKSHA_UNIFIED_HOST === "1" ||
+      process.env.RENDER ||
+      (configured && /127\.0\.0\.1/i.test(configured))
+    ) {
+      return `http://127.0.0.1:${process.env.PORT || "3000"}`;
+    }
+    const origin = (
+      process.env.PROTOCOL_PUBLIC_ORIGIN ||
+      process.env.RENDER_EXTERNAL_URL ||
+      ""
+    ).replace(/\/$/, "");
+    if (origin && !/localhost|127\.0\.0\.1/i.test(origin)) return origin;
+    return configured || "http://localhost:3002";
+  }
+
   async pollEventsFromHttp(): Promise<ReceivedAlert[]> {
-    const baseUrl = process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002";
+    const baseUrl = this.resolveCapBaseUrl();
     const sinceParam = this.lastPolledTimestamp
       ? `&since=${encodeURIComponent(this.lastPolledTimestamp)}`
       : "";

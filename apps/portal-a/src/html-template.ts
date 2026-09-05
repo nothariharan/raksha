@@ -110,9 +110,9 @@ export function renderPortalAHtml(): string {
       <p>Portal A · Simulated downstream service — 1930 / bank response for prototype</p>
     </div>
     <nav>
-      <a href="/" data-nav>Dashboard</a>
-      <a href="/report" data-nav>Report fraud</a>
-      <a href="/review" data-nav>Review incoming</a>
+      <a href="/" data-nav data-path="/">Dashboard</a>
+      <a href="/report" data-nav data-path="/report">Report fraud</a>
+      <a href="/review" data-nav data-path="/review">Review incoming</a>
     </nav>
   </header>
   <main>
@@ -121,12 +121,23 @@ export function renderPortalAHtml(): string {
   </main>
   <script>
     const app = document.getElementById("app");
+    const BASE = location.pathname.startsWith("/portal-a") ? "/portal-a" : "";
+
+    function navHref(path) {
+      if (!path || path === "/") return BASE ? BASE + "/" : "/";
+      return (BASE || "") + path;
+    }
+
+    document.querySelectorAll("[data-nav][data-path]").forEach((a) => {
+      a.setAttribute("href", navHref(a.getAttribute("data-path")));
+    });
 
     function navHighlight() {
-      const path = location.pathname;
+      const path = location.pathname.replace(/\\/+$/, "") || "/";
+      const stripped = path.startsWith("/portal-a") ? (path.slice("/portal-a".length) || "/") : path;
       document.querySelectorAll("[data-nav]").forEach((a) => {
-        const href = a.getAttribute("href");
-        a.classList.toggle("active", href === path || (href === "/" && path === "/"));
+        const target = a.getAttribute("data-path") || "/";
+        a.classList.toggle("active", target === stripped || (target === "/" && (stripped === "/" || stripped === "")));
       });
     }
 
@@ -156,8 +167,8 @@ export function renderPortalAHtml(): string {
               <tbody>
                 \${cases.map((c) => \`
                   <tr>
-                    <td><a href="/case/\${c.portalCaseId}">\${c.portalCaseId}</a></td>
-                    <td><a href="/case/\${encodeURIComponent(c.externalReference || c.portalCaseId)}">\${c.externalReference || c.capCaseId}</a></td>
+                    <td><a href="\${navHref("/case/" + c.portalCaseId)}" data-nav>\${c.portalCaseId}</a></td>
+                    <td><a href="\${navHref("/case/" + encodeURIComponent(c.externalReference || c.portalCaseId))}" data-nav>\${c.externalReference || c.capCaseId}</a></td>
                     <td>\${rupees(c.incident?.transaction?.amount)}</td>
                     <td>\${c.incident?.transaction?.transactionId || "—"}</td>
                     <td class="status">\${c.lifecycle}</td>
@@ -221,7 +232,7 @@ export function renderPortalAHtml(): string {
               <tbody>
                 \${incoming.map((c) => \`
                   <tr>
-                    <td><a href="/case/\${c.portalCaseId}">\${c.portalCaseId}</a><br/><span class="muted">\${c.externalReference || ""}</span></td>
+                    <td><a href="\${navHref("/case/" + c.portalCaseId)}" data-nav>\${c.portalCaseId}</a><br/><span class="muted">\${c.externalReference || ""}</span></td>
                     <td>FINANCIAL_CYBER_FRAUD</td>
                     <td>\${rupees(c.incident?.transaction?.amount)}</td>
                     <td class="status">\${c.lifecycle}</td>
@@ -276,7 +287,7 @@ export function renderPortalAHtml(): string {
               c.incidentId === refParam
             );
             if (hit) {
-              history.replaceState({}, "", "/case/" + encodeURIComponent(hit.portalCaseId));
+              history.replaceState({}, "", navHref("/case/" + encodeURIComponent(hit.portalCaseId)));
               app.innerHTML = caseDetail(hit);
               document.querySelectorAll("[data-ack]").forEach((btn) => {
                 btn.addEventListener("click", async () => {
@@ -346,7 +357,8 @@ export function renderPortalAHtml(): string {
     document.querySelectorAll("[data-nav]").forEach((a) => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
-        history.pushState({}, "", a.getAttribute("href"));
+        const href = a.getAttribute("href") || navHref("/");
+        history.pushState({}, "", href.startsWith("/portal-a") || !BASE ? href : navHref(href));
         render();
       });
     });

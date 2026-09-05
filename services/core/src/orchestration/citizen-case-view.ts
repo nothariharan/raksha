@@ -59,7 +59,11 @@ export function followUpThresholdMs(nowMs = Date.now()): number {
   const raw = process.env.RAKSHA_FOLLOW_UP_AFTER_MS;
   if (raw && /^\d+$/.test(raw.trim())) return Number(raw.trim());
   // Live Render demos: offer follow-up after a short wait so Minute 2 works without a time-jump.
-  if (/^(1|true|yes)$/i.test(String(process.env.DEMO_MODE ?? "").trim())) {
+  if (
+    /^(1|true|yes)$/i.test(String(process.env.DEMO_MODE ?? "").trim()) ||
+    Boolean(process.env.RENDER) ||
+    process.env.RAKSHA_UNIFIED_HOST === "1"
+  ) {
     void nowMs;
     return 60 * 1000; // 1 minute
   }
@@ -367,10 +371,11 @@ export function formatCitizenStatusWhatsApp(view: CitizenCaseView): string {
   }
 
   if (view.externalReference) {
+    const deskA = `${portalA}/?ref=${encodeURIComponent(view.externalReference)}`;
     lines.push(
       ``,
       `Open desks (simulated):`,
-      `• 1930 cyber cell (report filed): ${portalA}`,
+      `• 1930 cyber cell (report filed): ${deskA}`,
       `• ${bank === "—" ? "Bank" : bank} freeze desk: ${portalB}`
     );
   }

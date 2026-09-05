@@ -460,8 +460,18 @@ export class PhoneToolsHandler {
       if (this.findByMobileFn) {
         incident = (await this.findByMobileFn(mobile)) || null;
       } else {
-        const open = await incidentService.findOpenByMobile(mobile);
-        incident = open || (await incidentService.findLatestByMobile(mobile));
+        try {
+          if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+            const remote = await fetchJsonOrNull<{ incident?: FraudIncident | null }>(
+              `${this.coreBaseUrl}/v1/incidents/latest?mobile=${encodeURIComponent(mobile)}`
+            );
+            if (remote?.incident) incident = remote.incident;
+          }
+        } catch {}
+        if (!incident) {
+          const open = await incidentService.findOpenByMobile(mobile);
+          incident = open || (await incidentService.findLatestByMobile(mobile));
+        }
       }
     }
     if (!incident) return { error: "Incident not found" };
@@ -579,8 +589,8 @@ export class PhoneToolsHandler {
     const ref = capData.externalReference || "";
     const confirmationSpeech =
       lang === "hi"
-        ? `फॉलो अप दर्ज हो गया है। केस ${incidentId}${ref ? ` संदर्भ ${ref}` : ""} सक्रिय रहता है।`
-        : `Follow-up received. Your case ${incidentId}${ref ? ` (${ref})` : ""} remains active.`;
+        ? `फॉलो अप दर्ज हो गया है। केस ${incidentId}${ref ? ` संदर्भ ${ref}` : ""} सक्रिय रहता है। WhatsApp पर भी पुष्टि भेजी जाएगी।`
+        : `Follow-up received. Your case ${incidentId}${ref ? ` (${ref})` : ""} remains active. You should also get a WhatsApp confirmation on the number used when filing.`;
 
     return {
       success: true,

@@ -24,6 +24,16 @@ const PUBLIC_WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN || "").replace(/\/$/, "
 const SAME_ORIGIN_WEB = { coreUrl: "", capUrl: "" };
 const WEB_PAGE_PATHS = new Set(["/", "/how", "/agents", "/cap", "/app", "/demo", "/index.html"]);
 
+// Unified host: Portal A/B poll CAP on the same process. Defaulting CAP_PUBLIC_BASE_URL
+ // to localhost:3002 leaves Portal A empty on Render after restart.
+process.env.RAKSHA_UNIFIED_HOST = "1";
+if (!process.env.CAP_PUBLIC_BASE_URL || /localhost|127\.0\.0\.1/i.test(process.env.CAP_PUBLIC_BASE_URL)) {
+  process.env.CAP_PUBLIC_BASE_URL = `http://127.0.0.1:${PORT}`;
+}
+if (!process.env.PROTOCOL_PUBLIC_ORIGIN && process.env.RENDER_EXTERNAL_URL) {
+  process.env.PROTOCOL_PUBLIC_ORIGIN = process.env.RENDER_EXTERNAL_URL.replace(/\/$/, "");
+}
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",

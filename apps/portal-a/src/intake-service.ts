@@ -203,11 +203,34 @@ export class PortalAIntakeService {
    * HTTP poll fallback for multi-process deployments where EventBus is not shared.
    * Always used on GET /portal-a/cases so localhost:3003 shows filings from CAP :3002.
    */
-  async pollEventsFromHttp(): Promise<PortalACase[]> {
-    const baseUrl = (process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002").replace(
-      /\/$/,
+  private resolveCapBaseUrl(): string {
+    const configured = (process.env.CAP_PUBLIC_BASE_URL || "").replace(/\/$/, "");
+    if (
+      configured &&
+      !/localhost|127\.0\.0\.1/i.test(configured)
+    ) {
+      return configured;
+    }
+    // Unified Render/prod host: CAP shares this process — poll loopback on PORT.
+    if (
+      process.env.RAKSHA_UNIFIED_HOST === "1" ||
+      process.env.RENDER ||
+      (configured && /127\.0\.0\.1/i.test(configured))
+    ) {
+      const port = process.env.PORT || "3000";
+      return `http://127.0.0.1:${port}`;
+    }
+    const origin = (
+      process.env.PROTOCOL_PUBLIC_ORIGIN ||
+      process.env.RENDER_EXTERNAL_URL ||
       ""
-    );
+    ).replace(/\/$/, "");
+    if (origin && !/localhost|127\.0\.0\.1/i.test(origin)) return origin;
+    return configured || "http://localhost:3002";
+  }
+
+  async pollEventsFromHttp(): Promise<PortalACase[]> {
+    const baseUrl = this.resolveCapBaseUrl();
     // If local store is empty (portal restarted / separate process), re-read full history.
     const sinceParam =
       this.localCases.size > 0 && this.lastPolledTimestamp

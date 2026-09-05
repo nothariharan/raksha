@@ -151,18 +151,28 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
     }
 
     if (toolName === "get_incident_status" || toolName === "raksha_get_status") {
-      const incidentId = String(parameters.incidentId || session.activeIncidentId || "");
+      const incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
+      const spokenMobile = String(
+        parameters.mobile ||
+          parameters.reporterPhone ||
+          parameters.phone ||
+          parameters.phone_number ||
+          ""
+      ).trim();
+      const callerPhone =
+        spokenMobile || context.callerNumber || session.callerNumber || undefined;
       const res = await this.tools.getIncidentStatus({
         incidentId: incidentId || undefined,
-        callerPhone: context.callerNumber || session.callerNumber,
+        callerPhone,
         language: String(parameters.language || session.language || "en"),
       });
       const view = (res as { view?: { spokenStatus?: string; incidentId?: string; followUpAvailable?: boolean }; speech?: string }).view;
+      const err = (res as { error?: string }).error;
       const speech =
         (res as { speech?: string }).speech ||
         view?.spokenStatus ||
-        ((res as { incident?: { id?: string; state?: string; handoff?: { externalReference?: string } } }).incident
-          ? `Your case ${(res as { incident: { id: string; state: string } }).incident.id} is ${(res as { incident: { id: string; state: string } }).incident.state}.`
+        (err
+          ? "I could not find a filed report for that number yet. Please give the mobile used when you filed, or your RKS case ID."
           : "I do not have an open report on this number yet. Please tell me what happened.");
       const incident = (res as { incident?: { id?: string; state?: string } }).incident;
       if (incident?.id) {
@@ -177,9 +187,16 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
 
     if (toolName === "follow_up" || toolName === "raksha_follow_up") {
       const incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
+      const spokenMobile = String(
+        parameters.mobile ||
+          parameters.reporterPhone ||
+          parameters.phone ||
+          parameters.phone_number ||
+          ""
+      ).trim();
       const res = await this.tools.followUpCase({
         incidentId: incidentId || undefined,
-        callerPhone: context.callerNumber || session.callerNumber,
+        callerPhone: spokenMobile || context.callerNumber || session.callerNumber,
         language: String(parameters.language || session.language || "en"),
         authorizedByCitizen: parameters.authorizedByCitizen !== false,
       });

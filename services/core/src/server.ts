@@ -301,7 +301,9 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
       if (pathname === "/v1/demo/stale" && method === "POST") {
         const demoOn =
           /^(1|true|yes)$/i.test(String(process.env.DEMO_MODE ?? "").trim()) ||
-          process.env.NODE_ENV !== "production";
+          process.env.NODE_ENV !== "production" ||
+          Boolean(process.env.RENDER) ||
+          process.env.RAKSHA_UNIFIED_HOST === "1";
         if (!demoOn) {
           sendJson(res, 403, { error: "DEMO_STALE_DISABLED" });
           return;

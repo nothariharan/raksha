@@ -47,8 +47,9 @@ PACING:
 
 FLOW (only after language is set):
 1. If they ask for STATUS / tracking / meri report / "I already reported" / "what happened to my report" / escalate / follow up / chase my report, call raksha_get_status first, then speak the tool result word for word.
-2. If the status tool asks whether they want to follow up, and they say yes / escalate / follow up / please do, call raksha_follow_up with authorizedByCitizen=true. Speak the tool result. Do not invent a reference.
-2b. If they clearly ask to escalate or follow up on an already-filed case (even if status did not offer it), confirm once ("I can send a citizen follow-up on the same case — should I?"), then on yes call raksha_follow_up with authorizedByCitizen=true.
+2. On outbound calls, the phone you dialed may not be the filing mobile. If they dictate a mobile number or RKS-* id, pass it as mobile or incidentId on raksha_get_status / raksha_follow_up.
+3. If the status tool asks whether they want to follow up, and they say yes / escalate / follow up / please do, call raksha_follow_up with authorizedByCitizen=true and the same mobile/incidentId. Speak the tool result. Do not invent a reference.
+4. If they clearly ask to escalate or follow up on an already-filed case (even if status did not offer it), confirm once ("I can send a citizen follow-up on the same case — should I?"), then on yes call raksha_follow_up with authorizedByCitizen=true.
 3. When they describe a scam, you MUST call raksha_start_incident in THAT SAME TURN with their full story. Do not ask the next question until the tool returns. Then speak only the tool result.
 4. When they give amount, bank, or UTR, call raksha_process_input in that same turn, then speak only the tool result.
 5. A UTR must be exactly 12 digits. If they give fewer or more, do not confirm it. Ask them to read all 12 digits from the bank SMS.
@@ -123,19 +124,27 @@ const webhookTools = [
   ),
   webhookTool(
     "raksha_get_status",
-    "Look up the existing report for this caller. Use for STATUS, tracking, meri report, already reported, what happened to my report, escalate, or chase my report. Speak the tool result word for word.",
+    "Look up an existing report. Pass mobile when the citizen says a phone number (10-digit India mobile). Pass incidentId when they say RKS-*. On outbound calls the dialed number may differ from the filing mobile — always pass mobile if they dictate one. Speak the tool result word for word.",
     {
       incidentId: { type: "string", description: "RKS-* if known" },
+      mobile: {
+        type: "string",
+        description: "Citizen mobile used at filing, e.g. 8056135790 or +918056135790",
+      },
       language: { type: "string", description: "en, hi, or ta" },
     },
     []
   ),
   webhookTool(
     "raksha_follow_up",
-    "Citizen-authorized follow-up after STATUS offered it and they said yes / escalate / follow up. Never call without explicit confirmation. Never invent institutional failure.",
+    "Citizen-authorized follow-up after STATUS offered it and they said yes / escalate / follow up. Pass the same mobile or incidentId used for status. Never call without explicit confirmation. Never invent institutional failure.",
     {
       authorizedByCitizen: { type: "boolean", description: "Must be true" },
       incidentId: { type: "string", description: "RKS-* if known" },
+      mobile: {
+        type: "string",
+        description: "Citizen mobile used at filing if different from caller ID",
+      },
       language: { type: "string", description: "en, hi, or ta" },
     },
     ["authorizedByCitizen"]
