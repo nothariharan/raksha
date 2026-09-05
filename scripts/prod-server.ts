@@ -15,7 +15,7 @@ import { handleCapRequest } from "@raksha/cap";
 import { handlePortalARequest } from "@raksha/portal-a";
 import { handlePortalBRequest } from "@raksha/portal-b";
 import { handleWebRequest } from "@raksha/web";
-import { handleWhatsAppRequest } from "@raksha/agent-whatsapp";
+import { handleWhatsAppRequest, wireWhatsAppHandoffSubscriber } from "@raksha/agent-whatsapp";
 import { handlePhoneRequest } from "@raksha/agent-phone";
 import { handleMcpRequest } from "@raksha/agent-mcp";
 
@@ -55,6 +55,7 @@ function redirectToWebsite(res: ServerResponse, destination: string): void {
 }
 
 export function createUnifiedGatewayServer() {
+  wireWhatsAppHandoffSubscriber();
   return createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const pathname = url.pathname;

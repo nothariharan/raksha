@@ -5,6 +5,9 @@
   "private": true,
   "description": "Raksha — Multimodal Emergency Public-Service Protocol for Financial Cyber-Fraud Reporting",
   "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
     "start": "tsx scripts/prod-server.ts",
     "raksha": "tsx scripts/raksha.ts",
@@ -18,6 +21,7 @@
     "test:cross-channel": "tsx test/cross-channel.test.ts",
     "test:cap-handoff": "tsx test/cap-event-handoff.test.ts",
     "test:thesis": "tsx test/raksha-thesis.test.ts",
+    "test:whatsapp-edge": "tsx test/whatsapp-edge.test.ts",
     "test:e2e:cap": "tsx test/run-e2e.ts",
     "verify:prod": "tsx scripts/verify-prod-persistence.ts",
     "demo": "tsx scripts/demo-start.ts",

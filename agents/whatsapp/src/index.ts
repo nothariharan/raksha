@@ -5,6 +5,8 @@ export * from "./message-normalizer.js";
 export * from "./whatsapp-service.js";
 export * from "./webhook.js";
 export * from "./handoff-subscriber.js";
+export * from "./twilio.js";
+export * from "./language.js";
 
 const PORT = Number(process.env.PORT_WHATSAPP) || 3005;
 

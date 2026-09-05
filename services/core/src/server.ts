@@ -162,8 +162,8 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
       // 3. Unified Multimodal Process Orchestration Endpoint
       if (pathname === "/v1/process" && method === "POST") {
         const body = await parseJsonBody<ProcessInput>(req);
-        if (!body.content && !body.userClarificationAnswer) {
-          sendJson(res, 400, { error: "Missing content or userClarificationAnswer in body" });
+        if (!body.content && !body.userClarificationAnswer && !body.confirmFacts) {
+          sendJson(res, 400, { error: "Missing content, userClarificationAnswer, or confirmFacts in body" });
           return;
         }
         // Identity guard: every request must supply reporter.mobile or an incidentId
@@ -254,6 +254,18 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
         }
         const open = await incidentService.findOpenByMobile(mobile);
         sendJson(res, 200, { found: !!open, incident: open ?? null });
+        return;
+      }
+
+      // GET /v1/incidents/latest?mobile=... — STATUS / restart reconstruction after CAP
+      if (pathname === "/v1/incidents/latest" && method === "GET") {
+        const mobile = url.searchParams.get("mobile");
+        if (!mobile) {
+          sendJson(res, 400, { error: "MOBILE_REQUIRED" });
+          return;
+        }
+        const latest = await incidentService.findLatestByMobile(mobile);
+        sendJson(res, 200, { found: !!latest, incident: latest ?? null });
         return;
       }
 

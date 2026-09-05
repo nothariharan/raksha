@@ -1,30 +1,27 @@
 /**
  * WhatsApp Webhook HTTP Server
- * Exposes the webhook endpoint for Twilio and WhatsApp Cloud API payloads.
+ * Accepts Twilio form-urlencoded and JSON simulator payloads.
+ * Every inbound turn is processed, then replied via Twilio REST outbound.
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { RawWhatsAppPayload } from "./message-normalizer.js";
 import { WhatsAppService, defaultWhatsAppService } from "./whatsapp-service.js";
 import { wireWhatsAppHandoffSubscriber } from "./handoff-subscriber.js";
+import {
+  parseFormUrlEncoded,
+  reconstructTwilioWebhookUrl,
+  shouldValidateTwilioSignature,
+  validateTwilioSignature,
+} from "./twilio.js";
 
-function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
+function readRawBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
     });
-    req.on("end", () => {
-      try {
-        if (!data || data.trim() === "") {
-          resolve({} as T);
-        } else {
-          resolve(JSON.parse(data) as T);
-        }
-      } catch (err) {
-        reject(new Error(`Invalid JSON body: ${(err as Error).message}`));
-      }
-    });
+    req.on("end", () => resolve(data));
     req.on("error", reject);
   });
 }
@@ -37,6 +34,18 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown): void 
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Twilio-Signature",
   });
   res.end(JSON.stringify(data, null, 2));
+}
+
+function sendEmptyTwiml(res: ServerResponse): void {
+  res.writeHead(200, {
+    "Content-Type": "text/xml",
+    "Access-Control-Allow-Origin": "*",
+  });
+  res.end('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+}
+
+function isTwilioShaped(req: IncomingMessage, contentType: string): boolean {
+  return Boolean(req.headers["x-twilio-signature"]) || contentType.includes("application/x-www-form-urlencoded");
 }
 
 export async function handleWhatsAppRequest(
@@ -71,22 +80,51 @@ export async function handleWhatsAppRequest(
     }
 
     if ((pathname === "/whatsapp/webhook" || pathname === "/webhook") && method === "POST") {
-      const body = await parseJsonBody<RawWhatsAppPayload>(req);
+      const raw = await readRawBody(req);
+      const contentType = String(req.headers["content-type"] || "");
+      const formParams = contentType.includes("application/x-www-form-urlencoded")
+        ? parseFormUrlEncoded(raw)
+        : {};
+
+      if (shouldValidateTwilioSignature(req)) {
+        const signature = String(req.headers["x-twilio-signature"] || "");
+        const token = process.env.TWILIO_AUTH_TOKEN || "";
+        const signedUrl = reconstructTwilioWebhookUrl(req, pathname);
+        if (!validateTwilioSignature(token, signature, signedUrl, formParams)) {
+          sendJson(res, 403, { error: "INVALID_TWILIO_SIGNATURE" });
+          return;
+        }
+      }
+
+      let body: RawWhatsAppPayload;
+      if (Object.keys(formParams).length > 0) {
+        body = formParams as RawWhatsAppPayload;
+      } else {
+        body = raw.trim() ? (JSON.parse(raw) as RawWhatsAppPayload) : {};
+      }
+
       const result = await ws.handleIncomingMessage(body);
+      if (isTwilioShaped(req, contentType)) {
+        sendEmptyTwiml(res);
+        return;
+      }
       sendJson(res, 200, result);
       return;
     }
 
     if ((pathname === "/whatsapp/notify" || pathname === "/notify") && method === "POST") {
-      const body = await parseJsonBody<{
-        mobile: string;
-        incidentId: string;
-        referenceNumber: string;
-        amount?: number;
-        channel?: string;
-        bank?: string;
-        utr?: string;
-      }>(req);
+      const raw = await readRawBody(req);
+      const body = raw.trim()
+        ? (JSON.parse(raw) as {
+            mobile: string;
+            incidentId: string;
+            referenceNumber: string;
+            amount?: number;
+            channel?: string;
+            bank?: string;
+            utr?: string;
+          })
+        : ({} as { mobile: string; incidentId: string; referenceNumber: string });
       const result = await ws.notifyCitizenIncidentAccepted(body);
       sendJson(res, 200, result);
       return;
@@ -100,7 +138,6 @@ export async function handleWhatsAppRequest(
 }
 
 export function createWhatsAppWebhookServer(service?: WhatsAppService) {
-  // Ensure citizen notify runs from incident.accepted (event-driven, not scripts)
   wireWhatsAppHandoffSubscriber(service);
   return createServer((req, res) => handleWhatsAppRequest(req, res, service));
 }

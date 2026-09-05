@@ -80,7 +80,18 @@ export interface TransactionDetails {
   beneficiaryIdentifier?: string; // UPI VPA or account number
   beneficiaryInstitution?: string; // e.g. "Yes Bank Ltd"
   channel?: TransactionChannel;
+  application?: string; // e.g. PhonePe / Google Pay
 }
+
+export type FraudCategory =
+  | "ELECTRICITY_BILL_SCAM"
+  | "DIGITAL_ARREST"
+  | "UPI_PAYMENT_FRAUD"
+  | "TASK_SCAM"
+  | "KYC_UPDATE_FRAUD"
+  | "LOTTERY_PHISHING"
+  | "CUSTOMER_CARE_IMPERSONATION"
+  | "OTHER";
 
 export interface ReporterInfo {
   mobile?: string;
@@ -109,6 +120,12 @@ export interface IncidentValidation {
   conflicts: FieldConflict[];
   nextQuestion?: string;
   validatedAt?: string;
+  /** Set once citizen confirmed dossier facts; proof image still required before CAP. */
+  factsConfirmed?: boolean;
+  /** Set once a payment/scam screenshot was verified (vision or heuristic). */
+  proofVerified?: boolean;
+  /** Adaptive context question already answered for this incident. */
+  contextCaptured?: boolean;
 }
 
 export type HandoffStatus =
@@ -138,6 +155,10 @@ export interface FraudIncident {
   state: IncidentState;
   validation: IncidentValidation;
   handoff: IncidentHandoff;
+  /** High-level scam typology from extraction. */
+  fraudCategory?: FraudCategory;
+  /** Short citizen-facing summary of what happened. */
+  scamSummary?: string;
   createdAt: string;
   updatedAt: string;
 }

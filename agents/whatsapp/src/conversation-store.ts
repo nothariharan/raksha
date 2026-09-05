@@ -1,18 +1,35 @@
 /**
- * WhatsApp Session & Conversation Store
- * Maps user mobile phone numbers to active canonical Raksha incidents and handles webhook idempotency.
+ * WhatsApp conversation cache.
+ * Core remains authoritative for incident state. This store only holds
+ * per-process conversation context (language, pending turn, last conflict options).
  */
 
 import { IncidentState } from "@raksha/schemas";
 import { SupportedLanguage } from "@raksha/i18n";
 import { normalizeMobile } from "@raksha/shared";
 
+export interface ConflictOption {
+  label: string;
+  value: unknown;
+}
+
+export interface PendingTurn {
+  modality: "text" | "image" | "voice";
+  content: string;
+}
+
 export interface WhatsAppSession {
   phoneNumber: string;
   activeIncidentId: string | null;
   language: SupportedLanguage;
+  languageConfirmed: boolean;
   lastState: IncidentState | null;
   lastActive: string;
+  hydratedFromCore: boolean;
+  pendingTurn: PendingTurn | null;
+  lastConflictOptions: ConflictOption[];
+  lastConflictField: string | null;
+  lastPendingField: string | null;
 }
 
 export interface CachedMessageReply {
@@ -23,6 +40,22 @@ export interface CachedMessageReply {
   processedAt: string;
 }
 
+function emptySession(phoneNumber: string): WhatsAppSession {
+  return {
+    phoneNumber,
+    activeIncidentId: null,
+    language: "en",
+    languageConfirmed: false,
+    lastState: null,
+    lastActive: new Date().toISOString(),
+    hydratedFromCore: false,
+    pendingTurn: null,
+    lastConflictOptions: [],
+    lastConflictField: null,
+    lastPendingField: null,
+  };
+}
+
 export class WhatsAppConversationStore {
   private sessions: Map<string, WhatsAppSession> = new Map();
   private processedMessages: Map<string, CachedMessageReply> = new Map();
@@ -31,13 +64,7 @@ export class WhatsAppConversationStore {
     const cleanPhone = normalizeMobile(phoneNumber);
     let session = this.sessions.get(cleanPhone);
     if (!session) {
-      session = {
-        phoneNumber: cleanPhone,
-        activeIncidentId: null,
-        language: "en",
-        lastState: null,
-        lastActive: new Date().toISOString(),
-      };
+      session = emptySession(cleanPhone);
       this.sessions.set(cleanPhone, session);
     }
     return session;

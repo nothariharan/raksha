@@ -111,7 +111,7 @@ function compile(gl: WebGLRenderingContext, type: number, src: string) {
 
 export const FluidOrb: FC<FluidOrbProps> = ({
   size = 240,
-  color = "#f97316",
+    color = "#ea580c",
   state = "LISTENING",
   className,
   style,

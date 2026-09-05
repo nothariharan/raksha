@@ -98,9 +98,12 @@ export class PhoneToolsHandler {
     if (isReady) {
       const amt = data.incident.transaction.amount || 0;
       const bank = data.incident.transaction.debitInstitution || "State Bank of India";
-      promptForCaller = lang === "hi"
-        ? `मैंने ₹${amt.toLocaleString()} का लेन-देन और ${bank} बैंक विवरण दर्ज कर लिया है। क्या आप चाहते हैं कि मैं इसे 1930 साइबर सेल को तुरंत भेज दूँ?`
-        : `I have identified the ₹${amt.toLocaleString()} transaction from ${bank}. Should I submit the emergency freeze report now?`;
+      const utr = data.incident.transaction.transactionId || "";
+      const utrBit = utr ? (lang === "hi" ? ` यूटीआर ${utr}।` : ` UTR ${utr}.`) : "";
+      promptForCaller =
+        lang === "hi"
+          ? `मैंने ₹${amt.toLocaleString()} और ${bank} दर्ज कर लिया है।${utrBit} कृपया पुष्टि करें — क्या मैं इसे 1930 साइबर सेल और बैंक को भेज दूँ?`
+          : `I have recorded ₹${amt.toLocaleString()} with ${bank}.${utrBit} Please confirm these details are correct. Shall I send this to 1930 and the bank now?`;
     }
 
     return {
@@ -221,10 +224,12 @@ export class PhoneToolsHandler {
 
     if (isReady) {
       const amt = data.incident.transaction.amount || 0;
+      const bank = data.incident.transaction.debitInstitution || "the bank";
       const utr = data.incident.transaction.transactionId || "Verified";
-      promptForCaller = lang === "hi"
-        ? `विवरण सत्यापित हो गया है: ₹${amt.toLocaleString()}, यूटीआर ${utr}। क्या मैं इसे अभी 1930 पोर्टल पर सबमिट करूँ?`
-        : `Details verified: ₹${amt.toLocaleString()}, UTR ${utr}. May I submit this emergency freeze to the 1930 portal now?`;
+      promptForCaller =
+        lang === "hi"
+          ? `विवरण सत्यापित: ₹${amt.toLocaleString()}, ${bank}, यूटीआर ${utr}। कृपया पुष्टि करें — क्या मैं इसे 1930 और बैंक को भेज दूँ?`
+          : `Details verified: ₹${amt.toLocaleString()}, ${bank}, UTR ${utr}. Please confirm — shall I submit this to 1930 and the bank now?`;
     }
 
     return {
@@ -241,6 +246,8 @@ export class PhoneToolsHandler {
     officialReference: string;
     caseId: string;
     confirmationSpeech: string;
+    portalAUrl?: string;
+    portalBUrl?: string;
   }> {
     const lang = params.language || "hi";
     let incident: FraudIncident | null = null;
@@ -289,16 +296,22 @@ export class PhoneToolsHandler {
     }
 
     const refNum = capData.externalReference || `1930-SYN-${capData.caseId}`;
+    const portalA = process.env.PORTAL_A_BASE_URL || "http://localhost:3003";
+    const portalB = process.env.PORTAL_B_BASE_URL || "http://localhost:3004";
+    const bank = incident.transaction?.debitInstitution || "bank";
 
-    const confirmationSpeech = lang === "hi"
-      ? `आपकी रिपोर्ट दर्ज हो गई है। आपका संदर्भ नंबर है: ${refNum}। संबंधित प्रतिक्रिया प्रक्रिया के लिए अनुरोध भेजा गया है (सिम्युलेटेड प्रदर्शन)।`
-      : `Your emergency fraud report is filed. Your tracking reference is ${refNum}. Emergency response processing request dispatched (Simulated Demonstration).`;
+    const confirmationSpeech =
+      lang === "hi"
+        ? `आपकी रिपोर्ट दर्ज हो गई है। संदर्भ नंबर ${refNum} है। सिम्युलेटेड 1930 डेस्क ${portalA} और ${bank} फ्रीज डेस्क ${portalB} पर देख सकते हैं। अब यहाँ और कुछ करने की जरूरत नहीं है।`
+        : `Your emergency fraud report is filed. Tracking reference ${refNum}. Open the simulated 1930 desk at ${portalA} and the ${bank} freeze desk at ${portalB}. Nothing else you need to do here.`;
 
     return {
       success: true,
       officialReference: refNum,
       caseId: capData.caseId,
       confirmationSpeech,
+      portalAUrl: portalA,
+      portalBUrl: portalB,
     };
   }
 

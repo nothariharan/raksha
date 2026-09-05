@@ -53,6 +53,15 @@ export class ValidationEngine {
       }
     }
 
+    // Keep reconciliation conflicts written by ProcessService — validate()
+    // only sees the merged incident, not the full candidate history.
+    const prior = incident.validation?.conflicts || [];
+    for (const pc of prior) {
+      if (!conflicts.some((c) => c.field === pc.field)) {
+        conflicts.push(pc);
+      }
+    }
+
     // Determine status & next clarification question
     let status: ValidationStatus = "READY";
     let nextQuestion: string | undefined;
@@ -79,6 +88,10 @@ export class ValidationEngine {
       conflicts,
       nextQuestion,
       validatedAt: new Date().toISOString(),
+      // Preserve edge-gate flags — validate() rebuilds status/missing but must not wipe proof flow.
+      factsConfirmed: incident.validation?.factsConfirmed,
+      proofVerified: incident.validation?.proofVerified,
+      contextCaptured: incident.validation?.contextCaptured,
     };
   }
 }
