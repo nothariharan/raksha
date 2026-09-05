@@ -98,6 +98,19 @@ async function isolated() {
   };
 }
 
+async function testHiDoesNotSelectHindi(): Promise<void> {
+  const env = await isolated();
+  const greet = await env.wa.handleIncomingMessage({
+    From: "whatsapp:+919800011122",
+    Body: "hi",
+    MessageSid: "WA-EDGE-HI",
+  });
+  assert.match(greet.replyText, /Please choose your language|English/);
+  assert.doesNotMatch(greet.replyText, /हिंदी में आगे|हम हिंदी/);
+  env.cleanup();
+  console.log("  ✓ greeting hi stays on English picker, not Hindi");
+}
+
 async function testLanguageThenCapLoop(): Promise<void> {
   const env = await isolated();
   const from = "whatsapp:+919811122233";
@@ -318,6 +331,7 @@ async function run(): Promise<void> {
   console.log("  WhatsApp Real Edge — Acceptance");
   console.log("====================================================\n");
 
+  await testHiDoesNotSelectHindi();
   await testLanguageThenCapLoop();
   await testConflictFromCoreNotHardcoded();
   await testWebThenWhatsAppSameCase();

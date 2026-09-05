@@ -2,7 +2,8 @@ import { SupportedLanguage } from "@raksha/i18n";
 
 const LANGUAGE_ALIASES: Array<{ lang: SupportedLanguage; tokens: string[] }> = [
   { lang: "en", tokens: ["1", "en", "eng", "english"] },
-  { lang: "hi", tokens: ["2", "hi", "hin", "hindi", "हिंदी", "हिन्दी"] },
+  // Do not use "hi" — that is the English greeting, not a Hindi choice.
+  { lang: "hi", tokens: ["2", "hin", "hindi", "हिंदी", "हिन्दी"] },
   { lang: "ta", tokens: ["3", "ta", "tam", "tamil", "தமிழ்"] },
   { lang: "te", tokens: ["4", "te", "tel", "telugu", "తెలుగు"] },
   { lang: "kn", tokens: ["5", "kn", "kan", "kannada", "ಕನ್ನಡ"] },
@@ -17,15 +18,19 @@ export function normalizeSupportedLanguage(raw?: string): SupportedLanguage | nu
   return hit?.lang ?? null;
 }
 
+const GREETINGS = /^(hi+|hii+|hello|hey|yo|ok|okay|sup|namaste|hola)$/i;
+
 export function parseLanguageChoice(text: string): SupportedLanguage | null {
   const raw = (text || "").trim();
   if (!raw) return null;
   const compact = raw.toLowerCase().replace(/[.!?,]/g, "");
+  if (GREETINGS.test(compact)) return null;
   for (const row of LANGUAGE_ALIASES) {
     if (row.tokens.some((token) => token.toLowerCase() === compact || token === raw)) {
       return row.lang;
     }
   }
+  if (compact.length <= 2) return null;
   return normalizeSupportedLanguage(raw);
 }
 

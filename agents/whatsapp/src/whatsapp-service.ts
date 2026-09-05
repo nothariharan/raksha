@@ -127,9 +127,13 @@ export class WhatsAppService {
 
     const session = await this.hydrateSession(senderPhone);
     if (inputEvent.language) {
-      const fromPayload = normalizeSupportedLanguage(inputEvent.language);
-      if (fromPayload) {
-        this.store.setSession(senderPhone, { language: fromPayload, languageConfirmed: true });
+      const raw = String(inputEvent.language).trim();
+      const explicit = raw.length > 2 || /^en([-_]|$)/i.test(raw);
+      if (explicit) {
+        const fromPayload = normalizeSupportedLanguage(raw);
+        if (fromPayload) {
+          this.store.setSession(senderPhone, { language: fromPayload, languageConfirmed: true });
+        }
       }
     }
 
@@ -388,6 +392,7 @@ export class WhatsAppService {
     if (latest) {
       this.store.bindIncident(phoneNumber, latest.id, latest.state);
       const lang = normalizeSupportedLanguage(latest.reporter?.preferredLanguage);
+      const inherited = lang && lang !== "hi" ? lang : "en";
       const conflict = latest.validation?.conflicts?.[0];
       const options: ConflictOption[] = (conflict?.values || []).map((value) => ({
         label: typeof value === "number" ? `₹${Number(value).toLocaleString("en-IN")}` : String(value),
@@ -395,8 +400,8 @@ export class WhatsAppService {
       }));
       this.store.setSession(phoneNumber, {
         hydratedFromCore: true,
-        language: lang || session.language,
-        languageConfirmed: Boolean(lang) || Boolean(latest.id),
+        language: inherited,
+        languageConfirmed: inherited !== "en",
         lastConflictOptions: options,
         lastConflictField: conflict?.field || null,
       });
