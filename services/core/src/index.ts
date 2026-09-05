@@ -13,6 +13,7 @@ export * from "./reconciliation/reconciler.js";
 export * from "./clarification/clarification-engine.js";
 export * from "./orchestration/process-service.js";
 export * from "./orchestration/citizen-case-view.js";
+export * from "./orchestration/demo-stale.js";
 export * from "./server.js";
 
 const PORT = Number(process.env.PORT_CORE) || 3001;

@@ -10,6 +10,7 @@ import { defaultEventRepository } from "./repositories/index.js";
 import { MultimodalExtractor } from "./extraction/extractor.js";
 import { ProcessInput, processService } from "./orchestration/process-service.js";
 import { buildCitizenCaseView } from "./orchestration/citizen-case-view.js";
+import { backdateCaseClockForMobile } from "./orchestration/demo-stale.js";
 import { wirePersistentIdentity } from "./db/wire-identity.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
@@ -293,6 +294,33 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
         const events = await defaultEventRepository.findByIncidentId(incident.id);
         const view = buildCitizenCaseView({ incident, events, language });
         sendJson(res, 200, { found: true, view });
+        return;
+      }
+
+      // POST /v1/demo/stale — Minute-2 time jump (DEMO_MODE / non-production only)
+      if (pathname === "/v1/demo/stale" && method === "POST") {
+        const demoOn =
+          /^(1|true|yes)$/i.test(String(process.env.DEMO_MODE ?? "").trim()) ||
+          process.env.NODE_ENV !== "production";
+        if (!demoOn) {
+          sendJson(res, 403, { error: "DEMO_STALE_DISABLED" });
+          return;
+        }
+        const body = await parseJsonBody<{
+          mobile?: string;
+          days?: number;
+          incidentId?: string;
+        }>(req);
+        if (!body.mobile && !body.incidentId) {
+          sendJson(res, 400, { error: "MOBILE_OR_INCIDENT_REQUIRED" });
+          return;
+        }
+        const result = await backdateCaseClockForMobile({
+          mobile: body.mobile || "",
+          days: body.days,
+          incidentId: body.incidentId,
+        });
+        sendJson(res, result.ok ? 200 : 404, result);
         return;
       }
 
