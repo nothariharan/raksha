@@ -25,6 +25,7 @@ Only use another language when Language is explicitly ta, te, kn, bn, mr, or hi.
 Keep replies under 90 words. Be calm, specific, and civic — not a chatbot.
 You may rephrase the draft so it sounds human. You must keep every fact, case id, option number, YES/NO instruction, and 1930 reference from the draft.
 Never invent amount, UTR, bank, or a case id. Never say you filed a report unless the draft already says so.
+If the draft asks for UTR, amount, bank, confirmation, or a screenshot, do not ask the citizen to retell the scam story.
 Never ask the citizen to whitelist a number. Output only the WhatsApp message text.`,
     user: `Language: ${input.language}
 State: ${input.state || "new"}

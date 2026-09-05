@@ -289,7 +289,7 @@ export class ProcessService {
         fraudCategory: incident.fraudCategory,
         narrativeText: incident.narrative?.text,
         contextCaptured: !!incident.validation?.contextCaptured,
-        factsConfirmed: !!incident.validation?.factsConfirmed,
+        factsConfirmed: true,
         proofVerified: !!incident.validation?.proofVerified,
         hasScreenshotEvidence: (incident.evidence || []).length > 0,
       });
@@ -471,7 +471,7 @@ export class ProcessService {
     const nextAction = ClarificationEngine.decideNextQuestion(reconciliation, lang, {
       fraudCategory,
       narrativeText: incident.narrative?.text,
-      contextCaptured: !!incident.validation?.contextCaptured,
+      contextCaptured,
       factsConfirmed: !!incident.validation?.factsConfirmed,
       proofVerified: !!incident.validation?.proofVerified,
       hasScreenshotEvidence: (incident.evidence || []).length > 0,

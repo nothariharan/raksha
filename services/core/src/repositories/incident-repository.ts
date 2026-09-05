@@ -43,11 +43,12 @@ export class IncidentRepository implements IIncidentRepository {
           transaction_amount, transaction_currency, transaction_id, transaction_timestamp,
           debit_institution, beneficiary_identifier, beneficiary_institution, transaction_channel,
           validation_status, validation_missing_fields, validation_conflicts, validation_next_question,
+          validation_context_captured, validation_facts_confirmed, validation_proof_verified,
           handoff_target, handoff_status, handoff_external_reference,
           created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-          $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
+          $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
         ) RETURNING *;
       `;
       await pool.query(query, [
@@ -74,6 +75,9 @@ export class IncidentRepository implements IIncidentRepository {
         JSON.stringify(incident.validation.missingFields),
         JSON.stringify(incident.validation.conflicts),
         incident.validation.nextQuestion || null,
+        !!incident.validation.contextCaptured,
+        !!incident.validation.factsConfirmed,
+        !!incident.validation.proofVerified,
         incident.handoff.target || "portal-a",
         incident.handoff.status || "NOT_STARTED",
         incident.handoff.externalReference || null,
@@ -193,9 +197,13 @@ export class IncidentRepository implements IIncidentRepository {
           state = $1, narrative_text = $2, reporter_mobile = $3,
           transaction_amount = $4, transaction_id = $5,
           validation_status = $6, validation_missing_fields = $7,
-          handoff_status = $8, handoff_external_reference = $9,
-          updated_at = $10
-        WHERE id = $11 RETURNING *;
+          validation_conflicts = $8, validation_next_question = $9,
+          validation_context_captured = $10, validation_facts_confirmed = $11,
+          validation_proof_verified = $12,
+          debit_institution = $13,
+          handoff_status = $14, handoff_external_reference = $15,
+          updated_at = $16
+        WHERE id = $17 RETURNING *;
       `;
       await pool.query(query, [
         merged.state,
@@ -205,6 +213,12 @@ export class IncidentRepository implements IIncidentRepository {
         merged.transaction.transactionId || null,
         merged.validation.status,
         JSON.stringify(merged.validation.missingFields),
+        JSON.stringify(merged.validation.conflicts || []),
+        merged.validation.nextQuestion || null,
+        !!merged.validation.contextCaptured,
+        !!merged.validation.factsConfirmed,
+        !!merged.validation.proofVerified,
+        merged.transaction.debitInstitution || null,
         merged.handoff.status,
         merged.handoff.externalReference || null,
         merged.updatedAt,
@@ -284,6 +298,9 @@ export class IncidentRepository implements IIncidentRepository {
         missingFields: typeof row.validation_missing_fields === "string" ? JSON.parse(row.validation_missing_fields) : (row.validation_missing_fields || []),
         conflicts: typeof row.validation_conflicts === "string" ? JSON.parse(row.validation_conflicts) : (row.validation_conflicts || []),
         nextQuestion: row.validation_next_question,
+        contextCaptured: !!row.validation_context_captured,
+        factsConfirmed: !!row.validation_facts_confirmed,
+        proofVerified: !!row.validation_proof_verified,
       },
       handoff: {
         target: row.handoff_target || "portal-a",

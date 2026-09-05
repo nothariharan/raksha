@@ -233,6 +233,10 @@ export class DatabaseClient {
       CREATE INDEX IF NOT EXISTS idx_events_incident_id ON events(incident_id);
       CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
 
+      ALTER TABLE incidents ADD COLUMN IF NOT EXISTS validation_context_captured BOOLEAN DEFAULT false;
+      ALTER TABLE incidents ADD COLUMN IF NOT EXISTS validation_facts_confirmed BOOLEAN DEFAULT false;
+      ALTER TABLE incidents ADD COLUMN IF NOT EXISTS validation_proof_verified BOOLEAN DEFAULT false;
+
       CREATE SEQUENCE IF NOT EXISTS raksha_incident_seq;
       CREATE SEQUENCE IF NOT EXISTS raksha_case_seq;
       CREATE SEQUENCE IF NOT EXISTS raksha_evidence_seq;

@@ -82,8 +82,14 @@ function contextPrompt(category: FraudCategory | undefined, lang: SupportedLangu
 
 function narrativeNeedsContext(narrativeText: string | undefined, category?: FraudCategory): boolean {
   const text = (narrativeText || "").trim();
-  if (text.length < 48) return true;
-  if (!category || category === "OTHER") return text.length < 120;
+  if (text.length < 40) return true;
+  const hasScamSignal =
+    /\b(scam|scammed|fraud|cheated|tax|upi|kyc|arrest|lottery|refund|otp|paid|pay|rupee|₹)\b/i.test(
+      text
+    );
+  const hasAmountSignal = /\b\d{3,7}\b/.test(text) || /thousand|lakh|₹/i.test(text);
+  if (hasScamSignal && (hasAmountSignal || text.length >= 60)) return false;
+  if (!category || category === "OTHER") return text.length < 80;
   return false;
 }
 

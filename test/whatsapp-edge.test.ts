@@ -111,6 +111,46 @@ async function testHiDoesNotSelectHindi(): Promise<void> {
   console.log("  ✓ greeting hi stays on English picker, not Hindi");
 }
 
+async function testEnglishStoryDoesNotReaskContext(): Promise<void> {
+  const env = await isolated();
+  const from = "whatsapp:+919855566677";
+
+  const greet = await env.wa.handleIncomingMessage({
+    From: from,
+    Body: "hi",
+    MessageSid: "WA-STORY-HI",
+  });
+  assert.match(greet.replyText, /Please choose your language/);
+
+  const lang = await env.wa.handleIncomingMessage({
+    From: from,
+    Body: "1",
+    MessageSid: "WA-STORY-LANG",
+  });
+  assert.match(lang.replyText, /continue in English/i);
+  assert.match(lang.replyText, /describe what happened/i);
+
+  const story = await env.wa.handleIncomingMessage({
+    From: from,
+    Body: "so i was asked to pay 5000 ruppees to a person with regard to tax but then realised i got scammed",
+    MessageSid: "WA-STORY-1",
+  });
+  assert.ok(story.incidentId, "story must open a Core incident");
+  assert.doesNotMatch(
+    story.replyText,
+    /kind of scam|how it started|how did they contact you/i,
+    "a complete paid-tax story must not re-ask for the same story"
+  );
+  assert.match(story.replyText, /UTR|12-digit|Reference Number|bank/i);
+
+  const incident = await env.incidentService.getIncident(story.incidentId!);
+  assert.equal(incident?.validation?.contextCaptured, true);
+  assert.equal(incident?.transaction?.amount, 5000);
+
+  env.cleanup();
+  console.log("  ✓ English tax-scam story advances to UTR/bank, not a second story prompt");
+}
+
 async function testLanguageThenCapLoop(): Promise<void> {
   const env = await isolated();
   const from = "whatsapp:+919811122233";
@@ -332,6 +372,7 @@ async function run(): Promise<void> {
   console.log("====================================================\n");
 
   await testHiDoesNotSelectHindi();
+  await testEnglishStoryDoesNotReaskContext();
   await testLanguageThenCapLoop();
   await testConflictFromCoreNotHardcoded();
   await testWebThenWhatsAppSameCase();
