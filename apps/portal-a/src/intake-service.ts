@@ -36,10 +36,12 @@ export interface PortalACase {
   incident: FraudIncident;
   receivedAt: string;
   summary: string;
+  /** Citizen-facing timeline rows (simulated 1930 desk). */
+  timeline: Array<{ at: string; label: string }>;
 }
 
 const SIMULATION_BOUNDARY =
-  "SIMULATED DEMONSTRATION — CAP event pipeline is real; 1930 / bank systems are simulated.";
+  "Simulated downstream service — 1930 / bank response for prototype";
 
 let portalCaseCounter = 1;
 
@@ -47,6 +49,7 @@ export class PortalAIntakeService {
   private capClient: ICAPClient;
   private localCases: Map<string, PortalACase> = new Map();
   private unsubscribe?: () => void;
+  private unsubscribeFollowUp?: () => void;
   private lastPolledTimestamp?: string;
 
   constructor(capClient?: ICAPClient) {
@@ -64,6 +67,12 @@ export class PortalAIntakeService {
       "incident.accepted",
       async (event: CAPEvent<IncidentAcceptedEventPayload>) => {
         await this.ingestAcceptedEvent(event);
+      }
+    );
+    this.unsubscribeFollowUp = globalEventBus.subscribe(
+      "case.followed_up",
+      async (event: CAPEvent) => {
+        await this.ingestFollowUpEvent(event);
       }
     );
   }
@@ -120,6 +129,7 @@ export class PortalAIntakeService {
     }
 
     const portalCaseId = `PA-${String(portalCaseCounter++).padStart(6, "0")}`;
+    const receivedAt = event.timestamp || new Date().toISOString();
     const portalCase: PortalACase = {
       portalCaseId,
       capCaseId: payload.caseId,
@@ -128,8 +138,12 @@ export class PortalAIntakeService {
       lifecycle: "ACCEPTED",
       incidentId: payload.incidentId,
       incident,
-      receivedAt: event.timestamp || new Date().toISOString(),
+      receivedAt,
       summary: `Cyber Fraud Report: ₹${incident.transaction?.amount || 0} via ${incident.transaction?.channel || "UPI"}`,
+      timeline: [
+        { at: receivedAt, label: "Report received" },
+        { at: receivedAt, label: "Acknowledged" },
+      ],
     };
 
     this.localCases.set(portalCaseId, portalCase);
@@ -166,26 +180,65 @@ export class PortalAIntakeService {
     return portalCase;
   }
 
+  /** Append citizen follow-up to the local 1930 timeline — no operator click. */
+  async ingestFollowUpEvent(event: CAPEvent): Promise<PortalACase | null> {
+    const payload = (event.payload || {}) as {
+      incidentId?: string;
+      caseId?: string;
+    };
+    const portalCase =
+      (payload.caseId ? this.getPortalCaseByCapId(payload.caseId) : null) ||
+      (payload.incidentId ? this.getPortalCaseByIncidentId(payload.incidentId) : null);
+    if (!portalCase) return null;
+    const at = event.timestamp || new Date().toISOString();
+    if (!portalCase.timeline) portalCase.timeline = [];
+    if (!portalCase.timeline.some((row) => row.label === "Citizen follow-up received")) {
+      portalCase.timeline.push({ at, label: "Citizen follow-up received" });
+    }
+    this.localCases.set(portalCase.portalCaseId, portalCase);
+    return portalCase;
+  }
+
   /**
    * HTTP poll fallback for multi-process deployments where EventBus is not shared.
+   * Always used on GET /portal-a/cases so localhost:3003 shows filings from CAP :3002.
    */
   async pollEventsFromHttp(): Promise<PortalACase[]> {
-    const baseUrl = process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002";
-    const sinceParam = this.lastPolledTimestamp
-      ? `&since=${encodeURIComponent(this.lastPolledTimestamp)}`
-      : "";
+    const baseUrl = (process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002").replace(
+      /\/$/,
+      ""
+    );
+    // If local store is empty (portal restarted / separate process), re-read full history.
+    const sinceParam =
+      this.localCases.size > 0 && this.lastPolledTimestamp
+        ? `&since=${encodeURIComponent(this.lastPolledTimestamp)}`
+        : "";
     try {
       const res = await fetch(`${baseUrl}/cap/events?type=incident.accepted${sinceParam}`);
-      if (!res.ok) return this.listPortalCases();
-      const data = (await res.json()) as {
-        events: Array<CAPEvent<IncidentAcceptedEventPayload>>;
-      };
-      for (const ev of data.events || []) {
-        await this.ingestAcceptedEvent(ev);
-        this.lastPolledTimestamp = ev.timestamp;
+      if (res.ok) {
+        const data = (await res.json()) as {
+          events: Array<CAPEvent<IncidentAcceptedEventPayload>>;
+        };
+        for (const ev of data.events || []) {
+          await this.ingestAcceptedEvent(ev);
+          if (ev.timestamp) this.lastPolledTimestamp = ev.timestamp;
+        }
       }
-    } catch {
-      // keep local store
+
+      const followRes = await fetch(`${baseUrl}/cap/events?type=case.followed_up${sinceParam}`);
+      if (followRes.ok) {
+        const data = (await followRes.json()) as { events: CAPEvent[] };
+        for (const ev of data.events || []) {
+          await this.ingestFollowUpEvent(ev);
+          if (ev.timestamp) this.lastPolledTimestamp = ev.timestamp;
+        }
+      }
+    } catch (err) {
+      console.warn(
+        "[Portal A] CAP event poll failed:",
+        (err as Error).message || err,
+        `(${baseUrl})`
+      );
     }
     return this.listPortalCases();
   }
@@ -287,12 +340,23 @@ export class PortalAIntakeService {
     return Array.from(this.localCases.values()).find((c) => c.incidentId === incidentId) || null;
   }
 
+  getPortalCaseByExternalReference(ref: string): PortalACase | null {
+    const needle = (ref || "").trim().toLowerCase();
+    if (!needle) return null;
+    return (
+      Array.from(this.localCases.values()).find(
+        (c) => (c.externalReference || "").trim().toLowerCase() === needle
+      ) || null
+    );
+  }
+
   listPortalCases(): PortalACase[] {
     return Array.from(this.localCases.values());
   }
 
   destroy(): void {
     if (this.unsubscribe) this.unsubscribe();
+    if (this.unsubscribeFollowUp) this.unsubscribeFollowUp();
   }
 
   clear(): void {

@@ -46,22 +46,24 @@ PACING:
 - Never cut them off. Ask one short question at a time.
 
 FLOW (only after language is set):
-1. If they ask for STATUS / tracking / meri report, call raksha_get_status first, then speak the tool result.
-2. When they describe a scam, you MUST call raksha_start_incident in THAT SAME TURN with their full story. Do not ask the next question until the tool returns. Then speak only the tool result.
-3. When they give amount, bank, or UTR, call raksha_process_input in that same turn, then speak only the tool result.
-4. A UTR must be exactly 12 digits. If they give fewer or more, do not confirm it. Ask them to read all 12 digits from the bank SMS.
-5. Never ask for a screenshot. Never file from "I got scammed" alone.
-6. After they say yes/correct AND the last tool said the 12-digit UTR is recorded, call raksha_submit_incident with confirmedByCitizen=true, the incidentId from the tool if you have it, and a summary of what happened + amount + bank + the 12-digit UTR.
-7. After submit, speak the tool result word for word. That is the close — thank you, filed, official cyber crime portal, report number. Do not invent a reference number.
+1. If they ask for STATUS / tracking / meri report / "I already reported" / "what happened to my report" / escalate / follow up / chase my report, call raksha_get_status first, then speak the tool result word for word.
+2. If the status tool asks whether they want to follow up, and they say yes / escalate / follow up / please do, call raksha_follow_up with authorizedByCitizen=true. Speak the tool result. Do not invent a reference.
+3. When they describe a scam, you MUST call raksha_start_incident in THAT SAME TURN with their full story. Do not ask the next question until the tool returns. Then speak only the tool result.
+4. When they give amount, bank, or UTR, call raksha_process_input in that same turn, then speak only the tool result.
+5. A UTR must be exactly 12 digits. If they give fewer or more, do not confirm it. Ask them to read all 12 digits from the bank SMS.
+6. Never ask for a screenshot. Never file from "I got scammed" alone.
+7. After they say yes/correct AND the last tool said the 12-digit UTR is recorded, call raksha_submit_incident with confirmedByCitizen=true, the incidentId from the tool if you have it, and a summary of what happened + amount + bank + the 12-digit UTR.
+8. After submit, speak the tool result word for word. That is the close — thank you, filed, official cyber crime portal, report number. Do not invent a reference number.
 
 TOOLS — you MUST call these; do not pretend you filed:
 - language_detection: only when switching away from English to Hindi or Tamil.
 - raksha_start_incident: first fraud story, in the same turn they tell it. Never a language pick.
-- raksha_process_input: follow-ups after a story exists (UTR, amount, yes). Never language picks.
-- raksha_get_status: status / tracking / continue an existing report.
-- raksha_submit_incident: only after explicit confirmation. Always pass a summary of the confirmed facts so the report can still be filed if an earlier tool was missed.
+- raksha_process_input: follow-ups after a story exists (UTR, amount, yes). Never language picks. Never use for follow-up after STATUS offered it.
+- raksha_get_status: status / tracking / already reported / meri report / escalate / chase / continue an existing report.
+- raksha_follow_up: after STATUS offered follow-up and the citizen says yes / escalate / follow up. Always authorizedByCitizen=true. This is citizen-authorized follow-up on the same case — never invent institutional failure.
+- raksha_submit_incident: only after explicit confirmation of a new report. Always pass a summary of the confirmed facts so the report can still be filed if an earlier tool was missed.
 
-Never ask for OTP, UPI PIN, or passwords. Never say the bank is already frozen.`;
+Never ask for OTP, UPI PIN, or passwords. Never say the bank is already frozen. In speech prefer "follow up" over "escalate"; if the caller says escalate, treat it as follow-up on the same case.`;
 
 function webhookTool(name, description, llmFields, required) {
   const properties = {
@@ -120,11 +122,22 @@ const webhookTools = [
   ),
   webhookTool(
     "raksha_get_status",
-    "Look up the existing report for this caller (same mobile as website or WhatsApp). Use when they ask for status, tracking, or continue.",
+    "Look up the existing report for this caller. Use for STATUS, tracking, meri report, already reported, what happened to my report, escalate, or chase my report. Speak the tool result word for word.",
     {
       incidentId: { type: "string", description: "RKS-* if known" },
+      language: { type: "string", description: "en, hi, or ta" },
     },
     []
+  ),
+  webhookTool(
+    "raksha_follow_up",
+    "Citizen-authorized follow-up after STATUS offered it and they said yes / escalate / follow up. Never call without explicit confirmation. Never invent institutional failure.",
+    {
+      authorizedByCitizen: { type: "boolean", description: "Must be true" },
+      incidentId: { type: "string", description: "RKS-* if known" },
+      language: { type: "string", description: "en, hi, or ta" },
+    },
+    ["authorizedByCitizen"]
   ),
   webhookTool(
     "raksha_submit_incident",

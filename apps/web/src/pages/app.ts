@@ -1496,13 +1496,40 @@ const bodyContent = `
               <div>
                 <h3>Report handed off</h3>
                 <p class="filed-card-sub">The simulated 1930 desk and bank freeze desk have this case.</p>
-                <p class="filed-disclaimer">Simulated demonstration. Not a real government filing.</p>
+                <p class="filed-disclaimer">Simulated downstream service — 1930 / bank response for prototype. Synthetic demo data only.</p>
               </div>
             </div>
             <div class="filed-ref">Tracking <span id="repRefNum">—</span></div>
             <div id="wsFilingLinks" style="display:flex;flex-direction:column;gap:0.55rem;margin:0 0 1rem;"></div>
             <div class="status-list" id="liveTimeline"></div>
+            <div id="followUpPanel" style="display:none;margin:1rem 0;padding:0.85rem 1rem;border:1px solid rgba(15,23,42,0.12);border-radius:12px;background:#fffbeb;">
+              <p id="followUpCopy" style="margin:0 0 0.75rem;font-size:0.92rem;line-height:1.45;color:#422006;"></p>
+              <button type="button" class="btn-dispatch" id="followUpBtn" onclick="authorizeCitizenFollowUp()">Yes — follow up</button>
+            </div>
             <button class="btn-link-type" onclick="resetToHome()">File another report</button>
+          </div>
+        </div>
+
+        <!-- EXISTING FILED CASE (hydrate on load) -->
+        <div id="wsTrackExisting" style="display: none;">
+          <div class="filed-card">
+            <div class="filed-card-head">
+              <img class="filed-card-mark" src="/images/line/card-filed-mark.png" alt="" draggable="false" />
+              <div>
+                <h3>Your existing report</h3>
+                <p class="filed-card-sub" id="trackExistingSub">Same case across Web, WhatsApp, and Phone.</p>
+                <p class="filed-disclaimer">Simulated downstream service — 1930 / bank response for prototype. Synthetic demo data only.</p>
+              </div>
+            </div>
+            <div class="filed-ref">Case <span id="trackCaseId">—</span></div>
+            <div class="filed-ref" style="margin-top:0.35rem;">Tracking <span id="trackRefNum">—</span></div>
+            <p id="trackSpoken" style="margin:0.85rem 0;font-size:0.95rem;line-height:1.5;color:var(--text);"></p>
+            <div class="status-list" id="trackTimeline"></div>
+            <div id="trackFollowUpPanel" style="display:none;margin:1rem 0;padding:0.85rem 1rem;border:1px solid rgba(15,23,42,0.12);border-radius:12px;background:#fffbeb;">
+              <p id="trackFollowUpCopy" style="margin:0 0 0.75rem;font-size:0.92rem;line-height:1.45;color:#422006;"></p>
+              <button type="button" class="btn-dispatch" onclick="authorizeCitizenFollowUp()">Yes — follow up</button>
+            </div>
+            <button class="btn-link-type" onclick="startNewReportFromTrack()">Start a new report instead</button>
           </div>
         </div>
 
@@ -1902,13 +1929,19 @@ const bodyContent = `
       function filingLinkCardsHtml(bankName, refNumber) {
         const bank = bankName || "Bank";
         const ref = refNumber ? '<div class="dossier-ref" style="margin-bottom:0.35rem;">' + escapeHtml(refNumber) + "</div>" : "";
+        const portalAHref = refNumber
+          ? String(PORTAL_A_URL).replace(/\\/$/, "") + "/?ref=" + encodeURIComponent(refNumber)
+          : PORTAL_A_URL;
+        const portalBHref = refNumber
+          ? String(PORTAL_B_URL).replace(/\\/$/, "") + "/?ref=" + encodeURIComponent(refNumber)
+          : PORTAL_B_URL;
         return (
           ref +
-          '<a class="dossier-link" href="' + escapeHtml(PORTAL_A_URL) + '" target="_blank" rel="noopener">' +
+          '<a class="dossier-link" href="' + escapeHtml(portalAHref) + '" target="_blank" rel="noopener">' +
             '<div class="dossier-link-title">1930 cyber cell desk</div>' +
             '<div class="dossier-link-sub">Open the simulated Portal A intake for this case</div>' +
           "</a>" +
-          '<a class="dossier-link" href="' + escapeHtml(PORTAL_B_URL) + '" target="_blank" rel="noopener">' +
+          '<a class="dossier-link" href="' + escapeHtml(portalBHref) + '" target="_blank" rel="noopener">' +
             '<div class="dossier-link-title">' + escapeHtml(bank) + " freeze desk</div>" +
             '<div class="dossier-link-sub">Open the simulated Portal B bank response console</div>' +
           "</a>"
@@ -3301,7 +3334,8 @@ const bodyContent = `
           CONFLICT: "wsConflict",
           READY: "wsReady",
           ERROR: "wsError",
-          SUBMITTED: "wsSubmitted"
+          SUBMITTED: "wsSubmitted",
+          TRACK: "wsTrackExisting"
         };
         Object.values(views).forEach(id => {
           const el = document.getElementById(id);
@@ -3312,6 +3346,155 @@ const bodyContent = `
           const el = document.getElementById(active);
           if (el) el.style.display = "block";
         }
+      }
+
+      function renderCitizenTimeline(el, timeline) {
+        if (!el) return;
+        if (!timeline || !timeline.length) {
+          el.innerHTML = '<div class="status-step"><span class="status-step-label">No updates yet.</span></div>';
+          return;
+        }
+        el.innerHTML = timeline.map(function (row) {
+          return (
+            '<div class="status-step">' +
+            '<span class="status-step-label">' + (row.label || "") + '</span>' +
+            '<span class="status-step-time">' + String(row.at || "").slice(0, 10) + '</span>' +
+            "</div>"
+          );
+        }).join("");
+      }
+
+      function applyCitizenCaseView(view, where) {
+        if (!view) return;
+        const target = where || "track";
+        if (target === "submitted") {
+          const refEl = document.getElementById("repRefNum");
+          if (refEl) refEl.innerText = view.externalReference || view.incidentId || "—";
+          renderCitizenTimeline(document.getElementById("liveTimeline"), view.timeline || []);
+          const panel = document.getElementById("followUpPanel");
+          const copy = document.getElementById("followUpCopy");
+          if (panel && copy) {
+            if (view.followUpAvailable) {
+              panel.style.display = "block";
+              copy.innerText = view.spokenStatus || "No new response has been recorded. Would you like me to follow up?";
+            } else {
+              panel.style.display = "none";
+            }
+          }
+          return;
+        }
+        const idEl = document.getElementById("trackCaseId");
+        const refEl = document.getElementById("trackRefNum");
+        const spoken = document.getElementById("trackSpoken");
+        if (idEl) idEl.innerText = view.incidentId || "—";
+        if (refEl) refEl.innerText = view.externalReference || "—";
+        if (spoken) spoken.innerText = view.spokenStatus || "";
+        renderCitizenTimeline(document.getElementById("trackTimeline"), view.timeline || []);
+        const panel = document.getElementById("trackFollowUpPanel");
+        const copy = document.getElementById("trackFollowUpCopy");
+        if (panel && copy) {
+          if (view.followUpAvailable) {
+            panel.style.display = "block";
+            copy.innerText = view.promptFollowUp || "Would you like me to follow up?";
+          } else {
+            panel.style.display = "none";
+          }
+        }
+      }
+
+      async function hydrateCitizenCaseOnLoad() {
+        try {
+          const mobileInput = document.getElementById("reporterMobile");
+          if (mobileInput && mobileInput.value) currentReporterMobile = mobileInput.value.trim();
+          const res = await protocolFetch(
+            CORE_URL + "/v1/citizen-case?mobile=" + encodeURIComponent(currentReporterMobile) +
+              "&language=" + encodeURIComponent(currentLanguage || "en")
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!data.found || !data.view) return;
+          const view = data.view;
+          const filed = ["SUBMITTED", "ACKNOWLEDGED", "FOLLOW_UP_AVAILABLE", "FOLLOW_UP_SENT", "AWAITING_RESPONSE", "RESOLVED", "IN_REVIEW"].indexOf(view.citizenStatus) >= 0
+            || ["SUBMITTED", "ACKNOWLEDGED", "FOLLOW_UP_REQUIRED", "TRACKING"].indexOf(view.incident?.state) >= 0;
+          if (filed) {
+            currentIncidentId = view.incidentId;
+            currentIncident = view.incident || null;
+            startFreshCase = true;
+            applyCitizenCaseView(view, "track");
+            showWsView("TRACK");
+            return;
+          }
+          // Open intake case — resume instead of forceNew
+          if (view.incidentId) {
+            currentIncidentId = view.incidentId;
+            currentIncident = view.incident || null;
+            startFreshCase = false;
+          }
+        } catch (err) {
+          console.warn("citizen-case hydrate skipped", err);
+        }
+      }
+
+      async function authorizeCitizenFollowUp() {
+        if (!currentIncidentId) return;
+        showWsView("PROCESSING");
+        try {
+          const idemKey = "follow-up-" + currentIncidentId;
+          const res = await protocolFetch(CAP_URL + "/cap/actions/execute", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Idempotency-Key": idemKey
+            },
+            body: JSON.stringify({
+              action: "follow_up_case",
+              payload: {
+                incidentId: currentIncidentId,
+                authorizedByCitizen: true,
+                note: "Citizen follow-up via Web"
+              },
+              idempotencyKey: idemKey
+            })
+          });
+          const data = await res.json().catch(function () { return {}; });
+          if (!res.ok || !data.success) {
+            showError(
+              "Follow-up could not be recorded",
+              data.error || "Please try again. Your case was not lost.",
+              function () { showWsView("TRACK"); }
+            );
+            return;
+          }
+          const refresh = await protocolFetch(
+            CORE_URL + "/v1/citizen-case?incidentId=" + encodeURIComponent(currentIncidentId) +
+              "&language=" + encodeURIComponent(currentLanguage || "en")
+          );
+          const refreshed = await refresh.json().catch(function () { return {}; });
+          if (refreshed.view) {
+            applyCitizenCaseView(refreshed.view, "track");
+            showWsView("TRACK");
+          } else {
+            applyCitizenCaseView({
+              incidentId: currentIncidentId,
+              externalReference: data.externalReference,
+              spokenStatus: "Follow-up received. Your case remains active.",
+              timeline: [{ at: new Date().toISOString(), label: "Citizen follow-up received" }],
+              followUpAvailable: false
+            }, "track");
+            showWsView("TRACK");
+          }
+        } catch (err) {
+          showError("Follow-up could not be recorded", (err && err.message) || "Network error", function () {
+            showWsView("TRACK");
+          });
+        }
+      }
+
+      function startNewReportFromTrack() {
+        currentIncidentId = null;
+        currentIncident = null;
+        startFreshCase = true;
+        showWsView("IDLE");
       }
 
       function humanStatusSteps(events) {
@@ -3478,10 +3661,11 @@ const bodyContent = `
       window.submitQuestionAnswer = submitQuestionAnswer;
       window.dispatchEmergencyReport = dispatchEmergencyReport;
       window.resetToHome = resetToHome;
+      window.authorizeCitizenFollowUp = authorizeCitizenFollowUp;
+      window.startNewReportFromTrack = startNewReportFromTrack;
 
-      // Intentionally no load-time open-incident recovery.
-      // Fresh /app must render with empty incident facts; Core populates only after live turns.
-      // Cross-channel resume still works via mobile on process / open APIs when the citizen speaks.
+      // Hydrate existing filed/open case by mobile so Web joins the same RKS-* as WhatsApp/Phone.
+      hydrateCitizenCaseOnLoad();
     </script>
   `;
 

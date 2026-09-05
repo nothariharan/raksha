@@ -183,7 +183,7 @@ async function run(): Promise<void> {
   waStore.bindIncident("919876543210", incidentId, "ACKNOWLEDGED");
   const status = await waService.handleIncomingMessage({
     From: "whatsapp:+919876543210",
-    Body: "STATUS",
+    Body: `STATUS ${incidentId}`,
     MessageSid: `WA-STATUS-${Date.now()}`,
   });
   assert.equal(status.incidentId, incidentId);

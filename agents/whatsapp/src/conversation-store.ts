@@ -30,6 +30,10 @@ export interface WhatsAppSession {
   lastConflictOptions: ConflictOption[];
   lastConflictField: string | null;
   lastPendingField: string | null;
+  /** After STATUS offered follow-up; next YES invokes follow_up_case. */
+  pendingFollowUp: boolean;
+  /** STATUS asked for RKS-*; waiting for the citizen to send the case id. */
+  pendingStatusCaseAsk: boolean;
 }
 
 export interface CachedMessageReply {
@@ -53,6 +57,8 @@ function emptySession(phoneNumber: string): WhatsAppSession {
     lastConflictOptions: [],
     lastConflictField: null,
     lastPendingField: null,
+    pendingFollowUp: false,
+    pendingStatusCaseAsk: false,
   };
 }
 

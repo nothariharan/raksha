@@ -253,7 +253,7 @@ async function testLanguageThenCapLoop(): Promise<void> {
 
   const status = await env.wa.handleIncomingMessage({
     From: from,
-    Body: "STATUS",
+    Body: `STATUS ${incidentId}`,
     MessageSid: "WA-EDGE-5",
   });
   assert.equal(status.incidentId, incidentId);
@@ -276,7 +276,7 @@ async function testLanguageThenCapLoop(): Promise<void> {
   });
   const afterRestart = await wa2.handleIncomingMessage({
     From: from,
-    Body: "STATUS",
+    Body: `STATUS ${incidentId}`,
     MessageSid: "WA-EDGE-6",
   });
   assert.equal(afterRestart.incidentId, incidentId, "restart must reconstruct the same RKS-* from Core");
@@ -340,7 +340,7 @@ async function testWebThenWhatsAppSameCase(): Promise<void> {
 
   const status = await env.wa.handleIncomingMessage({
     From: `whatsapp:${mobile}`,
-    Body: "STATUS",
+    Body: `STATUS ${web.incidentId}`,
     MessageSid: "WA-ID-1",
   });
   assert.equal(status.incidentId, web.incidentId);
@@ -439,7 +439,7 @@ async function testDeployedDeskUrls(): Promise<void> {
     );
     const status = await env.wa.handleIncomingMessage({
       From: `whatsapp:${mobile}`,
-      Body: "STATUS",
+      Body: `STATUS ${opened.incidentId}`,
       MessageSid: "WA-DESK-STATUS",
     });
     assert.match(status.replyText, /https:\/\/raksha-protocol\.onrender\.com\/portal-a/);

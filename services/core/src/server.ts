@@ -9,6 +9,7 @@ import { evidenceService } from "./evidence-service.js";
 import { defaultEventRepository } from "./repositories/index.js";
 import { MultimodalExtractor } from "./extraction/extractor.js";
 import { ProcessInput, processService } from "./orchestration/process-service.js";
+import { buildCitizenCaseView } from "./orchestration/citizen-case-view.js";
 import { wirePersistentIdentity } from "./db/wire-identity.js";
 
 function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
@@ -266,6 +267,32 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
         }
         const latest = await incidentService.findLatestByMobile(mobile);
         sendJson(res, 200, { found: !!latest, incident: latest ?? null });
+        return;
+      }
+
+      // GET /v1/citizen-case?mobile=... | ?incidentId=... — Track / follow-up projection
+      if (pathname === "/v1/citizen-case" && method === "GET") {
+        const mobile = url.searchParams.get("mobile");
+        const incidentId = url.searchParams.get("incidentId");
+        const language = url.searchParams.get("language") || undefined;
+        let incident = null;
+        if (incidentId) {
+          incident = await incidentService.getIncident(incidentId);
+        } else if (mobile) {
+          incident =
+            (await incidentService.findOpenByMobile(mobile)) ||
+            (await incidentService.findLatestByMobile(mobile));
+        } else {
+          sendJson(res, 400, { error: "MOBILE_OR_INCIDENT_REQUIRED" });
+          return;
+        }
+        if (!incident) {
+          sendJson(res, 200, { found: false, view: null });
+          return;
+        }
+        const events = await defaultEventRepository.findByIncidentId(incident.id);
+        const view = buildCitizenCaseView({ incident, events, language });
+        sendJson(res, 200, { found: true, view });
         return;
       }
 

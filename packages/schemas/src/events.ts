@@ -10,7 +10,8 @@ export type CAPEventType =
   | "service.accepted"
   | "response.acknowledged"
   | "evidence.sealed"
-  | "case.updated";
+  | "case.updated"
+  | "case.followed_up";
 
 export interface CAPEvent<T = unknown> {
   id: string; // e.g. "EVT-000001"
@@ -67,4 +68,13 @@ export interface ResponseAcknowledgedEventPayload {
   caseId: string;
   responderInstitution: string;
   actionTaken: string;
+}
+
+export interface CaseFollowedUpEventPayload {
+  incidentId: string;
+  caseId: string;
+  externalReference?: string;
+  authorizedByCitizen: true;
+  note?: string;
+  simulationBoundary?: string;
 }

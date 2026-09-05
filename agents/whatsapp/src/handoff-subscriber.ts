@@ -1,15 +1,21 @@
 /**
  * WhatsApp handoff subscriber
  *
- * Listens for CAP incident.accepted and sends the citizen notification automatically.
- * No scripts/send-whatsapp.mjs in the happy path.
+ * Listens for CAP incident.accepted and case.followed_up; notifies the citizen.
+ * No scripts in the happy path.
  */
 
-import { CAPEvent, IncidentAcceptedEventPayload, FraudIncident } from "@raksha/schemas";
+import {
+  CAPEvent,
+  IncidentAcceptedEventPayload,
+  CaseFollowedUpEventPayload,
+  FraudIncident,
+} from "@raksha/schemas";
 import { globalEventBus } from "@raksha/shared";
 import { WhatsAppService, defaultWhatsAppService } from "./whatsapp-service.js";
 
 let unsubscribe: (() => void) | null = null;
+let unsubscribeFollowUp: (() => void) | null = null;
 let wired = false;
 
 export function wireWhatsAppHandoffSubscriber(service?: WhatsAppService): () => void {
@@ -49,6 +55,32 @@ export function wireWhatsAppHandoffSubscriber(service?: WhatsAppService): () => 
     }
   );
 
+  unsubscribeFollowUp = globalEventBus.subscribe<CaseFollowedUpEventPayload>(
+    "case.followed_up",
+    async (event: CAPEvent<CaseFollowedUpEventPayload>) => {
+      const payload = event.payload;
+      if (!payload?.incidentId) return;
+      try {
+        const incident = await ws.getIncidentStatus(payload.incidentId);
+        const mobile = incident?.reporter?.mobile;
+        if (!mobile) {
+          console.warn("[WhatsAppHandoff] follow-up notify skipped — no mobile on incident");
+          return;
+        }
+        await ws.notifyCitizenFollowUp({
+          mobile,
+          incidentId: payload.incidentId,
+          referenceNumber: payload.externalReference,
+        });
+        console.log(
+          `[WhatsAppHandoff] Follow-up notified ${mobile} for ${payload.incidentId}`
+        );
+      } catch (err) {
+        console.error("[WhatsAppHandoff] Follow-up notify failed:", err);
+      }
+    }
+  );
+
   wired = true;
   return unsubscribe;
 }
@@ -57,6 +89,10 @@ export function unwireWhatsAppHandoffSubscriber(): void {
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
-    wired = false;
   }
+  if (unsubscribeFollowUp) {
+    unsubscribeFollowUp();
+    unsubscribeFollowUp = null;
+  }
+  wired = false;
 }

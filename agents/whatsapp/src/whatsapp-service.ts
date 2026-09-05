@@ -11,7 +11,7 @@ import {
   NormalizedInputEvent,
   ProcessResponse,
 } from "@raksha/schemas";
-import { ProcessInput, ProcessOutput, processService, incidentService } from "@raksha/core";
+import { ProcessInput, ProcessOutput, processService, incidentService, buildCitizenCaseView, formatCitizenStatusWhatsApp, defaultEventRepository } from "@raksha/core";
 import { normalizeMobile } from "@raksha/shared";
 import { actionRouter } from "@raksha/cap";
 import { SupportedLanguage } from "@raksha/i18n";
@@ -31,6 +31,7 @@ import {
   formatAccepted,
   formatAskNarrative,
   formatConflict,
+  formatFollowUpAccepted,
   formatLanguagePicker,
   formatNoCase,
   formatNotifyAccepted,
@@ -48,6 +49,7 @@ export interface WhatsAppIncidentLookup {
   findOpenByMobile(mobile: string): Promise<FraudIncident | null>;
   findLatestByMobile(mobile: string): Promise<FraudIncident | null>;
   getIncident(id: string): Promise<FraudIncident | null>;
+  listEvents?: (incidentId: string) => Promise<import("@raksha/schemas").CAPEvent[]>;
 }
 
 export interface WhatsAppServiceConfig {
@@ -57,6 +59,12 @@ export interface WhatsAppServiceConfig {
   incidentLookup?: WhatsAppIncidentLookup;
   processInput?: (input: ProcessInput) => Promise<ProcessOutput>;
   executeCap?: (incident: FraudIncident, idempotencyKey: string) => Promise<CAPActionResponse>;
+  /** Isolated tests: route CAP actions (incl. follow_up_case) at the in-memory ActionRouter. */
+  executeAction?: (
+    action: string,
+    payload: unknown,
+    idempotencyKey: string
+  ) => Promise<CAPActionResponse>;
   sendOutbound?: (to: string, body: string) => Promise<TwilioOutboundResult>;
 }
 
@@ -83,7 +91,27 @@ function parseAmount(text: string): number | null {
 }
 
 function isStatusCommand(text: string): boolean {
-  return /^\s*(status|check status|case|track)\s*$/i.test(text);
+  const t = (text || "").trim();
+  if (/^\s*(status|check status|case|track)\s*$/i.test(t)) return true;
+  if (/^\s*(status|check status|track)\s+RKS[- ]?\d+/i.test(t)) return true;
+  if (
+    /\b(already reported|what happened to my report|meri report|apni report|kya hua)\b/i.test(t)
+  ) {
+    return true;
+  }
+  if (/मेरी रिपोर्ट|क्या हुआ|पहले रिपोर्ट/.test(t)) return true;
+  return false;
+}
+
+function isGreeting(text: string): boolean {
+  const t = (text || "").trim();
+  return /^(hi|hii|hello|hey|yo|hola|namaste|namaskar|vanakkam)([!.\s]*)$/i.test(t);
+}
+
+function extractCaseId(text: string): string | null {
+  const m = (text || "").match(/\bRKS[-\s]?(\d{1,8})\b/i);
+  if (!m) return null;
+  return `RKS-${m[1].padStart(6, "0")}`;
 }
 
 function isYes(value: string): boolean {
@@ -97,6 +125,7 @@ export class WhatsAppService {
   private incidentLookup?: WhatsAppIncidentLookup;
   private processInputFn?: (input: ProcessInput) => Promise<ProcessOutput>;
   private executeCapFn?: (incident: FraudIncident, idempotencyKey: string) => Promise<CAPActionResponse>;
+  private executeActionFn?: WhatsAppServiceConfig["executeAction"];
   private sendOutboundFn: (to: string, body: string) => Promise<TwilioOutboundResult>;
 
   constructor(config?: WhatsAppServiceConfig) {
@@ -106,6 +135,7 @@ export class WhatsAppService {
     this.incidentLookup = config?.incidentLookup;
     this.processInputFn = config?.processInput;
     this.executeCapFn = config?.executeCap;
+    this.executeActionFn = config?.executeAction;
     this.sendOutboundFn = config?.sendOutbound || sendTwilioWhatsApp;
   }
 
@@ -184,7 +214,25 @@ export class WhatsAppService {
           : "";
 
     if (inputEvent.type === "TEXT" && isStatusCommand(textValue)) {
-      return this.replyStatus(senderPhone, messageId);
+      return this.replyStatus(senderPhone, messageId, textValue);
+    }
+
+    if (live.pendingStatusCaseAsk && inputEvent.type === "TEXT") {
+      const caseId = extractCaseId(textValue);
+      if (caseId) {
+        return this.replyStatus(senderPhone, messageId, caseId);
+      }
+      return this.finish(
+        senderPhone,
+        messageId,
+        `Please reply with your case ID like *RKS-000006* (or the tracking ref from your filing message).`,
+        live.activeIncidentId,
+        live.lastState
+      );
+    }
+
+    if (inputEvent.type === "TEXT" && isGreeting(textValue)) {
+      return this.replyGreeting(senderPhone, messageId);
     }
 
     if (this.shouldAskLanguage(live, inputEvent, textValue)) {
@@ -209,6 +257,14 @@ export class WhatsAppService {
     }
 
     const confirmationValue = inputEvent.type === "CONFIRMATION" ? String(inputEvent.value) : textValue;
+
+    if (
+      live.pendingFollowUp &&
+      live.activeIncidentId &&
+      (inputEvent.type === "CONFIRMATION" || isYes(textValue))
+    ) {
+      return this.submitFollowUp(live.activeIncidentId, senderPhone, messageId);
+    }
 
     if (live.lastState === "READY" && (inputEvent.type === "CONFIRMATION" || isYes(textValue))) {
       if (live.activeIncidentId && (isYes(textValue) || confirmationValue.toUpperCase() === "1")) {
@@ -346,14 +402,14 @@ export class WhatsAppService {
     } else if (processData.state === "READY") {
       replyText = formatReady(lang, incident);
     } else if (processData.state === "SUBMITTED" || processData.state === "ACKNOWLEDGED") {
-      const desks = resolveDeskUrls();
-      replyText = formatAccepted(
-        lang,
-        incident,
-        incident.handoff?.externalReference || incident.id,
-        desks.portalA,
-        desks.portalB
-      );
+      // Already-filed resume must not re-dump the freeze packet (e.g. citizen said "hi").
+      replyText =
+        `Your case *${incident.id}* is already filed` +
+        (incident.handoff?.externalReference
+          ? ` (ref *${incident.handoff.externalReference}*).`
+          : ".") +
+        `\n\nReply *STATUS* to see when it was filed and what happens next.\n` +
+        `Or tell me if you need to report a *new* fraud.`;
     } else {
       replyText = formatRecorded(incident.id, processData.nextAction.prompt);
     }
@@ -361,28 +417,217 @@ export class WhatsAppService {
     return this.finish(senderPhone, messageId, replyText, processData.incidentId, processData.state);
   }
 
-  private async replyStatus(senderPhone: string, messageId: string): Promise<WhatsAppProcessResult> {
+  private async replyGreeting(
+    senderPhone: string,
+    messageId: string
+  ): Promise<WhatsAppProcessResult> {
     const session = this.store.getSession(senderPhone);
-    let lookupId = session.activeIncidentId;
+    const latest =
+      (session.activeIncidentId
+        ? await this.getIncidentStatus(session.activeIncidentId)
+        : null) ||
+      (await this.lookupLatest(senderPhone));
+
+    const filed =
+      latest &&
+      (latest.state === "SUBMITTED" ||
+        latest.state === "ACKNOWLEDGED" ||
+        latest.state === "FOLLOW_UP_REQUIRED" ||
+        latest.state === "TRACKING" ||
+        !!latest.handoff?.externalReference);
+
+    if (filed && latest) {
+      this.store.bindIncident(senderPhone, latest.id, latest.state);
+      this.store.setSession(senderPhone, {
+        languageConfirmed: true,
+        pendingStatusCaseAsk: false,
+      });
+      const ref = latest.handoff?.externalReference;
+      const reply =
+        `Hi — I'm Raksha.\n\n` +
+        `I already have a filed case for this number: *${latest.id}*` +
+        (ref ? ` (ref *${ref}*).` : ".") +
+        `\n\nReply *STATUS* to check it, or describe a *new* fraud if this is another incident.`;
+      return this.finish(senderPhone, messageId, reply, latest.id, latest.state);
+    }
+
+    if (!session.languageConfirmed) {
+      return this.finish(senderPhone, messageId, formatLanguagePicker(), null, null);
+    }
+    return this.finish(
+      senderPhone,
+      messageId,
+      formatAskNarrative(session.language),
+      session.activeIncidentId,
+      session.lastState
+    );
+  }
+
+  private async replyStatus(
+    senderPhone: string,
+    messageId: string,
+    rawText = ""
+  ): Promise<WhatsAppProcessResult> {
+    const session = this.store.getSession(senderPhone);
+    const askedId = extractCaseId(rawText);
+    const bareStatus = /^\s*(status|check status|case|track)\s*$/i.test((rawText || "").trim());
+
+    // Bare STATUS asks for RKS-* so the citizen confirms the case on camera.
+    // Phrases like "already reported" / "meri report" skip the ask and use latest.
+    if (bareStatus && !askedId) {
+      this.store.setSession(senderPhone, { pendingStatusCaseAsk: true });
+      const hint = session.activeIncidentId
+        ? `\n(Your filing on this number was *${session.activeIncidentId}*.)`
+        : "";
+      return this.finish(
+        senderPhone,
+        messageId,
+        `Sure — I can check your report.\n\nPlease reply with your case ID (for example *RKS-000006*).${hint}`,
+        session.activeIncidentId,
+        session.lastState
+      );
+    }
+
+    let lookupId = askedId || session.activeIncidentId;
     if (!lookupId) {
       const latest = (await this.lookupOpen(senderPhone)) || (await this.lookupLatest(senderPhone));
       lookupId = latest?.id ?? null;
       if (latest) this.store.bindIncident(senderPhone, latest.id, latest.state);
     }
     if (!lookupId) {
-      return this.finish(senderPhone, messageId, formatNoCase(session.language), null, null);
+      this.store.setSession(senderPhone, { pendingStatusCaseAsk: true });
+      return this.finish(
+        senderPhone,
+        messageId,
+        `I couldn't find a case on this number yet.\nPlease reply with your case ID like *RKS-000006*.`,
+        null,
+        null
+      );
     }
+
     const existingInc = await this.getIncidentStatus(lookupId);
     if (!existingInc) {
-      return this.finish(senderPhone, messageId, formatNoCase(session.language), lookupId, session.lastState);
+      this.store.setSession(senderPhone, { pendingStatusCaseAsk: true });
+      return this.finish(
+        senderPhone,
+        messageId,
+        `I couldn't find *${lookupId}*.\nPlease check the ID and send it again (example *RKS-000006*).`,
+        session.activeIncidentId,
+        session.lastState
+      );
     }
-    return this.finish(
+
+    // Ownership: case must belong to this WhatsApp mobile when a reporter mobile is set.
+    const caseMobile = existingInc.reporter?.mobile
+      ? normalizeMobile(existingInc.reporter.mobile)
+      : "";
+    if (caseMobile && caseMobile !== normalizeMobile(senderPhone)) {
+      this.store.setSession(senderPhone, { pendingStatusCaseAsk: true });
+      return this.finish(
+        senderPhone,
+        messageId,
+        `That case ID is not linked to this WhatsApp number.\nPlease send the *RKS-* ID from your filing confirmation.`,
+        session.activeIncidentId,
+        session.lastState
+      );
+    }
+
+    let events: Awaited<ReturnType<typeof defaultEventRepository.findByIncidentId>> = [];
+    try {
+      if (this.incidentLookup?.listEvents) {
+        events = await this.incidentLookup.listEvents(existingInc.id);
+      } else if (usesRemoteCore(this.coreBaseUrl)) {
+        try {
+          const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${existingInc.id}/events`);
+          if (res.ok) {
+            const data = (await res.json()) as { events?: typeof events };
+            events = data.events || [];
+          }
+        } catch {
+          events = [];
+        }
+      } else {
+        events = await defaultEventRepository.findByIncidentId(existingInc.id);
+      }
+    } catch {
+      events = [];
+    }
+    const view = buildCitizenCaseView({
+      incident: existingInc,
+      events,
+      language: session.language,
+    });
+    this.store.setSession(senderPhone, {
+      pendingFollowUp: view.followUpAvailable,
+      pendingStatusCaseAsk: false,
+      activeIncidentId: existingInc.id,
+      lastState: existingInc.state,
+    });
+    const reply = formatCitizenStatusWhatsApp(view);
+    return this.finish(senderPhone, messageId, reply, existingInc.id, existingInc.state);
+  }
+
+  private async submitFollowUp(
+    incidentId: string,
+    senderPhone: string,
+    messageId: string
+  ): Promise<WhatsAppProcessResult> {
+    const session = this.store.getSession(senderPhone);
+    const idempotencyKey = `follow-up-${incidentId}`;
+    const payload = {
+      incidentId,
+      authorizedByCitizen: true,
+      note: "Citizen follow-up via WhatsApp",
+    };
+    let capData: CAPActionResponse;
+    try {
+      if (this.executeActionFn) {
+        capData = await this.executeActionFn("follow_up_case", payload, idempotencyKey);
+      } else if (this.capBaseUrl && !this.capBaseUrl.includes("localhost:3002") && !this.executeCapFn) {
+        const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+          body: JSON.stringify({
+            action: "follow_up_case",
+            payload,
+            idempotencyKey,
+          }),
+        });
+        if (capRes.ok) {
+          capData = (await capRes.json()) as CAPActionResponse;
+        } else {
+          capData = await actionRouter.executeAction("follow_up_case", payload, idempotencyKey);
+        }
+      } else {
+        capData = await actionRouter.executeAction("follow_up_case", payload, idempotencyKey);
+      }
+    } catch {
+      capData = this.executeActionFn
+        ? await this.executeActionFn("follow_up_case", payload, idempotencyKey)
+        : await actionRouter.executeAction("follow_up_case", payload, idempotencyKey);
+    }
+
+    this.store.setSession(senderPhone, {
+      pendingFollowUp: false,
+      lastState: "FOLLOW_UP_REQUIRED",
+    });
+
+    const reply = formatFollowUpAccepted(
+      session.language,
+      incidentId,
+      capData.externalReference
+    );
+    const finished = this.finish(
       senderPhone,
       messageId,
-      formatStatus(session.language, existingInc),
-      lookupId,
-      existingInc.state
+      reply,
+      incidentId,
+      "FOLLOW_UP_REQUIRED"
     );
+    return { ...finished, capResponse: capData };
   }
 
   private async hydrateSession(phoneNumber: string): Promise<WhatsAppSession> {
@@ -582,6 +827,31 @@ export class WhatsAppService {
       replyText,
       params.incidentId,
       "SUBMITTED"
+    );
+    return { ...finished, outbound };
+  }
+
+  async notifyCitizenFollowUp(params: {
+    mobile: string;
+    incidentId: string;
+    referenceNumber?: string;
+  }): Promise<WhatsAppProcessResult> {
+    const cleanPhone = normalizeMobile(params.mobile.replace(/whatsapp:/i, "").trim());
+    const session = this.store.getSession(cleanPhone);
+    const replyText = formatFollowUpAccepted(
+      session.language,
+      params.incidentId,
+      params.referenceNumber
+    );
+    this.store.bindIncident(cleanPhone, params.incidentId, "FOLLOW_UP_REQUIRED");
+    this.store.setSession(cleanPhone, { pendingFollowUp: false });
+    const outbound = await this.dispatchOutbound(cleanPhone, replyText);
+    const finished = this.finish(
+      cleanPhone,
+      `followup-${Date.now()}`,
+      replyText,
+      params.incidentId,
+      "FOLLOW_UP_REQUIRED"
     );
     return { ...finished, outbound };
   }

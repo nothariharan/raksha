@@ -14,6 +14,7 @@ import {
   CAPCase,
   FraudIncident,
   AcknowledgeResponsePayload,
+  FollowUpCasePayload,
 } from "@raksha/schemas";
 import {
   generateExternalReference,
@@ -34,7 +35,7 @@ import {
 import { capabilityRegistry } from "./capability-registry.js";
 
 const SIMULATION_BOUNDARY =
-  "SIMULATED DEMONSTRATION — CAP event pipeline is real; 1930 / bank systems are simulated.";
+  "Simulated downstream service — 1930 / bank response for prototype";
 
 export class ActionRouter {
   private caseRepo: ICaseRepository;
@@ -83,6 +84,12 @@ export class ActionRouter {
       if (!p?.caseId) errors.push("Missing caseId");
       if (!p?.responderInstitution) errors.push("Missing responderInstitution");
       if (!p?.actionTaken) errors.push("Missing actionTaken");
+    } else if (action === "follow_up_case") {
+      const p = payload as Partial<FollowUpCasePayload>;
+      if (!p?.incidentId) errors.push("Missing incidentId");
+      if (p?.authorizedByCitizen !== true) {
+        errors.push("follow_up_case requires authorizedByCitizen: true");
+      }
     }
 
     return { valid: errors.length === 0, errors };
@@ -329,6 +336,137 @@ export class ActionRouter {
         requestPayload: payload,
         responsePayload: response,
         executedAt: new Date().toISOString(),
+      });
+
+      return response;
+    }
+
+    // 5. Handle citizen-authorized follow_up_case
+    if (action === "follow_up_case") {
+      const body = payload as FollowUpCasePayload;
+      if (body.authorizedByCitizen !== true) {
+        return {
+          success: false,
+          status: "REJECTED",
+          caseId: body.caseId || "",
+          error: "Citizen authorization required",
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      const existing =
+        (body.caseId ? await this.caseRepo.findById(body.caseId) : null) ||
+        (await this.caseRepo.findByIncidentId(body.incidentId));
+
+      if (!existing) {
+        return {
+          success: false,
+          status: "REJECTED",
+          caseId: "",
+          error: `No CAP case found for incident ${body.incidentId}`,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      const followKey = idempotencyKey || `follow-up-${body.incidentId}`;
+      const prior = await this.actionRepo.findByIdempotencyKey(followKey);
+      if (prior?.responsePayload) {
+        return prior.responsePayload as CAPActionResponse<R>;
+      }
+
+      const priorFollow = (await this.eventRepo.findByIncidentId(body.incidentId)).find(
+        (e) => e.type === "case.followed_up"
+      );
+      if (priorFollow) {
+        const replay: CAPActionResponse<R> = {
+          success: true,
+          status: existing.status === "ACTION_TAKEN" ? "ACTION_TAKEN" : "ACCEPTED",
+          caseId: existing.id,
+          externalReference: existing.externalReference,
+          data: {
+            caseId: existing.id,
+            status: "FOLLOW_UP_SENT",
+            externalReference: existing.externalReference,
+            idempotentReplay: true,
+            simulationBoundary: SIMULATION_BOUNDARY,
+          } as unknown as R,
+          timestamp: priorFollow.timestamp || new Date().toISOString(),
+        };
+        await this.actionRepo.record({
+          id: await this.ids.allocateEventId("ACT"),
+          actionName: action,
+          caseId: existing.id,
+          incidentId: body.incidentId,
+          status: "ACCEPTED",
+          idempotencyKey: followKey,
+          requestPayload: payload,
+          responsePayload: replay,
+          executedAt: new Date().toISOString(),
+        });
+        return replay;
+      }
+
+      const now = new Date().toISOString();
+      await this.caseRepo.update(existing.id, { updatedAt: now });
+
+      try {
+        const stored = await this.incidentRepo.findById(body.incidentId);
+        if (stored) {
+          await this.incidentRepo.update(stored.id, {
+            state: "FOLLOW_UP_REQUIRED",
+            handoff: {
+              ...stored.handoff,
+              nextRequiredAction: "Await simulated 1930 response to citizen follow-up",
+            },
+            updatedAt: now,
+          });
+        }
+      } catch (err) {
+        console.warn("[CAP] Could not mark FOLLOW_UP_REQUIRED:", (err as Error).message);
+      }
+
+      const followPayload = {
+        incidentId: body.incidentId,
+        caseId: existing.id,
+        externalReference: existing.externalReference,
+        authorizedByCitizen: true as const,
+        note: body.note,
+        simulationBoundary: SIMULATION_BOUNDARY,
+      };
+
+      const event = await globalEventBus.emit({
+        type: "case.followed_up",
+        caseId: existing.id,
+        incidentId: body.incidentId,
+        source: "cap",
+        payload: followPayload,
+      });
+      await this.eventRepo.append(event);
+
+      const response: CAPActionResponse<R> = {
+        success: true,
+        status: existing.status === "ACTION_TAKEN" ? "ACTION_TAKEN" : "ACCEPTED",
+        caseId: existing.id,
+        externalReference: existing.externalReference,
+        data: {
+          caseId: existing.id,
+          status: "FOLLOW_UP_SENT",
+          externalReference: existing.externalReference,
+          simulationBoundary: SIMULATION_BOUNDARY,
+        } as unknown as R,
+        timestamp: now,
+      };
+
+      await this.actionRepo.record({
+        id: await this.ids.allocateEventId("ACT"),
+        actionName: action,
+        caseId: existing.id,
+        incidentId: body.incidentId,
+        status: "ACCEPTED",
+        idempotencyKey: followKey,
+        requestPayload: payload,
+        responsePayload: response,
+        executedAt: now,
       });
 
       return response;

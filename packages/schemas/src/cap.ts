@@ -14,7 +14,8 @@ export type CAPActionName =
   | "get_case_events"
   | "emit_event"
   | "acknowledge_response"
-  | "update_response";
+  | "update_response"
+  | "follow_up_case";
 
 export type CAPCaseStatus =
   | "PENDING"
@@ -72,4 +73,13 @@ export interface AcknowledgeResponsePayload {
   responderInstitution: string;
   actionTaken: "LIEN_MARKED" | "ACCOUNT_FROZEN" | "TRANSACTION_TRACED" | "FLAGGED_FOR_REVIEW";
   operatorNotes?: string;
+}
+
+/** Citizen-authorized follow-up on an already filed case (not an institutional judgment). */
+export interface FollowUpCasePayload {
+  incidentId: string;
+  caseId?: string;
+  /** Must be true — Raksha never follows up without explicit citizen authorization. */
+  authorizedByCitizen: boolean;
+  note?: string;
 }

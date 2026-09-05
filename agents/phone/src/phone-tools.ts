@@ -1,6 +1,11 @@
 import { CAPActionResponse, ProcessResponse, FraudIncident } from "@raksha/schemas";
 import { getTranslation } from "@raksha/i18n";
-import { processService, incidentService } from "@raksha/core";
+import {
+  processService,
+  incidentService,
+  buildCitizenCaseView,
+  defaultEventRepository,
+} from "@raksha/core";
 import { actionRouter } from "@raksha/cap";
 import { normalizeMobile } from "@raksha/shared";
 import { detectSpokenLanguagePick, languagePickResult } from "./language-pick.js";
@@ -57,6 +62,13 @@ export interface PhoneToolsConfig {
   capBaseUrl?: string;
   /** Tests inject isolated Core so submit/status do not hit the process singleton DB. */
   incidentLookup?: (incidentId: string) => Promise<FraudIncident | null | undefined>;
+  findByMobile?: (mobile: string) => Promise<FraudIncident | null | undefined>;
+  listEvents?: (incidentId: string) => Promise<import("@raksha/schemas").CAPEvent[]>;
+  executeAction?: (
+    action: string,
+    payload: unknown,
+    idempotencyKey: string
+  ) => Promise<CAPActionResponse>;
   processInput?: (input: Parameters<typeof processService.processInput>[0]) => ReturnType<typeof processService.processInput>;
 }
 
@@ -96,12 +108,18 @@ export class PhoneToolsHandler {
   private coreBaseUrl: string;
   private capBaseUrl: string;
   private incidentLookup?: PhoneToolsConfig["incidentLookup"];
+  private findByMobileFn?: PhoneToolsConfig["findByMobile"];
+  private listEventsFn?: PhoneToolsConfig["listEvents"];
+  private executeActionFn?: PhoneToolsConfig["executeAction"];
   private processInputFn: NonNullable<PhoneToolsConfig["processInput"]>;
 
   constructor(config?: PhoneToolsConfig) {
     this.coreBaseUrl = config?.coreBaseUrl || process.env.CORE_BASE_URL || "http://localhost:3001";
     this.capBaseUrl = config?.capBaseUrl || process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002";
     this.incidentLookup = config?.incidentLookup;
+    this.findByMobileFn = config?.findByMobile;
+    this.listEventsFn = config?.listEvents;
+    this.executeActionFn = config?.executeAction;
     this.processInputFn = config?.processInput || ((input) => processService.processInput(input));
   }
 
@@ -417,29 +435,159 @@ export class PhoneToolsHandler {
     };
   }
 
-  async getIncidentStatus(params: { incidentId?: string; callerPhone?: string }) {
+  async getIncidentStatus(params: {
+    incidentId?: string;
+    callerPhone?: string;
+    language?: string;
+  }) {
+    let incident: FraudIncident | null = null;
     if (params.incidentId && this.incidentLookup) {
-      const incident = await this.incidentLookup(params.incidentId);
-      if (!incident) return { error: "Incident not found" };
-      return { incident };
-    }
-    if (params.incidentId) {
+      incident = (await this.incidentLookup(params.incidentId)) || null;
+    } else if (params.incidentId) {
       try {
         if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
-          const remote = await fetchJsonOrNull(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
-          if (remote) return remote;
+          const remote = await fetchJsonOrNull<{ incident?: FraudIncident } & FraudIncident>(
+            `${this.coreBaseUrl}/v1/incidents/${params.incidentId}`
+          );
+          if (remote) incident = (remote.incident || remote) as FraudIncident;
         }
       } catch {}
-      const incident = await incidentService.getIncident(params.incidentId);
-      if (incident) return { incident };
-    }
-    if (params.callerPhone) {
+      if (!incident) {
+        incident = (await incidentService.getIncident(params.incidentId)) as FraudIncident | null;
+      }
+    } else if (params.callerPhone) {
       const mobile = normalizeMobile(params.callerPhone);
-      const open = await incidentService.findOpenByMobile(mobile);
-      const latest = open || (await incidentService.findLatestByMobile(mobile));
-      if (latest) return { incident: latest };
+      if (this.findByMobileFn) {
+        incident = (await this.findByMobileFn(mobile)) || null;
+      } else {
+        const open = await incidentService.findOpenByMobile(mobile);
+        incident = open || (await incidentService.findLatestByMobile(mobile));
+      }
     }
-    return { error: "Incident not found" };
+    if (!incident) return { error: "Incident not found" };
+
+    let events: Awaited<ReturnType<typeof defaultEventRepository.findByIncidentId>> = [];
+    try {
+      if (this.listEventsFn) {
+        events = await this.listEventsFn(incident.id);
+      } else if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001") && !this.incidentLookup) {
+        const remote = await fetchJsonOrNull<{ events?: typeof events }>(
+          `${this.coreBaseUrl}/v1/incidents/${incident.id}/events`
+        );
+        events = remote?.events || [];
+      } else {
+        events = await defaultEventRepository.findByIncidentId(incident.id);
+      }
+    } catch {
+      events = [];
+    }
+
+    const view = buildCitizenCaseView({
+      incident,
+      events,
+      language: params.language || incident.reporter?.preferredLanguage || "en",
+    });
+    return { incident, view, speech: view.spokenStatus };
+  }
+
+  async followUpCase(params: {
+    incidentId?: string;
+    callerPhone?: string;
+    language?: string;
+    authorizedByCitizen?: boolean;
+  }): Promise<{
+    success: boolean;
+    officialReference: string;
+    confirmationSpeech: string;
+    incidentId?: string;
+  }> {
+    const lang = params.language || "en";
+    if (params.authorizedByCitizen === false) {
+      return {
+        success: false,
+        officialReference: "",
+        confirmationSpeech:
+          "I will not follow up unless you explicitly say yes.",
+      };
+    }
+
+    let incidentId = params.incidentId || "";
+    if (!incidentId && params.callerPhone) {
+      const status = await this.getIncidentStatus({
+        callerPhone: params.callerPhone,
+        language: lang,
+      });
+      incidentId = String((status as { incident?: { id?: string } }).incident?.id || "");
+    }
+    if (!incidentId) {
+      return {
+        success: false,
+        officialReference: "",
+        confirmationSpeech:
+          "I do not have a filed report on this number yet. Please tell me what happened first.",
+      };
+    }
+
+    const idempotencyKey = `follow-up-${incidentId}`;
+    const payload = {
+      incidentId,
+      authorizedByCitizen: true,
+      note: "Citizen follow-up via phone",
+    };
+    let capData: CAPActionResponse;
+    try {
+      if (this.executeActionFn) {
+        capData = await this.executeActionFn("follow_up_case", payload, idempotencyKey);
+      } else if (this.capBaseUrl && !this.capBaseUrl.includes("localhost:3002")) {
+        const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+          body: JSON.stringify({
+            action: "follow_up_case",
+            payload,
+            idempotencyKey,
+          }),
+        });
+        if (capRes.ok) {
+          capData = (await capRes.json()) as CAPActionResponse;
+        } else {
+          capData = await actionRouter.executeAction("follow_up_case", payload, idempotencyKey);
+        }
+      } else {
+        capData = await actionRouter.executeAction("follow_up_case", payload, idempotencyKey);
+      }
+    } catch {
+      capData = this.executeActionFn
+        ? await this.executeActionFn("follow_up_case", payload, idempotencyKey)
+        : await actionRouter.executeAction("follow_up_case", payload, idempotencyKey);
+    }
+
+    if (!capData.success) {
+      return {
+        success: false,
+        officialReference: "",
+        confirmationSpeech:
+          capData.error ||
+          "I could not record a follow-up yet. Please try again after checking status.",
+        incidentId,
+      };
+    }
+
+    const ref = capData.externalReference || "";
+    const confirmationSpeech =
+      lang === "hi"
+        ? `फॉलो अप दर्ज हो गया है। केस ${incidentId}${ref ? ` संदर्भ ${ref}` : ""} सक्रिय रहता है।`
+        : `Follow-up received. Your case ${incidentId}${ref ? ` (${ref})` : ""} remains active.`;
+
+    return {
+      success: true,
+      officialReference: ref,
+      confirmationSpeech,
+      incidentId,
+    };
   }
 }
 

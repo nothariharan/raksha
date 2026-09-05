@@ -62,6 +62,14 @@ export const CAP_GOVERNMENT_MANIFEST: CivicActionManifest = {
           requiresConfirmation: false,
           idempotent: true,
         },
+        {
+          name: "follow_up_case",
+          description: "Record a citizen-authorized follow-up when no new 1930 response has been recorded",
+          requires: ["incidentId", "authorizedByCitizen"],
+          risk: "MEDIUM",
+          requiresConfirmation: true,
+          idempotent: true,
+        },
       ],
     },
     {

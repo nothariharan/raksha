@@ -146,10 +146,10 @@ export class ProcessService {
     const t = (content || "").trim().toLowerCase();
     if (!t) return true;
     if (
-      /\b(continue|status|track|case|check status|meri report|apni report|continue my report)\b/i.test(
+      /\b(continue|status|track|case|check status|meri report|apni report|continue my report|already reported|what happened to my report|kya hua)\b/i.test(
         t
       ) ||
-      /मेरी रिपोर्ट|स्थिति|जारी/.test(content || "")
+      /मेरी रिपोर्ट|स्थिति|जारी|क्या हुआ|पहले रिपोर्ट/.test(content || "")
     ) {
       return true;
     }
@@ -281,7 +281,10 @@ export class ProcessService {
         const latest = await this.incidentService.findLatestByMobile(normalized);
         if (
           latest &&
-          (latest.state === "SUBMITTED" || latest.state === "ACKNOWLEDGED") &&
+          (latest.state === "SUBMITTED" ||
+            latest.state === "ACKNOWLEDGED" ||
+            latest.state === "FOLLOW_UP_REQUIRED" ||
+            latest.state === "TRACKING") &&
           this.isContinueIntent(input.content) &&
           !input.userClarificationAnswer
         ) {

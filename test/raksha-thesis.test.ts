@@ -25,6 +25,7 @@ import {
   EventRepository,
   ActionRepository,
   ProcessService,
+  buildCitizenCaseView,
 } from "@raksha/core";
 import { ActionRouter } from "@raksha/cap";
 import { PortalAIntakeService } from "@raksha/portal-a";
@@ -79,6 +80,7 @@ async function run(): Promise<void> {
   const waStore = new WhatsAppConversationStore();
   const waService = new WhatsAppService({ conversationStore: waStore });
   const notified: Array<{ mobile: string; incidentId: string; referenceNumber: string }> = [];
+  const followNotified: Array<{ mobile: string; incidentId: string }> = [];
   waService.notifyCitizenIncidentAccepted = async (params) => {
     notified.push({
       mobile: normalizeMobile(params.mobile),
@@ -90,6 +92,18 @@ async function run(): Promise<void> {
       replyText: "ok",
       incidentId: params.incidentId,
       state: "SUBMITTED",
+    };
+  };
+  waService.notifyCitizenFollowUp = async (params) => {
+    followNotified.push({
+      mobile: normalizeMobile(params.mobile),
+      incidentId: params.incidentId,
+    });
+    return {
+      success: true,
+      replyText: "follow-up ok",
+      incidentId: params.incidentId,
+      state: "FOLLOW_UP_REQUIRED",
     };
   };
   waService.getIncidentStatus = async (id) => incidentService.getIncident(id);
@@ -160,7 +174,7 @@ async function run(): Promise<void> {
   waStore.bindIncident("919876543210", incidentId, afterCap!.state);
   const status = await waService.handleIncomingMessage({
     From: "whatsapp:+919876543210",
-    Body: "STATUS",
+    Body: `STATUS ${incidentId}`,
     MessageSid: `THESIS-STATUS-${Date.now()}`,
   });
   assert.equal(status.incidentId, incidentId);
@@ -205,6 +219,83 @@ async function run(): Promise<void> {
   assert.equal(resumeAck.state, "ACKNOWLEDGED");
   console.log(`  ✓ 9b. ACKNOWLEDGED continue resumes same case`);
 
+  // 10. Stale case → FOLLOW_UP_AVAILABLE → citizen YES → follow_up_case (idempotent)
+  const eventsBefore = await eventRepo.findByIncidentId(incidentId);
+  const staleNow = Date.now();
+  const viewStale = buildCitizenCaseView({
+    incident: (await incidentService.getIncident(incidentId))!,
+    events: eventsBefore,
+    language: "en",
+    now: staleNow,
+    followUpAfterMs: 1000,
+  });
+  // Force staleness by pretending last clock was long ago
+  const viewForced = buildCitizenCaseView({
+    incident: {
+      ...(await incidentService.getIncident(incidentId))!,
+      handoff: {
+        ...(await incidentService.getIncident(incidentId))!.handoff,
+        acknowledgedAt: new Date(staleNow - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        submittedAt: new Date(staleNow - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      updatedAt: new Date(staleNow - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    events: eventsBefore.map((e) =>
+      ["incident.accepted", "service.accepted", "incident.submitted"].includes(String(e.type))
+        ? { ...e, timestamp: new Date(staleNow - 15 * 24 * 60 * 60 * 1000).toISOString() }
+        : e
+    ),
+    language: "en",
+    now: staleNow,
+  });
+  assert.equal(viewForced.followUpAvailable, true);
+  assert.equal(viewForced.citizenStatus, "FOLLOW_UP_AVAILABLE");
+  assert.match(viewForced.spokenStatus, /No new response has been recorded/i);
+  void viewStale;
+
+  const follow1 = await actionRouter.executeAction(
+    "follow_up_case",
+    {
+      incidentId,
+      authorizedByCitizen: true,
+      note: "Thesis citizen follow-up",
+    },
+    `follow-up-${incidentId}`
+  );
+  assert.equal(follow1.success, true);
+  await new Promise((r) => setTimeout(r, 80));
+
+  const follow2 = await actionRouter.executeAction(
+    "follow_up_case",
+    {
+      incidentId,
+      authorizedByCitizen: true,
+      note: "Duplicate YES",
+    },
+    `follow-up-${incidentId}`
+  );
+  assert.equal(follow2.success, true);
+  assert.equal(follow2.caseId, follow1.caseId);
+
+  const afterFollow = await incidentService.getIncident(incidentId);
+  assert.equal(afterFollow!.state, "FOLLOW_UP_REQUIRED");
+  const eventsAfter = await eventRepo.findByIncidentId(incidentId);
+  const followEvents = eventsAfter.filter((e) => e.type === "case.followed_up");
+  assert.equal(followEvents.length, 1);
+  assert.ok(followNotified.some((n) => n.incidentId === incidentId));
+  const paAfter = portalA.getPortalCaseByIncidentId(incidentId);
+  assert.ok(paAfter?.timeline?.some((row) => /follow-up/i.test(row.label)));
+
+  waStore.bindIncident("919876543210", incidentId, "FOLLOW_UP_REQUIRED");
+  const statusAfter = await waService.handleIncomingMessage({
+    From: "whatsapp:+919876543210",
+    Body: `STATUS ${incidentId}`,
+    MessageSid: `THESIS-STATUS-FOLLOW-${Date.now()}`,
+  });
+  assert.equal(statusAfter.incidentId, incidentId);
+  assert.match(statusAfter.replyText, /follow-up|FOLLOW_UP|remains active/i);
+  console.log(`  ✓ 10. Stale → follow_up_case idempotent + WhatsApp + Portal A timeline`);
+
   // 9c. Explicit new fraud narrative after terminal still creates a new case
   const fresh = await processService.processInput({
     source: "web",
@@ -222,7 +313,7 @@ async function run(): Promise<void> {
   wipe(dbPath);
 
   console.log("\n====================================================");
-  console.log("  PRODUCT THESIS PASSED — one citizen, one case, autonomous handoff");
+  console.log("  PRODUCT THESIS PASSED — report, track, follow up, same RKS-*");
   console.log("====================================================\n");
 }
 

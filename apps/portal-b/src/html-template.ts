@@ -338,7 +338,7 @@ export function renderPortalBHtml(): string {
   </main>
 
   <footer class="footer">
-    Financial Institution CAP Node · Simulated Demonstration Environment · Not connected to real banking systems
+    Financial Institution CAP Node · Simulated downstream service — 1930 / bank response for prototype
   </footer>
 
 <script>

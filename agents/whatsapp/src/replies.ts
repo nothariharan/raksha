@@ -136,7 +136,29 @@ export function formatStatus(lang: SupportedLanguage, incident: FraudIncident): 
     `• Bank: *${dash(bank)}*\n` +
     `• UTR: *${dash(incident.transaction?.transactionId)}*${institutional}${filedDesks}\n\n` +
     `Your emergency fraud report is active in the Civic Action Protocol.\n` +
-    `_SIMULATED DEMONSTRATION — 1930 / bank systems are simulated._`
+    `_Simulated downstream service — 1930 / bank response for prototype_`
+  );
+}
+
+export function formatFollowUpAccepted(
+  lang: SupportedLanguage,
+  incidentId: string,
+  reference?: string
+): string {
+  const ref = reference ? `\nTracking Reference: *${reference}*` : "";
+  if (lang === "hi") {
+    return (
+      `🛡️ *फॉलो अप दर्ज*\n\n` +
+      `केस *${incidentId}*${ref}\n` +
+      `नागरिक फॉलो अप प्राप्त हुआ। आपका केस सक्रिय रहता है।\n\n` +
+      `_Simulated downstream service — 1930 / bank response for prototype_`
+    );
+  }
+  return (
+    `🛡️ *Follow-up received*\n\n` +
+    `Case *${incidentId}*${ref}\n` +
+    `Follow-up received.\nYour case remains active.\n\n` +
+    `_Simulated downstream service — 1930 / bank response for prototype_`
   );
 }
 

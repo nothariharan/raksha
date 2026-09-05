@@ -117,7 +117,15 @@ export async function handlePortalARequest(req: IncomingMessage, res: ServerResp
       }
 
       if (pathname === "/portal-a/cases" && method === "GET") {
-        const cases = portalAIntakeService.listPortalCases();
+        // Multi-process local demo: EventBus is not shared across ports.
+        // Sync from CAP HTTP events (same pattern as Portal B).
+        const cases = await portalAIntakeService.pollEventsFromHttp();
+        sendJson(res, 200, { cases });
+        return;
+      }
+
+      if (pathname === "/portal-a/cases/poll" && method === "POST") {
+        const cases = await portalAIntakeService.pollEventsFromHttp();
         sendJson(res, 200, { cases });
         return;
       }
@@ -125,9 +133,12 @@ export async function handlePortalARequest(req: IncomingMessage, res: ServerResp
       const caseMatch = pathname.match(/^\/portal-a\/cases\/([^/]+)$/);
       if (caseMatch && method === "GET") {
         const id = decodeURIComponent(caseMatch[1]);
+        await portalAIntakeService.pollEventsFromHttp();
         const portalCase =
           portalAIntakeService.getPortalCase(id) ||
-          portalAIntakeService.getPortalCaseByCapId(id);
+          portalAIntakeService.getPortalCaseByCapId(id) ||
+          portalAIntakeService.getPortalCaseByIncidentId(id) ||
+          portalAIntakeService.getPortalCaseByExternalReference(id);
         if (!portalCase) {
           sendJson(res, 404, { error: `Case not found: ${id}` });
           return;

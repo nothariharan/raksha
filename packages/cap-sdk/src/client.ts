@@ -74,6 +74,13 @@ export const DEFAULT_CAPABILITIES: CAPCapability[] = [
     targetPortal: "portal-b",
   },
   {
+    name: "follow_up_case",
+    description: "Citizen-authorized follow-up on an already filed case (no institutional judgment)",
+    version: "0.1.0",
+    requiredFields: ["incidentId", "authorizedByCitizen"],
+    targetPortal: "portal-a",
+  },
+  {
     name: "get_case",
     description: "Retrieve case details and lifecycle status",
     version: "0.1.0",

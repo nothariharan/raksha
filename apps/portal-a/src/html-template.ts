@@ -107,7 +107,7 @@ export function renderPortalAHtml(): string {
   <header>
     <div>
       <h1>NATIONAL CYBER CRIME REPORTING PORTAL</h1>
-      <p>Portal A · Synthetic 1930 / NCRP intake · CAP-connected · Demo only</p>
+      <p>Portal A · Simulated downstream service — 1930 / bank response for prototype</p>
     </div>
     <nav>
       <a href="/" data-nav>Dashboard</a>
@@ -116,7 +116,7 @@ export function renderPortalAHtml(): string {
     </nav>
   </header>
   <main>
-    <div class="banner">This is a synthetic government-service layer for the Raksha CAP demo. It does not connect to cybercrime.gov.in, banks, or production authentication.</div>
+    <div class="banner">Simulated downstream service — 1930 / bank response for prototype. Synthetic demo data only.</div>
     <div id="app">Loading…</div>
   </main>
   <script>
@@ -146,18 +146,18 @@ export function renderPortalAHtml(): string {
       return \`
         <div class="card">
           <h2>Intake dashboard</h2>
-          <p class="muted">Cases exist only in Portal A local state after CAP report_financial_fraud. Portal A does not read the Raksha database.</p>
+          <p class="muted">Cases sync from CAP <code>incident.accepted</code> events (same filing as Raksha Web / WhatsApp / Phone). Simulated 1930 desk for prototype.</p>
         </div>
         <div class="card">
           <h2>Cases</h2>
-          \${cases.length === 0 ? "<p class='muted'>No cases yet. Use Report fraud or seed synthetic data.</p>" : \`
+          \${cases.length === 0 ? "<p class='muted'>No cases yet. File on Raksha <code>/app</code> first, then refresh — or use Report fraud / seed synthetic data.</p>" : \`
             <table>
-              <thead><tr><th>Portal case</th><th>CAP case</th><th>Amount</th><th>Transaction ID</th><th>Lifecycle</th></tr></thead>
+              <thead><tr><th>Portal case</th><th>Tracking ref</th><th>Amount</th><th>UTR</th><th>Lifecycle</th></tr></thead>
               <tbody>
                 \${cases.map((c) => \`
                   <tr>
                     <td><a href="/case/\${c.portalCaseId}">\${c.portalCaseId}</a></td>
-                    <td>\${c.capCaseId}</td>
+                    <td><a href="/case/\${encodeURIComponent(c.externalReference || c.portalCaseId)}">\${c.externalReference || c.capCaseId}</a></td>
                     <td>\${rupees(c.incident?.transaction?.amount)}</td>
                     <td>\${c.incident?.transaction?.transactionId || "—"}</td>
                     <td class="status">\${c.lifecycle}</td>
@@ -165,6 +165,7 @@ export function renderPortalAHtml(): string {
               </tbody>
             </table>\`}
           <button class="secondary" id="seedBtn" type="button">Load synthetic CAP demo incident</button>
+          <button class="secondary" id="refreshBtn" type="button" style="margin-left:0.5rem">Refresh from CAP</button>
         </div>\`;
     }
 
@@ -220,7 +221,7 @@ export function renderPortalAHtml(): string {
               <tbody>
                 \${incoming.map((c) => \`
                   <tr>
-                    <td><a href="/case/\${c.portalCaseId}">\${c.portalCaseId}</a></td>
+                    <td><a href="/case/\${c.portalCaseId}">\${c.portalCaseId}</a><br/><span class="muted">\${c.externalReference || ""}</span></td>
                     <td>FINANCIAL_CYBER_FRAUD</td>
                     <td>\${rupees(c.incident?.transaction?.amount)}</td>
                     <td class="status">\${c.lifecycle}</td>
@@ -248,21 +249,51 @@ export function renderPortalAHtml(): string {
             <dt>Lifecycle</dt><dd class="status">\${c.lifecycle}</dd>
             <dt>CAP status</dt><dd>\${c.status}</dd>
           </dl>
+          <p class="muted"><strong>Simulated downstream service</strong> — 1930 / bank response for prototype</p>
+          <h3>Timeline</h3>
+          <ul>
+            \${(c.timeline || []).map((row) => \`<li><strong>\${(row.at || "").slice(0, 10)}</strong> — \${row.label}</li>\`).join("") || "<li>No timeline rows yet</li>"}
+          </ul>
           <button class="secondary" data-ack="\${c.portalCaseId}" type="button">Advance lifecycle</button>
         </div>\`;
     }
 
     async function render() {
       navHighlight();
-      const path = location.pathname;
+      let path = location.pathname.replace(/\\/+$/, "") || "/";
+      if (path.startsWith("/portal-a")) {
+        path = path.slice("/portal-a".length) || "/";
+      }
+      const refParam = new URLSearchParams(location.search).get("ref");
       try {
-        if (path === "/" || path === "") {
+        if (path === "/" || path === "" || path === "/index.html") {
           const { cases } = await api("/portal-a/cases");
+          if (refParam) {
+            const hit = cases.find((c) =>
+              c.externalReference === refParam ||
+              c.portalCaseId === refParam ||
+              c.capCaseId === refParam ||
+              c.incidentId === refParam
+            );
+            if (hit) {
+              history.replaceState({}, "", "/case/" + encodeURIComponent(hit.portalCaseId));
+              app.innerHTML = caseDetail(hit);
+              document.querySelectorAll("[data-ack]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                  const id = btn.getAttribute("data-ack");
+                  await api("/portal-a/cases/" + id + "/acknowledge", { method: "POST" });
+                  render();
+                });
+              });
+              return;
+            }
+          }
           app.innerHTML = dashboard(cases);
           document.getElementById("seedBtn")?.addEventListener("click", async () => {
             await api("/portal-a/cases/synthetic", { method: "POST" });
             render();
           });
+          document.getElementById("refreshBtn")?.addEventListener("click", () => render());
           return;
         }
         if (path === "/report") {
@@ -280,7 +311,7 @@ export function renderPortalAHtml(): string {
                 body: JSON.stringify(body),
               });
               const pc = result.portalCase;
-              resultEl.innerHTML = \`<div class="result"><strong>CASE CREATED</strong><br/>\${pc.portalCaseId}<br/>CAP \${pc.capCaseId}<br/>Status: \${pc.lifecycle}</div>\`;
+              resultEl.innerHTML = \`<div class="result"><strong>CASE CREATED</strong><br/>\${pc.portalCaseId}<br/>CAP \${pc.capCaseId}<br/>Ref \${pc.externalReference}<br/>Status: \${pc.lifecycle}</div>\`;
             } catch (err) {
               resultEl.innerHTML = "<p>" + err.message + "</p>";
             }
@@ -296,7 +327,8 @@ export function renderPortalAHtml(): string {
             app.innerHTML = "<p>Not found.</p>";
             return;
           }
-          const data = await api("/portal-a/cases/" + m[1]);
+          const id = decodeURIComponent(m[1]);
+          const data = await api("/portal-a/cases/" + encodeURIComponent(id));
           app.innerHTML = caseDetail(data.case);
         }
         document.querySelectorAll("[data-ack]").forEach((btn) => {

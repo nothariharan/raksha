@@ -155,18 +155,41 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
       const res = await this.tools.getIncidentStatus({
         incidentId: incidentId || undefined,
         callerPhone: context.callerNumber || session.callerNumber,
+        language: String(parameters.language || session.language || "en"),
       });
-      const incident = (res as { incident?: { id?: string; state?: string; handoff?: { externalReference?: string } } }).incident;
-      const ref = incident?.handoff?.externalReference;
-      const speech = incident
-        ? ref
-          ? `Your case ${incident.id} is ${incident.state}. Tracking reference ${ref}.`
-          : `Your case ${incident.id} is ${incident.state}.`
-        : "I do not have an open report on this number yet. Please tell me what happened.";
+      const view = (res as { view?: { spokenStatus?: string; incidentId?: string; followUpAvailable?: boolean }; speech?: string }).view;
+      const speech =
+        (res as { speech?: string }).speech ||
+        view?.spokenStatus ||
+        ((res as { incident?: { id?: string; state?: string; handoff?: { externalReference?: string } } }).incident
+          ? `Your case ${(res as { incident: { id: string; state: string } }).incident.id} is ${(res as { incident: { id: string; state: string } }).incident.state}.`
+          : "I do not have an open report on this number yet. Please tell me what happened.");
+      const incident = (res as { incident?: { id?: string; state?: string } }).incident;
+      if (incident?.id) {
+        this.sessions.bindIncident(context.callSid, incident.id, incident.state as any);
+      }
       return {
         toolCallId,
         result: res,
         speechResponse: speech,
+      };
+    }
+
+    if (toolName === "follow_up" || toolName === "raksha_follow_up") {
+      const incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
+      const res = await this.tools.followUpCase({
+        incidentId: incidentId || undefined,
+        callerPhone: context.callerNumber || session.callerNumber,
+        language: String(parameters.language || session.language || "en"),
+        authorizedByCitizen: parameters.authorizedByCitizen !== false,
+      });
+      if (res.incidentId) {
+        this.sessions.bindIncident(context.callSid, res.incidentId, "FOLLOW_UP_REQUIRED" as any);
+      }
+      return {
+        toolCallId,
+        result: res,
+        speechResponse: res.confirmationSpeech,
       };
     }
 
