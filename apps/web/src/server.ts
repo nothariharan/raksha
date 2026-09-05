@@ -212,6 +212,8 @@ export function handleWebRequest(
           capUrl,
           portalAUrl: process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
           portalBUrl: process.env.PORTAL_B_BASE_URL || "http://localhost:3004",
+          whatsappNumber: process.env.WHATSAPP_SANDBOX_NUMBER || "+14155238886",
+          whatsappJoin: process.env.WHATSAPP_SANDBOX_JOIN || "join milk-work",
           elevenLabsAgentId:
             elevenLabsAgentId && !elevenLabsAgentId.includes("synthetic")
               ? elevenLabsAgentId

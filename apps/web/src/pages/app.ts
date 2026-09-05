@@ -4,18 +4,33 @@
 
 import { renderPageLayout } from "./layout.js";
 
+function formatWhatsAppDisplay(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+1 ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+  }
+  return raw.startsWith("+") ? raw : `+${digits}`;
+}
+
 export function renderAppPageHtml(config?: {
   coreUrl?: string;
   capUrl?: string;
   elevenLabsAgentId?: string;
   portalAUrl?: string;
   portalBUrl?: string;
+  whatsappNumber?: string;
+  whatsappJoin?: string;
 }): string {
   const coreUrl = config?.coreUrl ?? "http://localhost:3001";
   const capUrl = config?.capUrl ?? "http://localhost:3002";
   const elevenLabsAgentId = config?.elevenLabsAgentId ?? "";
   const portalAUrl = config?.portalAUrl ?? process.env.PORTAL_A_BASE_URL ?? "http://localhost:3003";
   const portalBUrl = config?.portalBUrl ?? process.env.PORTAL_B_BASE_URL ?? "http://localhost:3004";
+  const whatsappE164 = (config?.whatsappNumber || process.env.WHATSAPP_SANDBOX_NUMBER || "+14155238886").replace(/\s/g, "");
+  const whatsappDigits = whatsappE164.replace(/\D/g, "");
+  const whatsappDisplay = formatWhatsAppDisplay(whatsappE164);
+  const whatsappJoin = (config?.whatsappJoin || process.env.WHATSAPP_SANDBOX_JOIN || "join milk-work").trim();
+  const whatsappHref = `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(whatsappJoin)}`;
 
   const extraStyles = `
     .app-shell {
@@ -127,6 +142,107 @@ export function renderAppPageHtml(config?: {
     }
     .btn-link-type:hover { color: var(--text); }
 
+    .wa-path {
+      background: #fafaf9;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 1.15rem 1.25rem 1.2rem;
+      margin: 0 0 1.25rem;
+      text-align: left;
+    }
+    .wa-path-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.8rem;
+      margin-bottom: 0.9rem;
+    }
+    .wa-path-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+    .wa-path-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+    .wa-path-kicker {
+      font-size: 0.7rem;
+      font-weight: 650;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.2rem;
+    }
+    .wa-path-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      margin: 0 0 0.2rem;
+      color: var(--text);
+    }
+    .wa-path-copy {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+    .wa-path-facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+    .wa-fact {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+    }
+    .wa-fact-lbl {
+      font-size: 0.68rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+    .wa-fact-val {
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .wa-path-steps {
+      margin: 0 0 0.95rem;
+      padding-left: 1.15rem;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+    .wa-path-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #1c1917;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.15rem;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .wa-path-cta:hover { background: #0c0a09; }
+    .wa-path-note {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin: 0.65rem 0 0;
+      line-height: 1.4;
+    }
+
     @media (max-width: 900px) {
       .app-flow-story {
         width: 160vw;
@@ -215,6 +331,7 @@ export function renderAppPageHtml(config?: {
     .dt-amount { font-size: 1.45rem; color: var(--orange); }
     @media (max-width: 520px) {
       .details-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+      .action-grid, .wa-path-facts { grid-template-columns: 1fr; }
     }
 
     .btn-dispatch {
@@ -1235,7 +1352,7 @@ const bodyContent = `
         <div id="wsIdle">
           <div class="app-header">
             <h1 class="app-title" id="wsHead">Report Financial Cyber-Fraud</h1>
-            <p class="app-subtitle" id="wsSub">Speak in your language, show your payment receipt, or describe what happened.</p>
+            <p class="app-subtitle" id="wsSub">Speak in your language, show your payment receipt, message on WhatsApp, or describe what happened.</p>
           </div>
 
           <!-- Citizen identity: shown for demo; lets the mentor confirm cross-channel linkage -->
@@ -1260,6 +1377,34 @@ const bodyContent = `
               <input type="file" accept="image/*" style="display: none;" onchange="handleImageAction(event)" />
             </label>
           </div>
+
+          <aside class="wa-path" aria-labelledby="waPathTitle">
+            <div class="wa-path-head">
+              <span class="wa-path-icon"><img class="line-icon" src="/images/line/channel-whatsapp.png" alt="" draggable="false" /></span>
+              <div>
+                <div class="wa-path-kicker" id="waPathKicker">WhatsApp pilot</div>
+                <h2 class="wa-path-title" id="waPathTitle">Message Raksha on WhatsApp</h2>
+                <p class="wa-path-copy" id="waPathCopy">Same case as this page. Send the join phrase once, then tell Raksha what happened.</p>
+              </div>
+            </div>
+            <div class="wa-path-facts">
+              <div class="wa-fact">
+                <div class="wa-fact-lbl" id="waFactNumLbl">WhatsApp number</div>
+                <div class="wa-fact-val">${whatsappDisplay}</div>
+              </div>
+              <div class="wa-fact">
+                <div class="wa-fact-lbl" id="waFactJoinLbl">Join phrase</div>
+                <div class="wa-fact-val">${whatsappJoin}</div>
+              </div>
+            </div>
+            <ol class="wa-path-steps" id="waPathSteps">
+              <li>Open the number in WhatsApp.</li>
+              <li>Send <strong>${whatsappJoin}</strong> once.</li>
+              <li>Then write what happened — language, story, UTR, YES.</li>
+            </ol>
+            <a class="wa-path-cta" id="waPathCta" href="${whatsappHref}" target="_blank" rel="noopener noreferrer">Open WhatsApp</a>
+            <p class="wa-path-note" id="waPathNote">Live Twilio sandbox — not official 1930. No need to leave your number here. If you cannot join, use Talk, Show Transaction, or type on this page.</p>
+          </aside>
 
           <button class="btn-link-type" onclick="toggleTypeArea()">Type details instead</button>
 
@@ -3215,21 +3360,54 @@ const bodyContent = `
         const sub = document.getElementById("wsSub");
         const voice = document.getElementById("lblVoice");
         const image = document.getElementById("lblImage");
+        const waKicker = document.getElementById("waPathKicker");
+        const waTitle = document.getElementById("waPathTitle");
+        const waCopy = document.getElementById("waPathCopy");
+        const waNumLbl = document.getElementById("waFactNumLbl");
+        const waJoinLbl = document.getElementById("waFactJoinLbl");
+        const waSteps = document.getElementById("waPathSteps");
+        const waCta = document.getElementById("waPathCta");
+        const waNote = document.getElementById("waPathNote");
+        const joinPhrase = ${JSON.stringify(whatsappJoin)};
         if (currentLanguage === "hi") {
           if (head) head.innerText = "साइबर धोखाधड़ी की रिपोर्ट करें";
-          if (sub) sub.innerText = "अपनी भाषा में बोलें या लेन-देन का स्क्रीनशॉट दिखाएं।";
+          if (sub) sub.innerText = "अपनी भाषा में बोलें, रसीद दिखाएं, या व्हाट्सऐप पर लिखें।";
           if (voice) voice.innerText = "रक्षा से बोलें";
           if (image) image.innerText = "लेन-देन दिखाएं";
+          if (waKicker) waKicker.innerText = "व्हाट्सऐप पायलट";
+          if (waTitle) waTitle.innerText = "रक्षा को व्हाट्सऐप पर लिखें";
+          if (waCopy) waCopy.innerText = "यही केस व्हाट्सऐप पर भी चलता है। एक बार जॉइन वाक्य भेजें, फिर बताएं क्या हुआ।";
+          if (waNumLbl) waNumLbl.innerText = "व्हाट्सऐप नंबर";
+          if (waJoinLbl) waJoinLbl.innerText = "जॉइन वाक्य";
+          if (waSteps) waSteps.innerHTML = "<li>व्हाट्सऐप में यह नंबर खोलें।</li><li>एक बार <strong>" + joinPhrase + "</strong> भेजें।</li><li>फिर बताएं क्या हुआ — भाषा, घटना, UTR, YES।</li>";
+          if (waCta) waCta.innerText = "व्हाट्सऐप खोलें";
+          if (waNote) waNote.innerText = "लाइव Twilio सैंडबॉक्स — आधिकारिक 1930 नहीं। यहाँ नंबर छोड़ने की ज़रूरत नहीं। जॉइन न हो तो यहाँ बोलें, रसीद दिखाएं, या लिखें।";
         } else if (currentLanguage === "ta") {
           if (head) head.innerText = "நிதி சைபர் மோசடியை புகாரளிக்கவும்";
-          if (sub) sub.innerText = "உங்கள் மொழியில் பேசுங்கள் அல்லது பரிவர்த்தனை திரைப்பிடிப்பைக் காட்டுங்கள்.";
+          if (sub) sub.innerText = "உங்கள் மொழியில் பேசுங்கள், ரசீதைக் காட்டுங்கள், அல்லது வாட்ஸ்அப்பில் எழுதுங்கள்.";
           if (voice) voice.innerText = "ரக்ஷாவிடம் சொல்லுங்கள்";
           if (image) image.innerText = "பரிவர்த்தனையைக் காட்டு";
+          if (waKicker) waKicker.innerText = "வாட்ஸ்அப் பைலட்";
+          if (waTitle) waTitle.innerText = "வாட்ஸ்அப்பில் ரக்ஷாவிடம் எழுதுங்கள்";
+          if (waCopy) waCopy.innerText = "இதே வழக்கு வாட்ஸ்அப்பிலும் தொடரும். ஒருமுறை சேர் வாக்கியத்தை அனுப்பி, பிறகு நடந்ததைச் சொல்லுங்கள்.";
+          if (waNumLbl) waNumLbl.innerText = "வாட்ஸ்அப் எண்";
+          if (waJoinLbl) waJoinLbl.innerText = "சேர் வாக்கியம்";
+          if (waSteps) waSteps.innerHTML = "<li>வாட்ஸ்அப்பில் இந்த எண்ணைத் திறக்கவும்.</li><li>ஒருமுறை <strong>" + joinPhrase + "</strong> அனுப்பவும்.</li><li>பிறகு நடந்ததை எழுதுங்கள் — மொழி, கதை, UTR, YES.</li>";
+          if (waCta) waCta.innerText = "வாட்ஸ்அப்பைத் திற";
+          if (waNote) waNote.innerText = "நேரடி Twilio sandbox — அதிகாரப்பூர்வ 1930 அல்ல. இங்கே எண்ணை விட வேண்டாம். சேர முடியாவிட்டால் இங்கே பேசவும், ரசீதைக் காட்டவும், அல்லது எழுதவும்.";
         } else {
           if (head) head.innerText = "Report Financial Cyber-Fraud";
-          if (sub) sub.innerText = "Speak in your language, show your payment receipt, or describe what happened.";
+          if (sub) sub.innerText = "Speak in your language, show your payment receipt, message on WhatsApp, or describe what happened.";
           if (voice) voice.innerText = "Tell Raksha";
           if (image) image.innerText = "Show Transaction";
+          if (waKicker) waKicker.innerText = "WhatsApp pilot";
+          if (waTitle) waTitle.innerText = "Message Raksha on WhatsApp";
+          if (waCopy) waCopy.innerText = "Same case as this page. Send the join phrase once, then tell Raksha what happened.";
+          if (waNumLbl) waNumLbl.innerText = "WhatsApp number";
+          if (waJoinLbl) waJoinLbl.innerText = "Join phrase";
+          if (waSteps) waSteps.innerHTML = "<li>Open the number in WhatsApp.</li><li>Send <strong>" + joinPhrase + "</strong> once.</li><li>Then write what happened — language, story, UTR, YES.</li>";
+          if (waCta) waCta.innerText = "Open WhatsApp";
+          if (waNote) waNote.innerText = "Live Twilio sandbox — not official 1930. No need to leave your number here. If you cannot join, use Talk, Show Transaction, or type on this page.";
         }
       };
 

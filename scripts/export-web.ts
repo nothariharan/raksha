@@ -36,17 +36,23 @@ writePage("/", renderHomePageHtml());
 writePage("/how", renderHowPageHtml());
 writePage("/agents", renderAgentsPageHtml());
 writePage("/cap", renderCapPageHtml());
+const whatsappPilot = {
+  whatsappNumber: process.env.WHATSAPP_SANDBOX_NUMBER || "+14155238886",
+  whatsappJoin: process.env.WHATSAPP_SANDBOX_JOIN || "join milk-work",
+};
 writePage("/app", renderAppPageHtml({
   coreUrl: protocolOrigin,
   capUrl: protocolOrigin,
   portalAUrl: process.env.PORTAL_A_BASE_URL || `${protocolOrigin}/portal-a`,
   portalBUrl: process.env.PORTAL_B_BASE_URL || `${protocolOrigin}/portal-b`,
+  ...whatsappPilot,
 }));
 writePage("/demo", renderAppPageHtml({
   coreUrl: protocolOrigin,
   capUrl: protocolOrigin,
   portalAUrl: process.env.PORTAL_A_BASE_URL || `${protocolOrigin}/portal-a`,
   portalBUrl: process.env.PORTAL_B_BASE_URL || `${protocolOrigin}/portal-b`,
+  ...whatsappPilot,
 }));
 
 const publicDir = join(root, "apps", "web", "public");
