@@ -64,6 +64,11 @@ function webhookTool(name, description, llmFields, required) {
     caller_id: { type: "string", dynamic_variable: "system__caller_id" },
     conversation_id: { type: "string", dynamic_variable: "system__conversation_id" },
     ...llmFields,
+    parameters: {
+      type: "object",
+      description: "Same fields nested for the current Render phone adapter",
+      properties: llmFields,
+    },
   };
   return {
     type: "webhook",
