@@ -35,6 +35,7 @@ import {
   formatNoCase,
   formatNotifyAccepted,
   formatQuestion,
+  resolveDeskUrls,
   formatReady,
   formatRecorded,
   formatStatus,
@@ -345,12 +346,13 @@ export class WhatsAppService {
     } else if (processData.state === "READY") {
       replyText = formatReady(lang, incident);
     } else if (processData.state === "SUBMITTED" || processData.state === "ACKNOWLEDGED") {
+      const desks = resolveDeskUrls();
       replyText = formatAccepted(
         lang,
         incident,
         incident.handoff?.externalReference || incident.id,
-        process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
-        process.env.PORTAL_B_BASE_URL || "http://localhost:3004"
+        desks.portalA,
+        desks.portalB
       );
     } else {
       replyText = formatRecorded(incident.id, processData.nextAction.prompt);
@@ -536,12 +538,13 @@ export class WhatsAppService {
     const refNumber = capData.externalReference || `1930-SYN-${capData.caseId}`;
     this.store.bindIncident(senderPhone, incidentId, "SUBMITTED");
     const lang = this.store.getSession(senderPhone).language;
+    const desks = resolveDeskUrls();
     const replyText = formatAccepted(
       lang,
       incident,
       refNumber,
-      process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
-      process.env.PORTAL_B_BASE_URL || "http://localhost:3004"
+      desks.portalA,
+      desks.portalB
     );
 
     const finished = this.finish(senderPhone, messageId, replyText, incidentId, "SUBMITTED");
@@ -559,6 +562,7 @@ export class WhatsAppService {
   }): Promise<WhatsAppProcessResult> {
     const cleanPhone = normalizeMobile(params.mobile.replace(/whatsapp:/i, "").trim());
     const session = this.store.getSession(cleanPhone);
+    const desks = resolveDeskUrls();
     const replyText = formatNotifyAccepted(session.language, {
       incidentId: params.incidentId,
       referenceNumber: params.referenceNumber,
@@ -566,8 +570,8 @@ export class WhatsAppService {
       channel: params.channel,
       bank: params.bank,
       utr: params.utr,
-      portalA: process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
-      portalB: process.env.PORTAL_B_BASE_URL || "http://localhost:3004",
+      portalA: desks.portalA,
+      portalB: desks.portalB,
     });
 
     this.store.bindIncident(cleanPhone, params.incidentId, "SUBMITTED");

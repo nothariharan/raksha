@@ -30,6 +30,7 @@ import {
   WhatsAppService,
   computeTwilioSignature,
   handleWhatsAppRequest,
+  resolveDeskUrls,
   unwireWhatsAppHandoffSubscriber,
   wireWhatsAppHandoffSubscriber,
 } from "@raksha/agent-whatsapp";
@@ -403,6 +404,59 @@ async function testTwilioSignatureAndForm(): Promise<void> {
   console.log("  ✓ Twilio signature reject/accept + form-urlencoded + empty TwiML");
 }
 
+async function testDeployedDeskUrls(): Promise<void> {
+  const prevOrigin = process.env.PROTOCOL_PUBLIC_ORIGIN;
+  const prevA = process.env.PORTAL_A_BASE_URL;
+  const prevB = process.env.PORTAL_B_BASE_URL;
+  delete process.env.PORTAL_A_BASE_URL;
+  delete process.env.PORTAL_B_BASE_URL;
+  process.env.PROTOCOL_PUBLIC_ORIGIN = "https://raksha-protocol.onrender.com";
+
+  try {
+    const desks = resolveDeskUrls();
+    assert.equal(desks.portalA, "https://raksha-protocol.onrender.com/portal-a");
+    assert.equal(desks.portalB, "https://raksha-protocol.onrender.com/portal-b");
+
+    process.env.PORTAL_A_BASE_URL = "http://localhost:3003";
+    process.env.PORTAL_B_BASE_URL = "http://localhost:3004";
+    const ignoreLocalhost = resolveDeskUrls();
+    assert.equal(ignoreLocalhost.portalA, "https://raksha-protocol.onrender.com/portal-a");
+    assert.equal(ignoreLocalhost.portalB, "https://raksha-protocol.onrender.com/portal-b");
+
+    const env = await isolated();
+    const mobile = "+919877788899";
+    const opened = await env.processService.processInput({
+      source: "whatsapp",
+      modality: "text",
+      content: "Electricity scam. Paid ₹5000 via PhonePe from State Bank of India UTR 423456789012",
+      language: "en",
+      reporter: { mobile },
+    });
+    await env.actionRouter.executeAction(
+      "report_financial_fraud",
+      opened.incident,
+      `desk-${opened.incidentId}`
+    );
+    const status = await env.wa.handleIncomingMessage({
+      From: `whatsapp:${mobile}`,
+      Body: "STATUS",
+      MessageSid: "WA-DESK-STATUS",
+    });
+    assert.match(status.replyText, /https:\/\/raksha-protocol\.onrender\.com\/portal-a/);
+    assert.match(status.replyText, /https:\/\/raksha-protocol\.onrender\.com\/portal-b/);
+    assert.doesNotMatch(status.replyText, /localhost:300[34]/);
+    env.cleanup();
+    console.log("  ✓ deployed WhatsApp desks use Render portal-a / portal-b, not localhost");
+  } finally {
+    if (prevOrigin === undefined) delete process.env.PROTOCOL_PUBLIC_ORIGIN;
+    else process.env.PROTOCOL_PUBLIC_ORIGIN = prevOrigin;
+    if (prevA === undefined) delete process.env.PORTAL_A_BASE_URL;
+    else process.env.PORTAL_A_BASE_URL = prevA;
+    if (prevB === undefined) delete process.env.PORTAL_B_BASE_URL;
+    else process.env.PORTAL_B_BASE_URL = prevB;
+  }
+}
+
 async function testGatewayWiresHandoff(): Promise<void> {
   const { createUnifiedGatewayServer } = await import("../scripts/prod-server.js");
   unwireWhatsAppHandoffSubscriber();
@@ -425,6 +479,7 @@ async function run(): Promise<void> {
   await testConflictFromCoreNotHardcoded();
   await testWebThenWhatsAppSameCase();
   await testTwilioSignatureAndForm();
+  await testDeployedDeskUrls();
   await testGatewayWiresHandoff();
 
   console.log("\n====================================================");

@@ -12,6 +12,46 @@ function dash(value?: string | null): string {
   return value && String(value).trim() ? String(value) : "—";
 }
 
+function isPublicHttpUrl(url?: string): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return (
+      (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+      !/^(localhost|127\.0\.0\.1)$/i.test(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Live Render desks when PROTOCOL_PUBLIC_ORIGIN is set; localhost only for local demo. */
+export function resolveDeskUrls(): { portalA: string; portalB: string } {
+  const origin = (process.env.PROTOCOL_PUBLIC_ORIGIN || "").replace(/\/$/, "");
+  const envA = (process.env.PORTAL_A_BASE_URL || "").replace(/\/$/, "");
+  const envB = (process.env.PORTAL_B_BASE_URL || "").replace(/\/$/, "");
+  return {
+    portalA: isPublicHttpUrl(envA)
+      ? envA
+      : isPublicHttpUrl(origin)
+        ? `${origin}/portal-a`
+        : "http://localhost:3003",
+    portalB: isPublicHttpUrl(envB)
+      ? envB
+      : isPublicHttpUrl(origin)
+        ? `${origin}/portal-b`
+        : "http://localhost:3004",
+  };
+}
+
+function deskLines(portalA: string, portalB: string, bank: string): string {
+  return (
+    `Open desks (simulated):\n` +
+    `• 1930 cyber cell (report filed): ${portalA}\n` +
+    `• ${bank} freeze desk: ${portalB}`
+  );
+}
+
 export function formatLanguagePicker(): string {
   return LANGUAGE_PICKER_TEXT;
 }
@@ -72,9 +112,7 @@ export function formatAccepted(
     `• Bank: *${bank}*\n` +
     `• UTR: *${dash(incident.transaction?.transactionId)}*\n\n` +
     `${t.reportSubmitted}\n\n` +
-    `Open desks (simulated):\n` +
-    `• 1930 cyber cell: ${portalA}\n` +
-    `• ${bank} freeze desk: ${portalB}\n\n` +
+    `${deskLines(portalA, portalB, bank)}\n\n` +
     `Nothing else you need to do here.\n` +
     `Reply *STATUS* anytime for an update.`
   );
@@ -83,17 +121,20 @@ export function formatAccepted(
 export function formatStatus(lang: SupportedLanguage, incident: FraudIncident): string {
   const handoffRef = incident.handoff?.externalReference;
   const handoffStatus = incident.handoff?.status;
+  const bank = incident.transaction?.debitInstitution || "your bank";
+  const desks = resolveDeskUrls();
   const institutional = handoffRef
     ? `\n• Tracking Ref: *${handoffRef}*\n• Institutional: *${handoffStatus || "SUBMITTED"}*`
     : "";
+  const filedDesks = handoffRef ? `\n\n${deskLines(desks.portalA, desks.portalB, bank)}` : "";
   return (
     `🛡️ *Raksha Case Status*\n\n` +
     `Case ID: *${incident.id}*\n` +
     `Status: *${incident.state}*\n` +
     `• Amount: *${money(incident.transaction?.amount)}*\n` +
     `• Channel: *${dash(incident.transaction?.channel)}*\n` +
-    `• Bank: *${dash(incident.transaction?.debitInstitution)}*\n` +
-    `• UTR: *${dash(incident.transaction?.transactionId)}*${institutional}\n\n` +
+    `• Bank: *${dash(bank)}*\n` +
+    `• UTR: *${dash(incident.transaction?.transactionId)}*${institutional}${filedDesks}\n\n` +
     `Your emergency fraud report is active in the Civic Action Protocol.\n` +
     `_SIMULATED DEMONSTRATION — 1930 / bank systems are simulated._`
   );
@@ -128,9 +169,7 @@ export function formatNotifyAccepted(
     `• Bank: *${bank}*\n` +
     `• UTR: *${dash(params.utr)}*\n` +
     `• Status: *ACCEPTED — SIMULATED RESPONSE*\n\n` +
-    `Open desks (simulated):\n` +
-    `• 1930 cyber cell: ${params.portalA}\n` +
-    `• ${bank} freeze desk: ${params.portalB}\n\n` +
+    `${deskLines(params.portalA, params.portalB, bank)}\n\n` +
     `Nothing else you need to do here.\n\n` +
     `You can check real-time status anytime by replying *STATUS* to this WhatsApp number.`
   );

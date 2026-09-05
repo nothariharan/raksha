@@ -7,6 +7,7 @@ export * from "./webhook.js";
 export * from "./handoff-subscriber.js";
 export * from "./twilio.js";
 export * from "./language.js";
+export { resolveDeskUrls } from "./replies.js";
 
 const PORT = Number(process.env.PORT_WHATSAPP) || 3005;
 
