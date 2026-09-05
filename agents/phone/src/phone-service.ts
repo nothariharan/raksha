@@ -66,7 +66,7 @@ export class PhoneService {
       callSid: params.callSid,
       callerNumber: params.callerPhone,
       provider: "elevenlabs",
-      language: params.language || "hi",
+      language: params.language || "en",
       startTime: new Date().toISOString(),
     };
 

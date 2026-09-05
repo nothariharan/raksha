@@ -6,6 +6,7 @@
 import { ITelephonyProvider, TelephonyCallContext, VoiceToolCall, VoiceToolResult } from "./interface.js";
 import { PhoneToolsHandler, defaultPhoneToolsHandler } from "../phone-tools.js";
 import { PhoneSessionManager, defaultPhoneSessionManager } from "../session-manager.js";
+import { detectSpokenLanguagePick } from "../language-pick.js";
 
 export interface ElevenLabsWebhookPayload {
   agent_id?: string;
@@ -49,13 +50,15 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
 
     if (toolName === "start_incident" || toolName === "raksha_start_incident") {
       const narrative = String(parameters.narrative || parameters.text || "");
+      const picked = detectSpokenLanguagePick(narrative);
+      if (picked) session.language = picked;
       const res = await this.tools.startIncident({
         narrative,
         callerPhone: session.callerNumber,
-        language: session.language,
+        language: String(parameters.language || picked || session.language || "en"),
       });
 
-      this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);
+      if (res.incidentId) this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);
 
       return {
         toolCallId,
@@ -67,6 +70,8 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
     if (toolName === "process_input" || toolName === "process_user_input" || toolName === "raksha_process_input") {
       const incidentId = String(parameters.incidentId || session.activeIncidentId || "").trim();
       const userSpeech = String(parameters.userSpeech || parameters.speech || parameters.text || "");
+      const picked = detectSpokenLanguagePick(userSpeech);
+      if (picked) session.language = picked;
       const isConfirmation = Boolean(parameters.isConfirmation);
       const confirmedField = parameters.confirmedField as string | undefined;
       const confirmedValue = parameters.confirmedValue;
@@ -77,11 +82,11 @@ export class ElevenLabsTelephonyProvider implements ITelephonyProvider {
         isConfirmation,
         confirmedField,
         confirmedValue,
-        language: session.language,
+        language: String(parameters.language || picked || session.language || "en"),
         callerPhone: context.callerNumber,
       });
 
-      this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);
+      if (res.incidentId) this.sessions.bindIncident(context.callSid, res.incidentId, res.state as any);
 
       return {
         toolCallId,

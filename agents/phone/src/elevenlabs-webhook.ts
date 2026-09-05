@@ -25,6 +25,15 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+const HELPLINE_DID = /^\+?1?6055999677$/;
+
+export function resolveCitizenNumber(rawCaller: string, citizenNumber: string): string {
+  const caller = rawCaller.replace(/\s/g, "");
+  const citizen = citizenNumber.replace(/\s/g, "");
+  if (caller && HELPLINE_DID.test(caller) && citizen) return citizen;
+  return caller || citizen;
+}
+
 export function inferToolName(body: Record<string, unknown>, queryName?: string): string {
   const named = firstString(
     queryName,
@@ -60,16 +69,30 @@ export function normalizeElevenLabsToolRequest(input: {
     headers["x-elevenlabs-caller-id"]
   );
 
-  const callerNumber = firstString(
+  const dyn = asRecord(body.dynamic_variables);
+  const rawCaller = firstString(
     body.caller_id,
     body.callerId,
     body.system__caller_id,
     nested.caller_id,
     nested.callerId,
+    dyn.system__caller_id,
     query?.get("caller_id"),
-    headerCaller,
-    "+919876543210"
+    headerCaller
   );
+  const citizenNumber = firstString(
+    body.system__user_id,
+    body.system__called_number,
+    body.user_id,
+    nested.system__user_id,
+    nested.system__called_number,
+    nested.user_id,
+    dyn.system__user_id,
+    dyn.system__called_number,
+    body.called_number,
+    nested.called_number
+  );
+  const callerNumber = resolveCitizenNumber(rawCaller, citizenNumber) || "+919876543210";
 
   const conversationId = firstString(
     body.conversation_id,

@@ -39,7 +39,7 @@ export class PhoneSessionManager {
         callerNumber: context.callerNumber,
         provider: context.provider,
         activeIncidentId: null,
-        language: (context.language?.slice(0, 2) as SupportedLanguage) || "hi",
+        language: (context.language?.slice(0, 2) as SupportedLanguage) || "en",
         lastState: null,
         startTime: context.startTime || new Date().toISOString(),
         lastActive: new Date().toISOString(),

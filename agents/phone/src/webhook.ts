@@ -7,6 +7,7 @@ import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { PhoneService, defaultPhoneService } from "./phone-service.js";
 import { TelephonyCallContext, VoiceToolCall } from "./providers/interface.js";
 import { normalizeElevenLabsToolRequest } from "./elevenlabs-webhook.js";
+import { detectSpokenLanguagePick } from "./language-pick.js";
 import { incidentService } from "@raksha/core";
 import { normalizeMobile } from "@raksha/shared";
 
@@ -91,11 +92,22 @@ export async function handlePhoneRequest(
         headers: headerBag,
       });
 
+      const spokenIn =
+        typeof parsed.parameters.userSpeech === "string"
+          ? parsed.parameters.userSpeech
+          : typeof parsed.parameters.narrative === "string"
+            ? parsed.parameters.narrative
+            : typeof parsed.parameters.speech === "string"
+              ? parsed.parameters.speech
+              : typeof parsed.parameters.text === "string"
+                ? parsed.parameters.text
+                : "";
+      const picked = detectSpokenLanguagePick(spokenIn);
       const context: TelephonyCallContext = {
         callSid: parsed.conversationId,
         callerNumber: parsed.callerNumber,
         provider: "elevenlabs",
-        language: parsed.language || "en",
+        language: parsed.language || picked || "en",
         startTime: new Date().toISOString(),
       };
 
@@ -105,27 +117,52 @@ export async function handlePhoneRequest(
         parameters: parsed.parameters,
       };
 
-      const result = await ps.handleToolCall(toolCall, context);
-      const spoken =
-        result.speechResponse ||
-        (typeof (result.result as { promptForCaller?: string })?.promptForCaller === "string"
-          ? (result.result as { promptForCaller: string }).promptForCaller
-          : undefined) ||
-        (typeof (result.result as { confirmationSpeech?: string })?.confirmationSpeech === "string"
-          ? (result.result as { confirmationSpeech: string }).confirmationSpeech
-          : undefined);
-      sendJson(res, 200, {
-        ...((result.result && typeof result.result === "object") ? result.result : { result: result.result }),
-        speech: spoken,
-        speechResponse: spoken,
-        toolCallId: result.toolCallId,
-      });
+      try {
+        const result = await ps.handleToolCall(toolCall, context);
+        const spoken =
+          result.speechResponse ||
+          (typeof (result.result as { promptForCaller?: string })?.promptForCaller === "string"
+            ? (result.result as { promptForCaller: string }).promptForCaller
+            : undefined) ||
+          (typeof (result.result as { confirmationSpeech?: string })?.confirmationSpeech === "string"
+            ? (result.result as { confirmationSpeech: string }).confirmationSpeech
+            : undefined) ||
+          "Please tell me what happened, including the amount and the 12-digit UTR.";
+        const payload =
+          result.result && typeof result.result === "object"
+            ? (result.result as Record<string, unknown>)
+            : {};
+        sendJson(res, 200, {
+          result: spoken,
+          ...payload,
+          speech: spoken,
+          speechResponse: spoken,
+          toolCallId: result.toolCallId,
+        });
+      } catch (err) {
+        console.error("[PhoneWebhook tool]:", err);
+        const spoken =
+          "I had a brief delay. Please tell me what happened, including the amount and the 12-digit UTR from your bank SMS.";
+        sendJson(res, 200, {
+          result: spoken,
+          speech: spoken,
+          speechResponse: spoken,
+          error: true,
+        });
+      }
       return;
     }
 
     if (pathname === "/phone/elevenlabs/init" && method === "POST") {
-      const body = await parseJsonBody<{ caller_id?: string; conversation_id?: string }>(req);
-      const caller = normalizeMobile(body.caller_id || "");
+      const body = await parseJsonBody<Record<string, unknown>>(req);
+      const headerBag: Record<string, string | string[] | undefined> = {};
+      for (const [key, value] of Object.entries(req.headers)) headerBag[key] = value;
+      const parsedInit = normalizeElevenLabsToolRequest({
+        body,
+        query: url.searchParams,
+        headers: headerBag,
+      });
+      const caller = normalizeMobile(parsedInit.callerNumber === "+919876543210" ? "" : parsedInit.callerNumber);
       const open = caller ? await incidentService.findOpenByMobile(caller) : null;
       const latest = caller && !open ? await incidentService.findLatestByMobile(caller) : null;
       const incident = open || latest;

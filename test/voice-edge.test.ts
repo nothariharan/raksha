@@ -188,6 +188,34 @@ async function testPhoneSpokenYesConfirmsWhenUtrPresent(): Promise<void> {
   console.log("  ✓ phone confirm + UTR can file; spoken yes reaches Core");
 }
 
+async function testLanguagePickDoesNotOpenCase(): Promise<void> {
+  const env = await isolated();
+  let coreHits = 0;
+  const phone = new PhoneToolsHandler({
+    incidentLookup: (id) => env.incidentService.getIncident(id),
+    processInput: async (input) => {
+      coreHits += 1;
+      return env.processService.processInput(input);
+    },
+  });
+  const started = await phone.startIncident({
+    narrative: "English is fine",
+    callerPhone: "+919811100007",
+    language: "en",
+  });
+  assert.equal(started.incidentId, "");
+  assert.match(started.promptForCaller, /English/i);
+  const follow = await phone.processUserInput({
+    userSpeech: "I prefer English",
+    callerPhone: "+919811100007",
+    language: "en",
+  });
+  assert.equal(follow.incidentId, "");
+  assert.equal(coreHits, 0);
+  env.cleanup();
+  console.log("  ✓ language pick does not open a Core incident");
+}
+
 async function run(): Promise<void> {
   console.log("\n====================================================");
   console.log("  Voice / Phone Proof — Acceptance");
@@ -198,6 +226,7 @@ async function run(): Promise<void> {
   await testVoiceKeepsOriginalStory();
   await testPhoneRefusesFileWithoutUtr();
   await testPhoneSpokenYesConfirmsWhenUtrPresent();
+  await testLanguagePickDoesNotOpenCase();
   console.log("\n====================================================");
   console.log("  ALL VOICE PROOF CHECKS PASSED");
   console.log("====================================================\n");

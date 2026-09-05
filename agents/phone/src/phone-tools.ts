@@ -3,6 +3,23 @@ import { getTranslation } from "@raksha/i18n";
 import { processService, incidentService } from "@raksha/core";
 import { actionRouter } from "@raksha/cap";
 import { normalizeMobile } from "@raksha/shared";
+import { detectSpokenLanguagePick, languagePickResult } from "./language-pick.js";
+
+const CORE_FETCH_MS = 8_000;
+
+async function fetchJsonOrNull<T>(url: string, init?: RequestInit): Promise<T | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), CORE_FETCH_MS);
+  try {
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function isPublicHttpUrl(url?: string): boolean {
   if (!url) return false;
@@ -75,12 +92,14 @@ export class PhoneToolsHandler {
     missingField?: string;
     isReady: boolean;
   }> {
-    const lang = params.language || "hi";
+    const picked = detectSpokenLanguagePick(params.narrative);
+    if (picked) return languagePickResult(picked);
+    const lang = params.language || picked || "en";
     let data: ProcessResponse;
 
     try {
       if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001") && !this.incidentLookup) {
-        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
+        const remote = await fetchJsonOrNull<ProcessResponse>(`${this.coreBaseUrl}/v1/process`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -91,8 +110,8 @@ export class PhoneToolsHandler {
             reporter: { mobile: params.callerPhone || "+919876543210" },
           }),
         });
-        if (res.ok) {
-          data = (await res.json()) as ProcessResponse;
+        if (remote) {
+          data = remote;
         } else {
           const out = await this.processInputFn({
             source: "phone",
@@ -181,7 +200,9 @@ export class PhoneToolsHandler {
     missingField?: string;
     isReady: boolean;
   }> {
-    const lang = params.language || "hi";
+    const picked = detectSpokenLanguagePick(params.userSpeech);
+    if (picked) return languagePickResult(picked);
+    const lang = params.language || "en";
     let userClarificationAnswer: { field: string; answerValue: unknown } | undefined;
 
     if (params.confirmedField && params.confirmedValue !== undefined) {
@@ -217,13 +238,13 @@ export class PhoneToolsHandler {
     };
     try {
       if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001") && !this.incidentLookup) {
-        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
+        const remote = await fetchJsonOrNull<ProcessResponse>(`${this.coreBaseUrl}/v1/process`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(processBody),
         });
-        if (res.ok) {
-          data = (await res.json()) as ProcessResponse;
+        if (remote) {
+          data = remote;
         } else {
           const out = await this.processInputFn(processBody);
           data = {
@@ -288,18 +309,17 @@ export class PhoneToolsHandler {
     portalAUrl?: string;
     portalBUrl?: string;
   }> {
-    const lang = params.language || "hi";
+    const lang = params.language || "en";
     let incident: FraudIncident | null = null;
     if (this.incidentLookup) {
       incident = (await this.incidentLookup(params.incidentId)) || null;
     } else {
       try {
         if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
-          const incRes = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
-          if (incRes.ok) {
-            const raw = (await incRes.json()) as any;
-            incident = (raw.incident || raw) as FraudIncident;
-          }
+          const raw = await fetchJsonOrNull<{ incident?: FraudIncident } & FraudIncident>(
+            `${this.coreBaseUrl}/v1/incidents/${params.incidentId}`
+          );
+          if (raw) incident = (raw.incident || raw) as FraudIncident;
         }
       } catch {}
 
@@ -382,8 +402,8 @@ export class PhoneToolsHandler {
     if (params.incidentId) {
       try {
         if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
-          const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
-          if (res.ok) return await res.json();
+          const remote = await fetchJsonOrNull(`${this.coreBaseUrl}/v1/incidents/${params.incidentId}`);
+          if (remote) return remote;
         }
       } catch {}
       const incident = await incidentService.getIncident(params.incidentId);
