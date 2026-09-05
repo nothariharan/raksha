@@ -2,6 +2,8 @@ export type SupportedLanguage = "en" | "hi" | "ta" | "te" | "kn" | "bn" | "mr";
 
 export interface TranslationStrings {
   emergencyGreeting: string;
+  askPreferredLanguage: string;
+  languageAcknowledged: string;
   askNarrative: string;
   askTransactionDetails: string;
   askMissingDate: string;
@@ -12,11 +14,14 @@ export interface TranslationStrings {
   reportSubmitted: string;
   reportAccepted: string;
   policeDisclaimer: string;
+  noActiveCase: string;
 }
 
 export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
   en: {
     emergencyGreeting: "Raksha Emergency Response. Please don't worry at all, we are here to assist you immediately.",
+    askPreferredLanguage: "Please choose your language. Reply with the number or language name.",
+    languageAcknowledged: "Thank you. We will continue in English.",
     askNarrative: "Please describe what happened in your own words — how did they contact you?",
     askTransactionDetails: "Please upload your payment screenshot or enter transaction details.",
     askMissingDate: "I found the amount and bank details. When did this transaction take place?",
@@ -27,9 +32,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "Report submitted to 1930 / Cyber Crime Portal gateway.",
     reportAccepted: "Emergency fraud freeze packet accepted. Reference number generated.",
     policeDisclaimer: "Official acknowledgement received. Next step: Follow up on the national cyber crime portal.",
+    noActiveCase: "I could not find an active Raksha report on this number yet. Tell me what happened and I will start one.",
   },
   hi: {
     emergencyGreeting: "रक्षा आपातकालीन सेवा। आप बिल्कुल चिंता मत कीजिए, हम तुरंत आपकी सहायता कर रहे हैं।",
+    askPreferredLanguage: "कृपया अपनी भाषा चुनें। संख्या या भाषा का नाम लिखें।",
+    languageAcknowledged: "धन्यवाद। हम हिंदी में आगे बढ़ेंगे।",
     askNarrative: "कृपया अपने शब्दों में बताएं कि क्या हुआ — आपसे किसने और कैसे संपर्क किया?",
     askTransactionDetails: "कृपया अपने भुगतान का स्क्रीनशॉट अपलोड करें या विवरण दर्ज करें।",
     askMissingDate: "मुझे राशि और बैंक का विवरण मिल गया है। यह लेन-देन किस समय हुआ था?",
@@ -40,9 +48,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "रिपोर्ट 1930 / साइबर क्राइम पोर्टल गेटवे को भेज दी गई है।",
     reportAccepted: "आपातकालीन फ्रॉड फ्रीज पैकेट स्वीकार कर लिया गया है। संदर्भ संख्या तैयार है।",
     policeDisclaimer: "आधिकारिक पावती प्राप्त हुई। अगला कदम: पोर्टल पर अनुवर्ती कार्रवाई करें।",
+    noActiveCase: "इस नंबर पर अभी कोई सक्रिय रक्षा रिपोर्ट नहीं मिली। बताइए क्या हुआ, मैं रिपोर्ट शुरू करूँगा।",
   },
   ta: {
     emergencyGreeting: "ரக்ஷா அவசர உதவி மையம். தயவுசெய்து அமைதியாக இருங்கள், நாங்கள் உடனடியாக உதவுகிறோம்.",
+    askPreferredLanguage: "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும். எண் அல்லது மொழி பெயரை அனுப்பவும்.",
+    languageAcknowledged: "நன்றி. தமிழில் தொடர்கிறோம்.",
     askNarrative: "என்ன நடந்தது என்பதை உங்கள் சொந்த வார்த்தைகளில் கூறுங்கள்.",
     askTransactionDetails: "தயவுசெய்து உங்கள் பரிவர்த்தனை ஸ்கிரீன்ஷாட்டை பதிவேற்றவும்.",
     askMissingDate: "தொகை மற்றும் வங்கி விவரங்கள் கிடைத்தன. இந்த பரிவர்த்தனை எப்போது நடந்தது?",
@@ -53,9 +64,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "புகார் 1930 / சைபர் கிரைம் போர்ட்டலுக்கு அனுப்பப்பட்டது.",
     reportAccepted: "அவசர முடக்கல் அறிக்கை ஏற்றுக்கொள்ளப்பட்டது. குறிப்பு எண் உருவாக்கப்பட்டது.",
     policeDisclaimer: "அதிகாரப்பூர்வ ஒப்புதல் பெறப்பட்டது. அடுத்த கட்ட நடவடிக்கை எடுக்கவும்.",
+    noActiveCase: "இந்த எண்ணில் இன்னும் ரக்ஷா புகார் இல்லை. என்ன நடந்தது என்று சொல்லுங்கள்.",
   },
   te: {
     emergencyGreeting: "రక్ష ఎమర్జెన్సీ రెస్పాన్స్. దయచేసి ప్రశాంతంగా ఉండండి, మేము వెంటనే సహాయం చేస్తాము.",
+    askPreferredLanguage: "దయచేసి మీ భాషను ఎంచుకోండి. నంబర్ లేదా భాష పేరు పంపండి.",
+    languageAcknowledged: "ధన్యవాదాలు. తెలుగులో కొనసాగిస్తాము.",
     askNarrative: "ఏమి జరిగిందో మీ మాటల్లో చెప్పండి.",
     askTransactionDetails: "దయచేసి మీ లావాదేవీ స్క్రీన్‌షాట్‌ను అప్‌లోడ్ చేయండి.",
     askMissingDate: "మొత్తం మరియు బ్యాంక్ వివరాలు లభించాయి. ఈ లావాదేవీ ఎప్పుడు జరిగింది?",
@@ -66,9 +80,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "రిపోర్ట్ 1930 / సైబర్ క్రైమ్ పోర్టల్‌కు సమర్పించబడింది.",
     reportAccepted: "ఎమర్జెన్సీ ఫ్రీజ్ ప్యాకెట్ ఆమోదించబడింది.",
     policeDisclaimer: "అధికారిక రసీదు వచ్చింది.",
+    noActiveCase: "ఈ నంబర్‌పై ఇంకా రక్ష రిపోర్ట్ లేదు. ఏమి జరిగిందో చెప్పండి.",
   },
   kn: {
     emergencyGreeting: "ರಕ್ಷಾ ತುರ್ತು ಸೇವೆ. ದಯವಿಟ್ಟು ಶಾಂತರಾಗಿರಿ, ನಾವು ತಕ್ಷಣ ಸಹಾಯ ಮಾಡುತ್ತಿದ್ದೇವೆ.",
+    askPreferredLanguage: "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆರಿಸಿ. ಸಂಖ್ಯೆ ಅಥವಾ ಭಾಷೆಯ ಹೆಸರು ಕಳುಹಿಸಿ.",
+    languageAcknowledged: "ಧನ್ಯವಾದಗಳು. ಕನ್ನಡದಲ್ಲಿ ಮುಂದುವರಿಸುತ್ತೇವೆ.",
     askNarrative: "ಏನು ಸಂಭವಿಸಿದೆ ಎಂದು ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ತಿಳಿಸಿ.",
     askTransactionDetails: "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾವತಿ ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.",
     askMissingDate: "ಮೊತ್ತ ಮತ್ತು ಬ್ಯಾಂಕ್ ವಿವರ ಸಿಕ್ಕಿದೆ. ಈ ವಹಿವಾಟು ಯಾವಾಗ ನಡೆಯಿತು?",
@@ -79,9 +96,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "ವರದಿಯನ್ನು 1930 / ಸೈಬರ್ ಕ್ರೈಮ್ ಪೋರ್ಟಲ್‌ಗೆ ಸಲ್ಲಿಸಲಾಗಿದೆ.",
     reportAccepted: "ತುರ್ತು ವರದಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ.",
     policeDisclaimer: "ಅಧಿಕೃತ ಸ್ವೀಕೃತಿ ಪಡೆಯಲಾಗಿದೆ.",
+    noActiveCase: "ಈ ಸಂಖ್ಯೆಯಲ್ಲಿ ಇನ್ನೂ ರಕ್ಷಾ ವರದಿ ಇಲ್ಲ. ಏನಾಯಿತು ಎಂದು ಹೇಳಿ.",
   },
   bn: {
     emergencyGreeting: "রক্ষা জরুরি সহায়তা সেবা। অনুগ্রহ করে শান্ত থাকুন, আমরা অবিলম্বে আপনাকে সাহায্য করছি।",
+    askPreferredLanguage: "অনুগ্রহ করে আপনার ভাষা বেছে নিন। নম্বর বা ভাষার নাম পাঠান।",
+    languageAcknowledged: "ধন্যবাদ। আমরা বাংলায় এগোব।",
     askNarrative: "কী ঘটেছে তা আপনার নিজের ভাষায় বর্ণনা করুন।",
     askTransactionDetails: "অনুগ্রহ করে আপনার পেমেন্টের স্ক্রিনশট আপলোড করুন।",
     askMissingDate: "লেনদেনের পরিমাণ এবং ব্যাংকের বিবরণ পাওয়া গেছে। এই লেনদেন কখন হয়েছিল?",
@@ -92,9 +112,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "রিপোর্ট ১৯৩০ / সাইবার ক্রাইম পোর্টালে পাঠানো হয়েছে।",
     reportAccepted: "জরুরি ফ্রড ফ্রিজ প্যাকেট গৃহীত হয়েছে।",
     policeDisclaimer: "অফিসিয়াল প্রাপ্তি স্বীকারপত্র তৈরি হয়েছে।",
+    noActiveCase: "এই নম্বরে এখনও রক্ষা রিপোর্ট নেই। কী হয়েছে বলুন, আমি শুরু করব।",
   },
   mr: {
     emergencyGreeting: "रक्षा आपत्कालीन सेवा. कृपया शांत राहा, आम्ही लगेच मदत करत आहोत.",
+    askPreferredLanguage: "कृपया आपली भाषा निवडा. क्रमांक किंवा भाषेचे नाव पाठवा.",
+    languageAcknowledged: "धन्यवाद. आम्ही मराठीत पुढे जाऊ.",
     askNarrative: "नेमके काय घडले ते तुमच्या शब्दांत सांगा.",
     askTransactionDetails: "कृपया तुमच्या व्यवहाराचा स्क्रीनशॉट अपलोड करा.",
     askMissingDate: "रक्कम आणि बँकेचा तपशील मिळाला आहे. हा व्यवहार कधी झाला?",
@@ -105,6 +128,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, TranslationStrings> = {
     reportSubmitted: "अहवाल १९३० / सायबर क्राईम पोर्टलकडे पाठवला गेला आहे.",
     reportAccepted: "आपत्कालीन तक्रार स्वीकारली गेली आहे.",
     policeDisclaimer: "अधिकृत पावती मिळाली आहे.",
+    noActiveCase: "या नंबरवर अजून रक्षा अहवाल नाही. काय झाले ते सांगा, मी सुरू करेन.",
   },
 };
 

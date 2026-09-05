@@ -156,9 +156,9 @@ After `pnpm --filter @raksha/core build`, a short node script or existing extrac
 
 If you can POST the local webhooks:
 
-**WhatsApp** `POST http://localhost:3005/whatsapp/webhook` (or `/webhook`) with a normalized inbound text for a test mobile, then a YES while session `lastState === READY`.
+**WhatsApp** `POST http://localhost:3005/whatsapp/webhook` (or `/webhook`) with a normalized inbound text for a test mobile. New numbers must be asked for language before intake. Then a YES while session `lastState === READY`. Every turn must produce `replyText` and an outbound send (Twilio REST when live creds exist; captured in tests).
 
-**Pass:** CAP execute, reply text contains Portal A/B URLs, no `confirmFacts` / proof requirement.
+**Pass:** language gate → collect missing fields → CAP execute, reply text contains Portal A/B URLs, no `confirmFacts` / proof requirement. `pnpm test:whatsapp-edge` covers signature, form-urlencoded, restart hydrate, and Core conflict options.
 
 **Phone** `POST http://localhost:3006/phone/simulate` with `start` → `speech` → `submit` (see `agents/phone`).
 
@@ -176,7 +176,7 @@ If Twilio signatures block you, run `pnpm test:thesis` / `pnpm test:cross-channe
 ## 10. Suggested agent order
 
 1. `pnpm build && pnpm typecheck`
-2. `pnpm test && pnpm test:cross-channel && pnpm test:cap-handoff && pnpm test:thesis`
+2. `pnpm test && pnpm test:cross-channel && pnpm test:cap-handoff && pnpm test:thesis && pnpm test:whatsapp-edge`
 3. Start demo if not up
 4. `node scripts/test-fireworks-extractor.mjs`
 5. `node scripts/test-demo-proof-images.mjs`

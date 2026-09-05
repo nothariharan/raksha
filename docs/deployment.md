@@ -58,4 +58,13 @@ pnpm export:web
 vercel --prod --yes
 ```
 
-Protocol: Render auto-deploys `chore/production-deployment` for `raksha-protocol`.
+Protocol: Render auto-deploys `chore/production-deployment` for `raksha-protocol`. After merging WhatsApp edge to `main`, fast-forward that branch (or retarget the service) so the live host serves `/whatsapp/webhook`.
+
+### Twilio WhatsApp (live pilot)
+
+On the Render service, set live `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER`. Blueprint already sets:
+
+- `TWILIO_WEBHOOK_URL=https://raksha-protocol.onrender.com/whatsapp/webhook`
+- `TWILIO_VALIDATE_SIGNATURE=true`
+
+In the Twilio console, the WhatsApp sandbox "When a message comes in" URL must be that same path (`HTTP POST`). Keep the webhook on Render, not Vercel.

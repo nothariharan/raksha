@@ -109,10 +109,11 @@ Stay on the same call after confirm.
 
 Webhook is http://localhost:3005. Local demo may need the WhatsApp simulator or a tunnel.
 
-1. Message a new fraud story from a test number.
-2. Answer missing UTR / amount if asked.
-3. When it says payment identified, reply **YES**.
-4. Reply **STATUS**.
+1. Message a new number. Raksha must ask for preferred language first.
+2. Choose a language, then tell the fraud story.
+3. Answer missing UTR / amount if asked.
+4. When it says payment identified, reply **YES**.
+5. Reply **STATUS**.
 
 **Pass**
 - YES on READY files CAP **without** a screenshot (WhatsApp has no proof gate).

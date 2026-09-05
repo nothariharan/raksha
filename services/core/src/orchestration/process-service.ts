@@ -448,6 +448,12 @@ export class ProcessService {
         proofVerified: incident.validation?.proofVerified || false,
         factsConfirmed: incident.validation?.factsConfirmed || false,
         nextQuestion: undefined,
+        missingFields: reconciliation.missingCrucialFields,
+        conflicts: reconciliation.conflicts.map((c) => ({
+          field: c.field,
+          values: c.values,
+          explanation: c.explanation,
+        })),
       },
     });
 

@@ -1,30 +1,61 @@
 /**
  * WhatsApp Conversational Service for Raksha
- * Translates WhatsApp input events into Core /v1/process and CAP submissions.
+ * Bidirectional citizen edge: inbound turn → Core → outbound WhatsApp reply.
+ * Core owns incident identity and workflow state.
  */
 
 import {
   CAPActionResponse,
   FraudIncident,
+  NextAction,
   NormalizedInputEvent,
   ProcessResponse,
 } from "@raksha/schemas";
-import { processService, incidentService } from "@raksha/core";
+import { ProcessInput, ProcessOutput, processService, incidentService } from "@raksha/core";
 import { normalizeMobile } from "@raksha/shared";
 import { actionRouter } from "@raksha/cap";
+import { SupportedLanguage } from "@raksha/i18n";
 import {
   RawWhatsAppPayload,
   WhatsAppMessageNormalizer,
 } from "./message-normalizer.js";
 import {
+  ConflictOption,
   defaultConversationStore,
+  PendingTurn,
   WhatsAppConversationStore,
+  WhatsAppSession,
 } from "./conversation-store.js";
+import { parseLanguageChoice, normalizeSupportedLanguage } from "./language.js";
+import {
+  formatAccepted,
+  formatAskNarrative,
+  formatConflict,
+  formatLanguagePicker,
+  formatNoCase,
+  formatNotifyAccepted,
+  formatQuestion,
+  formatReady,
+  formatRecorded,
+  formatStatus,
+  optionsFromNextAction,
+} from "./replies.js";
+import { sendTwilioWhatsApp, TwilioOutboundResult } from "./twilio.js";
+
+export interface WhatsAppIncidentLookup {
+  findOpenByMobile(mobile: string): Promise<FraudIncident | null>;
+  findLatestByMobile(mobile: string): Promise<FraudIncident | null>;
+  getIncident(id: string): Promise<FraudIncident | null>;
+}
 
 export interface WhatsAppServiceConfig {
   coreBaseUrl?: string;
   capBaseUrl?: string;
   conversationStore?: WhatsAppConversationStore;
+  incidentLookup?: WhatsAppIncidentLookup;
+  processInput?: (input: ProcessInput) => Promise<ProcessOutput>;
+  executeCap?: (incident: FraudIncident, idempotencyKey: string) => Promise<CAPActionResponse>;
+  sendOutbound?: (to: string, body: string) => Promise<TwilioOutboundResult>;
 }
 
 export interface WhatsAppProcessResult {
@@ -34,17 +65,46 @@ export interface WhatsAppProcessResult {
   state: string | null;
   capResponse?: CAPActionResponse | null;
   fromCache?: boolean;
+  outbound?: TwilioOutboundResult;
+}
+
+function usesRemoteCore(baseUrl: string): boolean {
+  return Boolean(baseUrl) && !baseUrl.includes("localhost:3001");
+}
+
+function parseAmount(text: string): number | null {
+  const cleaned = text.replace(/[₹,\s]/g, "");
+  const match = cleaned.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const n = Number(match[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function isStatusCommand(text: string): boolean {
+  return /^\s*(status|check status|case|track)\s*$/i.test(text);
+}
+
+function isYes(value: string): boolean {
+  return /^(yes|report|confirm|haan|ha|हाँ|சரி)$/i.test(value.trim());
 }
 
 export class WhatsAppService {
   private coreBaseUrl: string;
   private capBaseUrl: string;
   private store: WhatsAppConversationStore;
+  private incidentLookup?: WhatsAppIncidentLookup;
+  private processInputFn?: (input: ProcessInput) => Promise<ProcessOutput>;
+  private executeCapFn?: (incident: FraudIncident, idempotencyKey: string) => Promise<CAPActionResponse>;
+  private sendOutboundFn: (to: string, body: string) => Promise<TwilioOutboundResult>;
 
   constructor(config?: WhatsAppServiceConfig) {
     this.coreBaseUrl = config?.coreBaseUrl || process.env.CORE_BASE_URL || "http://localhost:3001";
     this.capBaseUrl = config?.capBaseUrl || process.env.CAP_PUBLIC_BASE_URL || "http://localhost:3002";
     this.store = config?.conversationStore || defaultConversationStore;
+    this.incidentLookup = config?.incidentLookup;
+    this.processInputFn = config?.processInput;
+    this.executeCapFn = config?.executeCap;
+    this.sendOutboundFn = config?.sendOutbound || sendTwilioWhatsApp;
   }
 
   async handleIncomingMessage(rawPayload: RawWhatsAppPayload): Promise<WhatsAppProcessResult> {
@@ -52,7 +112,6 @@ export class WhatsAppService {
     const senderPhone = normalizeMobile(inputEvent.senderPhone || "+919876543210");
     const messageId = inputEvent.messageId || `msg-${Date.now()}`;
 
-    // 1. Idempotency Check
     const cached = this.store.getCachedReply(messageId);
     if (cached) {
       return {
@@ -61,35 +120,92 @@ export class WhatsAppService {
         incidentId: cached.incidentId,
         state: cached.state,
         fromCache: true,
+        outbound: { attempted: false, sent: false, skipped: true },
       };
     }
 
-    // 2. Look up user session
-    const session = this.store.getSession(senderPhone);
-    let activeIncidentId = session.activeIncidentId;
+    const session = await this.hydrateSession(senderPhone);
+    if (inputEvent.language) {
+      const fromPayload = normalizeSupportedLanguage(inputEvent.language);
+      if (fromPayload) {
+        this.store.setSession(senderPhone, { language: fromPayload, languageConfirmed: true });
+      }
+    }
 
-    // 3. Prepare /v1/process Request
+    const result = await this.routeTurn(session, inputEvent, senderPhone, messageId);
+    const outbound = await this.dispatchOutbound(senderPhone, result.replyText);
+    return { ...result, outbound };
+  }
+
+  private async routeTurn(
+    session: WhatsAppSession,
+    inputEvent: NormalizedInputEvent,
+    senderPhone: string,
+    messageId: string
+  ): Promise<WhatsAppProcessResult> {
+    const live = this.store.getSession(senderPhone);
+    const textValue =
+      inputEvent.type === "TEXT"
+        ? inputEvent.text
+        : inputEvent.type === "CONFIRMATION"
+          ? String(inputEvent.value)
+          : "";
+
+    if (inputEvent.type === "TEXT" && isStatusCommand(textValue)) {
+      return this.replyStatus(senderPhone, messageId);
+    }
+
+    if (this.shouldAskLanguage(live, inputEvent, textValue)) {
+      const choice = parseLanguageChoice(textValue);
+      if (choice) {
+        this.store.setSession(senderPhone, {
+          language: choice,
+          languageConfirmed: true,
+        });
+        const pending = live.pendingTurn;
+        this.store.setSession(senderPhone, { pendingTurn: null });
+        if (pending) {
+          return this.processCitizenContent(senderPhone, messageId, pending.modality, pending.content);
+        }
+        return this.finish(senderPhone, messageId, formatAskNarrative(choice), live.activeIncidentId, live.lastState);
+      }
+
+      if (this.looksLikeHeldStory(inputEvent, textValue)) {
+        this.store.setSession(senderPhone, { pendingTurn: this.toPendingTurn(inputEvent, textValue) });
+      }
+      return this.finish(senderPhone, messageId, formatLanguagePicker(), live.activeIncidentId, live.lastState);
+    }
+
+    const confirmationValue = inputEvent.type === "CONFIRMATION" ? String(inputEvent.value) : textValue;
+
+    if (live.lastState === "READY" && (inputEvent.type === "CONFIRMATION" || isYes(textValue))) {
+      if (live.activeIncidentId && (isYes(textValue) || confirmationValue.toUpperCase() === "1")) {
+        return this.submitIncidentToCAP(live.activeIncidentId, senderPhone, messageId);
+      }
+    }
+
     let modality: "text" | "image" | "voice" = "text";
     let content = "";
     let userClarificationAnswer: { field: string; answerValue: unknown } | undefined;
 
-    if (inputEvent.type === "CONFIRMATION") {
-      const val = String(inputEvent.value).toUpperCase();
-      if (val === "YES" || val === "REPORT" || val === "HAAN" || val === "1") {
-        if (session.lastState === "READY") {
-          // Trigger CAP directly on confirmed READY incident
-          return this.submitIncidentToCAP(activeIncidentId!, senderPhone, messageId);
-        } else if (session.lastState === "USER_CONFIRMATION") {
-          userClarificationAnswer = { field: "transaction.amount", answerValue: 5000 };
-          content = "Confirmed 5000";
-        } else {
-          content = "YES";
-        }
-      } else if (val === "2" && session.lastState === "USER_CONFIRMATION") {
-        userClarificationAnswer = { field: "transaction.amount", answerValue: 50000 };
-        content = "Confirmed 50000";
+    if (inputEvent.type === "CONFIRMATION" || live.lastState === "USER_CONFIRMATION") {
+      const picked = this.pickConflictAnswer(textValue || confirmationValue, live);
+      if (picked !== undefined) {
+        userClarificationAnswer = {
+          field: live.lastConflictField || "transaction.amount",
+          answerValue: picked,
+        };
+        content = `Confirmed ${picked}`;
+      } else if (live.lastState === "USER_CONFIRMATION") {
+        return this.finish(
+          senderPhone,
+          messageId,
+          formatConflict(live.language, undefined, live.lastConflictOptions),
+          live.activeIncidentId,
+          live.lastState
+        );
       } else {
-        content = String(inputEvent.value);
+        content = confirmationValue || textValue;
       }
     } else if (inputEvent.type === "IMAGE") {
       modality = "image";
@@ -98,170 +214,237 @@ export class WhatsAppService {
       modality = "voice";
       content = inputEvent.audioTranscript || inputEvent.mediaUrl;
     } else {
-      modality = "text";
-      content = inputEvent.text;
-
-      // Handle direct STATUS / CASE query
-      if (/^\s*(status|check status|case|track)\s*$/i.test(content)) {
-        // Prefer session-cached incidentId; fall back to Core mobile lookup
-        let lookupId = activeIncidentId;
-        if (!lookupId) {
-          const normPhone = normalizeMobile(senderPhone);
-          // Prefer open case; fall back to latest (covers SUBMITTED / ACKNOWLEDGED after CAP)
-          const openInc = await incidentService.findOpenByMobile(normPhone);
-          const latest = openInc || (await incidentService.findLatestByMobile(normPhone));
-          lookupId = latest?.id ?? null;
-        }
-        if (lookupId) {
-          const existingInc = await this.getIncidentStatus(lookupId);
-          if (existingInc) {
-            const amt = (existingInc.transaction?.amount || 0).toLocaleString();
-            const channel = existingInc.transaction?.channel || "UPI";
-            const bank = existingInc.transaction?.debitInstitution || "State Bank of India";
-            const handoffRef = existingInc.handoff?.externalReference;
-            const handoffStatus = existingInc.handoff?.status;
-            const institutional = handoffRef
-              ? `\n• Tracking Ref: *${handoffRef}*\n• Institutional: *${handoffStatus || "SUBMITTED"}*`
-              : "";
-            const replyText = `🛡️ *Raksha Case Status*\n\nCase ID: *${existingInc.id}*\nStatus: *${existingInc.state}*\n• Amount: *₹${amt}*\n• Channel: *${channel}*\n• Bank: *${bank}*\n• UTR: *${existingInc.transaction?.transactionId || "Verified"}*${institutional}\n\nYour emergency fraud report is active in the Civic Action Protocol.\n_SIMULATED DEMONSTRATION — 1930 / bank systems are simulated._`;
-            return {
-              success: true,
-              replyText,
-              incidentId: lookupId,
-              state: existingInc.state,
-              fromCache: false,
-            };
-          }
-        }
-      }
-
-      // If user provided 12-digit UTR directly in response to question
-      if (/^\d{12}$/.test(content.trim()) && session.lastState === "QUESTION_PENDING") {
+      content = textValue;
+      if (/^\d{12}$/.test(content.trim()) && live.lastState === "QUESTION_PENDING") {
         userClarificationAnswer = {
-          field: "transaction.transactionId",
+          field: live.lastPendingField || "transaction.transactionId",
           answerValue: content.trim(),
         };
-      }
-    }
-
-    // 4. Process incident via Raksha Core (in-memory or HTTP)
-    let processData: ProcessResponse;
-    try {
-      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
-        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            incidentId: activeIncidentId || undefined,
-            source: "whatsapp",
-            modality,
-            content,
-            language: session.language,
-            reporter: { mobile: senderPhone },
-            userClarificationAnswer,
-          }),
-        });
-        if (res.ok) {
-          processData = (await res.json()) as ProcessResponse;
-        } else {
-          const out = await processService.processInput({
-            incidentId: activeIncidentId || undefined,
-            source: "whatsapp",
-            modality,
-            content,
-            language: session.language,
-            reporter: { mobile: senderPhone },
-            userClarificationAnswer,
-          });
-          processData = {
-            incidentId: out.incidentId,
-            state: out.state,
-            nextAction: out.nextAction,
-            incident: out.incident,
-          };
+      } else if (live.lastState === "QUESTION_PENDING" && live.lastPendingField === "transaction.amount") {
+        const amount = parseAmount(content);
+        if (amount !== null) {
+          userClarificationAnswer = { field: "transaction.amount", answerValue: amount };
         }
-      } else {
-        const out = await processService.processInput({
-          incidentId: activeIncidentId || undefined,
-          source: "whatsapp",
-          modality,
-          content,
-          language: session.language,
-          reporter: { mobile: senderPhone },
-          userClarificationAnswer,
-        });
-        processData = {
-          incidentId: out.incidentId,
-          state: out.state,
-          nextAction: out.nextAction,
-          incident: out.incident,
-        };
       }
-    } catch {
-      const out = await processService.processInput({
-        incidentId: activeIncidentId || undefined,
-        source: "whatsapp",
-        modality,
-        content,
-        language: session.language,
-        reporter: { mobile: senderPhone },
-        userClarificationAnswer,
-      });
-      processData = {
-        incidentId: out.incidentId,
-        state: out.state,
-        nextAction: out.nextAction,
-        incident: out.incident,
-      };
     }
 
-    activeIncidentId = processData.incidentId;
-    this.store.bindIncident(senderPhone, activeIncidentId, processData.state);
+    return this.processCitizenContent(senderPhone, messageId, modality, content, userClarificationAnswer);
+  }
 
-    // 5. Format WhatsApp Response Message
+  private shouldAskLanguage(
+    session: WhatsAppSession,
+    inputEvent: NormalizedInputEvent,
+    textValue: string
+  ): boolean {
+    if (session.languageConfirmed) return false;
+    if (session.lastState === "READY" && isYes(textValue)) return false;
+    if (inputEvent.language && normalizeSupportedLanguage(inputEvent.language)) return false;
+    return true;
+  }
+
+  private looksLikeHeldStory(inputEvent: NormalizedInputEvent, textValue: string): boolean {
+    if (inputEvent.type === "IMAGE" || inputEvent.type === "VOICE") return true;
+    if (parseLanguageChoice(textValue)) return false;
+    return textValue.trim().length >= 12;
+  }
+
+  private toPendingTurn(inputEvent: NormalizedInputEvent, textValue: string): PendingTurn {
+    if (inputEvent.type === "IMAGE") {
+      return { modality: "image", content: inputEvent.ocrText || inputEvent.mediaUrl };
+    }
+    if (inputEvent.type === "VOICE") {
+      return { modality: "voice", content: inputEvent.audioTranscript || inputEvent.mediaUrl };
+    }
+    return { modality: "text", content: textValue };
+  }
+
+  private pickConflictAnswer(raw: string, session: WhatsAppSession): unknown | undefined {
+    const options = session.lastConflictOptions || [];
+    const compact = raw.trim();
+    const index = /^(1|2|3|4|5|6|7)$/.test(compact) ? Number(compact) - 1 : -1;
+    if (index >= 0 && options[index]) return options[index].value;
+
+    const amount = parseAmount(compact);
+    if (amount !== null) {
+      const match = options.find((opt) => Number(opt.value) === amount);
+      return match ? match.value : amount;
+    }
+    return undefined;
+  }
+
+  private async processCitizenContent(
+    senderPhone: string,
+    messageId: string,
+    modality: "text" | "image" | "voice",
+    content: string,
+    userClarificationAnswer?: { field: string; answerValue: unknown }
+  ): Promise<WhatsAppProcessResult> {
+    const session = this.store.getSession(senderPhone);
+    const processData = await this.callProcess({
+      incidentId: session.activeIncidentId || undefined,
+      source: "whatsapp",
+      modality,
+      content,
+      language: session.language,
+      reporter: { mobile: senderPhone },
+      userClarificationAnswer,
+    });
+
+    this.store.bindIncident(senderPhone, processData.incidentId, processData.state);
+    const options = optionsFromNextAction(processData.nextAction);
+    const field = processData.nextAction?.field || processData.nextAction?.conflictField || null;
+    this.store.setSession(senderPhone, {
+      lastConflictOptions: options,
+      lastConflictField: field,
+      lastPendingField: processData.nextAction?.field || null,
+      languageConfirmed: true,
+    });
+
+    const lang = session.language;
     let replyText = "";
     const incident = processData.incident;
 
     if (processData.state === "QUESTION_PENDING") {
-      replyText = `I can help report this immediately. 📋\n\n${processData.nextAction.prompt || "Please provide the 12-digit UTR or send the payment screenshot."}`;
+      replyText = formatQuestion(lang, processData.nextAction.prompt);
     } else if (processData.state === "USER_CONFIRMATION") {
-      replyText = `⚠️ *Difference in Transaction Found*\n\n${processData.nextAction.prompt || "Which amount is correct?"}\n\nReply with the correct number:\n1️⃣ ₹5,000\n2️⃣ ₹50,000`;
+      replyText = formatConflict(lang, processData.nextAction.prompt, options);
     } else if (processData.state === "READY") {
-      const amt = incident.transaction?.amount
-        ? `₹${Number(incident.transaction.amount).toLocaleString()}`
-        : "—";
-      replyText =
-        `✅ *Payment Identified*\n\n` +
-        `Please confirm these details are correct:\n` +
-        `• Amount: *${amt}*\n` +
-        `• Mode: *${incident.transaction?.channel || "—"}*\n` +
-        `• Bank: *${incident.transaction?.debitInstitution || "—"}*\n` +
-        `• UTR: *${incident.transaction?.transactionId || "—"}*\n` +
-        (incident.narrative?.text
-          ? `• What happened: ${String(incident.narrative.text).slice(0, 160)}\n`
-          : "") +
-        `\nReply *YES* to dispatch the emergency freeze to 1930 and the bank.`;
+      replyText = formatReady(lang, incident);
     } else if (processData.state === "SUBMITTED" || processData.state === "ACKNOWLEDGED") {
-      replyText = `🛡️ *Emergency Report Accepted*\n\nIncident ID: *${incident.id}*\nStatus: *${processData.state}*\nYour emergency freeze request has been dispatched for simulated 1930 / bank response.`;
+      replyText = formatAccepted(
+        lang,
+        incident,
+        incident.handoff?.externalReference || incident.id,
+        process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
+        process.env.PORTAL_B_BASE_URL || "http://localhost:3004"
+      );
     } else {
-      replyText = `Incident recorded: *${incident.id}*. Please share additional transaction details or screenshot.`;
+      replyText = formatRecorded(incident.id, processData.nextAction.prompt);
     }
 
-    // 6. Cache Reply for Idempotency
-    this.store.cacheReply(messageId, {
-      messageId,
-      replyText,
-      incidentId: activeIncidentId,
-      state: processData.state,
-      processedAt: new Date().toISOString(),
-    });
+    return this.finish(senderPhone, messageId, replyText, processData.incidentId, processData.state);
+  }
 
+  private async replyStatus(senderPhone: string, messageId: string): Promise<WhatsAppProcessResult> {
+    const session = this.store.getSession(senderPhone);
+    let lookupId = session.activeIncidentId;
+    if (!lookupId) {
+      const latest = (await this.lookupOpen(senderPhone)) || (await this.lookupLatest(senderPhone));
+      lookupId = latest?.id ?? null;
+      if (latest) this.store.bindIncident(senderPhone, latest.id, latest.state);
+    }
+    if (!lookupId) {
+      return this.finish(senderPhone, messageId, formatNoCase(session.language), null, null);
+    }
+    const existingInc = await this.getIncidentStatus(lookupId);
+    if (!existingInc) {
+      return this.finish(senderPhone, messageId, formatNoCase(session.language), lookupId, session.lastState);
+    }
+    return this.finish(
+      senderPhone,
+      messageId,
+      formatStatus(session.language, existingInc),
+      lookupId,
+      existingInc.state
+    );
+  }
+
+  private async hydrateSession(phoneNumber: string): Promise<WhatsAppSession> {
+    const session = this.store.getSession(phoneNumber);
+    if (session.hydratedFromCore) return session;
+    if (session.activeIncidentId) {
+      return this.store.setSession(phoneNumber, { hydratedFromCore: true });
+    }
+
+    const open = await this.lookupOpen(phoneNumber);
+    const latest = open || (await this.lookupLatest(phoneNumber));
+    if (latest) {
+      this.store.bindIncident(phoneNumber, latest.id, latest.state);
+      const lang = normalizeSupportedLanguage(latest.reporter?.preferredLanguage);
+      const conflict = latest.validation?.conflicts?.[0];
+      const options: ConflictOption[] = (conflict?.values || []).map((value) => ({
+        label: typeof value === "number" ? `₹${Number(value).toLocaleString("en-IN")}` : String(value),
+        value,
+      }));
+      this.store.setSession(phoneNumber, {
+        hydratedFromCore: true,
+        language: lang || session.language,
+        languageConfirmed: Boolean(lang) || Boolean(latest.id),
+        lastConflictOptions: options,
+        lastConflictField: conflict?.field || null,
+      });
+    } else {
+      this.store.setSession(phoneNumber, { hydratedFromCore: true });
+    }
+    return this.store.getSession(phoneNumber);
+  }
+
+  private async lookupOpen(mobile: string): Promise<FraudIncident | null> {
+    if (this.incidentLookup) return this.incidentLookup.findOpenByMobile(mobile);
+    if (usesRemoteCore(this.coreBaseUrl)) {
+      try {
+        const res = await fetch(
+          `${this.coreBaseUrl}/v1/incidents/open?mobile=${encodeURIComponent(mobile)}`
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { incident?: FraudIncident | null };
+          return data.incident || null;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    return incidentService.findOpenByMobile(mobile);
+  }
+
+  private async lookupLatest(mobile: string): Promise<FraudIncident | null> {
+    if (this.incidentLookup) return this.incidentLookup.findLatestByMobile(mobile);
+    if (usesRemoteCore(this.coreBaseUrl)) {
+      try {
+        const res = await fetch(
+          `${this.coreBaseUrl}/v1/incidents/latest?mobile=${encodeURIComponent(mobile)}`
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { incident?: FraudIncident | null };
+          return data.incident || null;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    return incidentService.findLatestByMobile(mobile);
+  }
+
+  private async callProcess(input: ProcessInput): Promise<ProcessResponse> {
+    if (this.processInputFn) {
+      const out = await this.processInputFn(input);
+      return {
+        incidentId: out.incidentId,
+        state: out.state,
+        nextAction: out.nextAction as NextAction,
+        incident: out.incident,
+      };
+    }
+
+    try {
+      if (usesRemoteCore(this.coreBaseUrl)) {
+        const res = await fetch(`${this.coreBaseUrl}/v1/process`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        if (res.ok) return (await res.json()) as ProcessResponse;
+      }
+    } catch {
+      /* in-process fallback */
+    }
+
+    const out = await processService.processInput(input);
     return {
-      success: true,
-      replyText,
-      incidentId: activeIncidentId,
-      state: processData.state,
-      fromCache: false,
+      incidentId: out.incidentId,
+      state: out.state,
+      nextAction: out.nextAction as NextAction,
+      incident: out.incident,
     };
   }
 
@@ -270,90 +453,55 @@ export class WhatsAppService {
     senderPhone: string,
     messageId: string
   ): Promise<WhatsAppProcessResult> {
-    let incident: FraudIncident | null = null;
-    try {
-      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
-        const incRes = await fetch(`${this.coreBaseUrl}/v1/incidents/${incidentId}`);
-        if (incRes.ok) {
-          const raw = (await incRes.json()) as any;
-          incident = (raw.incident || raw) as FraudIncident;
-        }
-      }
-    } catch {}
-
-    if (!incident) {
-      incident = (await incidentService.getIncident(incidentId)) as FraudIncident | null;
-    }
+    const incident = await this.getIncidentStatus(incidentId);
     if (!incident) throw new Error(`Failed to fetch incident ${incidentId}`);
 
     const idempotencyKey = `whatsapp-cap-${incidentId}`;
     let capData: CAPActionResponse;
 
-    try {
-      if (this.capBaseUrl && !this.capBaseUrl.includes("localhost:3002")) {
-        const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Idempotency-Key": idempotencyKey,
-          },
-          body: JSON.stringify({
-            action: "report_financial_fraud",
-            payload: incident,
-            idempotencyKey,
-          }),
-        });
-        if (capRes.ok) {
-          capData = (await capRes.json()) as CAPActionResponse;
+    if (this.executeCapFn) {
+      capData = await this.executeCapFn(incident, idempotencyKey);
+    } else {
+      try {
+        if (this.capBaseUrl && !this.capBaseUrl.includes("localhost:3002")) {
+          const capRes = await fetch(`${this.capBaseUrl}/cap/actions/execute`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Idempotency-Key": idempotencyKey,
+            },
+            body: JSON.stringify({
+              action: "report_financial_fraud",
+              payload: incident,
+              idempotencyKey,
+            }),
+          });
+          if (capRes.ok) {
+            capData = (await capRes.json()) as CAPActionResponse;
+          } else {
+            capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
+          }
         } else {
           capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
         }
-      } else {
+      } catch {
         capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
       }
-    } catch {
-      capData = await actionRouter.executeAction("report_financial_fraud", incident, idempotencyKey);
     }
 
     const refNumber = capData.externalReference || `1930-SYN-${capData.caseId}`;
-
     this.store.bindIncident(senderPhone, incidentId, "SUBMITTED");
+    const lang = this.store.getSession(senderPhone).language;
+    const replyText = formatAccepted(
+      lang,
+      incident,
+      refNumber,
+      process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
+      process.env.PORTAL_B_BASE_URL || "http://localhost:3004"
+    );
 
-    const portalA = process.env.PORTAL_A_BASE_URL || "http://localhost:3003";
-    const portalB = process.env.PORTAL_B_BASE_URL || "http://localhost:3004";
-    const bank = incident.transaction?.debitInstitution || "your bank";
-
-    const replyText =
-      `🛡️ *Raksha Emergency Report Accepted*\n\n` +
-      `Tracking Reference: *${refNumber}*\n` +
-      `Incident ID: *${incidentId}*\n\n` +
-      `• Amount: *₹${incident.transaction?.amount ? Number(incident.transaction.amount).toLocaleString() : "—"}*\n` +
-      `• Mode: *${incident.transaction?.channel || "—"}*\n` +
-      `• Bank: *${bank}*\n` +
-      `• UTR: *${incident.transaction?.transactionId || "—"}*\n\n` +
-      `Your emergency fraud packet has been handed over for simulated 1930 / bank response.\n\n` +
-      `Open desks (simulated):\n` +
-      `• 1930 cyber cell: ${portalA}\n` +
-      `• ${bank} freeze desk: ${portalB}\n\n` +
-      `Nothing else you need to do here.\n` +
-      `Reply *STATUS* anytime for an update.`;
-
-    this.store.cacheReply(messageId, {
-      messageId,
-      replyText,
-      incidentId,
-      state: "SUBMITTED",
-      processedAt: new Date().toISOString(),
-    });
-
-    return {
-      success: true,
-      replyText,
-      incidentId,
-      state: "SUBMITTED",
-      capResponse: capData,
-      fromCache: false,
-    };
+    const finished = this.finish(senderPhone, messageId, replyText, incidentId, "SUBMITTED");
+    return { ...finished, capResponse: capData };
   }
 
   async notifyCitizenIncidentAccepted(params: {
@@ -364,82 +512,74 @@ export class WhatsAppService {
     channel?: string;
     bank?: string;
     utr?: string;
-  }): Promise<{ sent: boolean; message: string }> {
-    const cleanPhone = params.mobile.replace(/whatsapp:/i, "").trim();
-    const amt = (params.amount || 5000).toLocaleString();
-    const channel = params.channel || "UPI";
-    const bank = params.bank || "State Bank of India";
-    const utr = params.utr || "Verified";
-
-    const portalA = process.env.PORTAL_A_BASE_URL || "http://localhost:3003";
-    const portalB = process.env.PORTAL_B_BASE_URL || "http://localhost:3004";
-
-    const replyText =
-      `🛡️ *Raksha Emergency Freeze Confirmation*\n\n` +
-      `Dear Citizen,\nYour Raksha emergency report has been submitted to the simulated 1930 / bank response layer.\n\n` +
-      `• Tracking Reference: *${params.referenceNumber}*\n` +
-      `• Case ID: *${params.incidentId}*\n` +
-      `• Amount: *₹${amt}*\n` +
-      `• Channel: *${channel}*\n` +
-      `• Bank: *${bank}*\n` +
-      `• UTR: *${utr}*\n` +
-      `• Status: *ACCEPTED — SIMULATED RESPONSE*\n\n` +
-      `Open desks (simulated):\n` +
-      `• 1930 cyber cell: ${portalA}\n` +
-      `• ${bank} freeze desk: ${portalB}\n\n` +
-      `Nothing else you need to do here.\n\n` +
-      `You can check real-time status anytime by replying *STATUS* to this WhatsApp number.`;
-
-    this.store.bindIncident(cleanPhone, params.incidentId, "SUBMITTED");
-    this.store.cacheReply(`notif-${Date.now()}`, {
-      messageId: `notif-${Date.now()}`,
-      replyText,
+  }): Promise<WhatsAppProcessResult> {
+    const cleanPhone = normalizeMobile(params.mobile.replace(/whatsapp:/i, "").trim());
+    const session = this.store.getSession(cleanPhone);
+    const replyText = formatNotifyAccepted(session.language, {
       incidentId: params.incidentId,
-      state: "SUBMITTED",
-      processedAt: new Date().toISOString(),
+      referenceNumber: params.referenceNumber,
+      amount: params.amount,
+      channel: params.channel,
+      bank: params.bank,
+      utr: params.utr,
+      portalA: process.env.PORTAL_A_BASE_URL || "http://localhost:3003",
+      portalB: process.env.PORTAL_B_BASE_URL || "http://localhost:3004",
     });
 
-    // If Twilio credentials exist and outbound is enabled, send via Twilio WhatsApp API
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER) {
-      try {
-        const auth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString("base64");
-        const fromNumber = process.env.TWILIO_FROM_NUMBER.startsWith("whatsapp:")
-          ? process.env.TWILIO_FROM_NUMBER
-          : `whatsapp:${process.env.TWILIO_FROM_NUMBER}`;
-        const toNumber = cleanPhone.startsWith("whatsapp:") ? cleanPhone : `whatsapp:${cleanPhone}`;
-
-        await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Basic ${auth}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            From: fromNumber,
-            To: toNumber,
-            Body: replyText,
-          }).toString(),
-        });
-      } catch (twilioErr) {
-        // Fallback gracefully without breaking local flow
-      }
-    }
-
-    return { sent: true, message: replyText };
+    this.store.bindIncident(cleanPhone, params.incidentId, "SUBMITTED");
+    const outbound = await this.dispatchOutbound(cleanPhone, replyText);
+    const finished = this.finish(
+      cleanPhone,
+      `notif-${Date.now()}`,
+      replyText,
+      params.incidentId,
+      "SUBMITTED"
+    );
+    return { ...finished, outbound };
   }
 
   async getIncidentStatus(incidentId: string): Promise<FraudIncident | null> {
+    if (this.incidentLookup) return this.incidentLookup.getIncident(incidentId);
     try {
-      if (this.coreBaseUrl && !this.coreBaseUrl.includes("localhost:3001")) {
+      if (usesRemoteCore(this.coreBaseUrl)) {
         const res = await fetch(`${this.coreBaseUrl}/v1/incidents/${incidentId}`);
-        if (res.ok) {
-          return (await res.json()) as FraudIncident;
-        }
+        if (res.ok) return (await res.json()) as FraudIncident;
       }
-    } catch {}
+    } catch {
+      /* in-process */
+    }
+    return (await incidentService.getIncident(incidentId)) || null;
+  }
 
-    const inc = await incidentService.getIncident(incidentId);
-    return inc || null;
+  private finish(
+    senderPhone: string,
+    messageId: string,
+    replyText: string,
+    incidentId: string | null,
+    state: ProcessResponse["state"] | string | null
+  ): WhatsAppProcessResult {
+    this.store.cacheReply(messageId, {
+      messageId,
+      replyText,
+      incidentId,
+      state: (state as WhatsAppProcessResult["state"]) as never,
+      processedAt: new Date().toISOString(),
+    });
+    return {
+      success: true,
+      replyText,
+      incidentId,
+      state,
+      fromCache: false,
+    };
+  }
+
+  private async dispatchOutbound(to: string, body: string): Promise<TwilioOutboundResult> {
+    try {
+      return await this.sendOutboundFn(to, body);
+    } catch (err) {
+      return { attempted: true, sent: false, error: (err as Error).message };
+    }
   }
 }
 

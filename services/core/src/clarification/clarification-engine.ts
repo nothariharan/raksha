@@ -22,6 +22,7 @@ export interface ClarificationDecision {
   conflictField?: string;
   prompt: string;
   localizedPrompts: Record<SupportedLanguage, string>;
+  options?: Array<{ label: string; value: unknown }>;
   isComplete: boolean;
 }
 
@@ -101,6 +102,11 @@ export class ClarificationEngine {
       const promptEn = `I noticed a difference in the ${conflict.field.replace("transaction.", "")}: ${conflict.sources.join(" vs ")}. Which value is correct?`;
       const promptHi = `लेन-देन विवरण में अंतर पाया गया: ${conflict.sources.join(" बनाम ")}। कृपया सही विवरण की पुष्टि करें।`;
 
+      const options = (conflict.values || []).map((value) => ({
+        label: typeof value === "number" ? `₹${Number(value).toLocaleString("en-IN")}` : String(value),
+        value,
+      }));
+
       return {
         type: "CONFIRM_CONFLICT",
         nextActionType: "CONFIRM_CONFLICT",
@@ -116,6 +122,7 @@ export class ClarificationEngine {
           bn: `লেনদেনের পরিমাণে গরমিল আছে। সঠিক পরিমাণ নিশ্চিত করুন।`,
           mr: `व्यवहाराच्या तपशीलात तफावत आहे. कृपया योग्य तपशील निश्चित करा.`,
         },
+        options,
         isComplete: false,
       };
     }

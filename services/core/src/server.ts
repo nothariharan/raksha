@@ -257,6 +257,18 @@ export async function handleCoreRequest(req: IncomingMessage, res: ServerRespons
         return;
       }
 
+      // GET /v1/incidents/latest?mobile=... — STATUS / restart reconstruction after CAP
+      if (pathname === "/v1/incidents/latest" && method === "GET") {
+        const mobile = url.searchParams.get("mobile");
+        if (!mobile) {
+          sendJson(res, 400, { error: "MOBILE_REQUIRED" });
+          return;
+        }
+        const latest = await incidentService.findLatestByMobile(mobile);
+        sendJson(res, 200, { found: !!latest, incident: latest ?? null });
+        return;
+      }
+
       // Regex for /v1/incidents/:id and sub-routes
       const incidentMatch = pathname.match(/^\/v1\/incidents\/([a-zA-Z0-9_-]+)(?:\/([a-zA-Z0-9_-]+))?$/);
       if (incidentMatch) {
