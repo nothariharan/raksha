@@ -30,18 +30,22 @@ export function renderHomePageHtml(): string {
       z-index: 5;
     }
     .hero-copy h1 {
-      max-width: 20ch;
-      font-size: clamp(3.15rem, 5vw, 5rem);
+      max-width: 9.4em;
+      font-size: clamp(2.85rem, 4.6vw, 4.55rem);
+      line-height: 1.1;
+      padding-bottom: 0.08em;
     }
     .hero-copy h1 em {
       color: var(--mode, var(--orange));
-      font-style: normal;
+      font-style: italic;
       font-family: inherit;
+      display: inline-block;
+      padding: 0.02em 0 0.14em;
       transition: color 0.3s ease;
     }
     .hero-copy p {
-      max-width: 360px;
-      margin: 1.35rem 0 1.65rem;
+      max-width: 34ch;
+      margin: 1.2rem 0 1.5rem;
       color: var(--text-muted);
       font-size: 1rem;
       line-height: 1.6;
@@ -52,11 +56,13 @@ export function renderHomePageHtml(): string {
       gap: 0.65rem;
       border-radius: 999px;
       padding: 0.83rem 1.25rem;
+      min-height: 44px;
       background: var(--text);
       color: #fff;
       font-size: 0.9rem;
       font-weight: 700;
       text-decoration: none;
+      white-space: nowrap;
       box-shadow: 0 10px 24px rgba(28, 25, 23, 0.14);
       transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     }
@@ -204,6 +210,8 @@ export function renderHomePageHtml(): string {
       position: absolute;
       z-index: 2;
       transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.35s cubic-bezier(0.16, 1, 0.3, 1), right 0.35s cubic-bezier(0.16, 1, 0.3, 1), bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .companion-wrap > * {
       animation: floatCard 6s ease-in-out infinite alternate;
     }
     /* Opposite side positioning */
@@ -850,17 +858,20 @@ export function renderHomePageHtml(): string {
 
     /* Responsive Adjustments */
     @media (max-width: 1100px) {
-      .landing { padding: 1.8rem 1.5rem 2.8rem; }
+      .landing { padding: 1.4rem 1.5rem 2.4rem; min-height: 0; overflow: visible; }
       .hero {
-        grid-template-columns: 0.85fr 1.25fr;
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.2fr);
+        gap: 1.4rem 1.8rem;
       }
+      .hero-copy h1 { font-size: clamp(2.45rem, 4.2vw, 3.4rem); max-width: 10em; }
+      .hero-stage { height: min(520px, calc(100dvh - 180px)); min-height: 380px; }
       .mode-detail {
         grid-column: 1 / -1;
         border-left: 0;
         border-top: 1px solid var(--border);
         padding: 1.4rem 0 0;
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         column-gap: 2rem;
       }
       .mode-detail .mode-kicker, .mode-detail h2, .mode-detail .mode-heading { grid-column: 1; }
@@ -869,26 +880,72 @@ export function renderHomePageHtml(): string {
       .mode-detail ul { grid-row: 2; margin-top: 0.8rem; }
     }
 
-    @media (max-width: 760px) {
-      .landing { display: block; padding: 1.35rem 1rem 2.4rem; min-height: 0; overflow: visible; }
-      .hero { display: flex; flex-direction: column; gap: 1.35rem; }
-      .hero-copy { width: 100%; }
-      .hero-copy h1 { font-size: clamp(2.25rem, 10.5vw, 3.15rem); max-width: none; line-height: 1.02; }
-      .hero-copy p { margin: 0.95rem 0 1.15rem; font-size: 0.92rem; max-width: none; }
-      .hero-cta { width: 100%; justify-content: center; }
-      .hero-stage { width: 100%; height: min(400px, 78vw); min-height: 300px; }
+    @media (max-width: 900px) {
+      .landing {
+        display: flex;
+        flex-direction: column;
+        padding: 1.35rem 1.15rem 2.25rem;
+        min-height: 0;
+        overflow: visible;
+      }
+      .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+        width: 100%;
+      }
+      .hero-copy {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+      }
+      .hero-copy h1 {
+        font-size: clamp(2.2rem, 8vw, 2.65rem);
+        max-width: 10em;
+        line-height: 1.16;
+        letter-spacing: -0.03em;
+      }
+      html[lang="hi"] .hero-copy h1,
+      html[lang="ta"] .hero-copy h1 {
+        font-size: clamp(1.8rem, 7.2vw, 2.2rem);
+        max-width: none;
+        line-height: 1.28;
+      }
+      .hero-copy p { margin: 0.85rem 0 1.15rem; font-size: 0.95rem; max-width: 40ch; }
+      .hero-cta { width: auto; justify-content: center; }
+      .hero-stage {
+        position: relative;
+        z-index: 0;
+        width: 100%;
+        height: min(420px, 88vw);
+        min-height: 320px;
+        overflow: hidden;
+        border-radius: 22px;
+        background: var(--mode-bg, #fff1e8);
+      }
       .mode-switch {
-        width: calc(100% - 8px);
-        bottom: 6px;
-        padding: 0.28rem;
+        left: 8px;
+        right: 8px;
+        width: auto;
+        transform: none;
+        bottom: 8px;
+        padding: 0.26rem;
       }
       .mode-switch button {
         font-size: 0.7rem;
         padding: 0.58rem 0.3rem;
+        min-height: 40px;
       }
-      .mode-detail { width: 100%; display: block; padding-top: 1.1rem; }
-      .mode-detail h2, .mode-heading { margin-bottom: 0.55rem; font-size: clamp(2rem, 8.4vw, 2.55rem); }
+      .mode-detail {
+        width: 100%;
+        display: block;
+        padding: 0.15rem 0 0;
+        border-top: 0;
+      }
+      .mode-detail h2, .mode-heading { margin-bottom: 0.5rem; font-size: clamp(1.85rem, 7.2vw, 2.3rem); line-height: 1.14; }
       .mode-heading-icon { width: 0.72em; height: 0.72em; }
+      .mode-detail p { font-size: 0.93rem; }
       .mode-detail ul { margin-top: 1rem; gap: 0.7rem; }
       .mode-bullet-icon { width: 20px; height: 20px; }
       .hero-stage[data-align="left"] .hero-person,
@@ -896,7 +953,7 @@ export function renderHomePageHtml(): string {
       .hero-stage[data-current-mode="call"] .hero-person,
       .hero-stage[data-current-mode="web"] .hero-person,
       .hero-stage[data-current-mode="whatsapp"] .hero-person {
-        object-position: 50% 36%;
+        object-position: 50% 18%;
         transform: none !important;
       }
       .companion-wrap,
@@ -905,22 +962,50 @@ export function renderHomePageHtml(): string {
       .hero-stage[data-current-mode="call"] .companion-wrap,
       .hero-stage[data-current-mode="whatsapp"] .companion-wrap,
       .hero-stage[data-current-mode="web"] .companion-wrap {
-        left: 50% !important;
-        right: auto !important;
+        left: auto !important;
+        right: 4% !important;
         bottom: 18% !important;
-        transform: translateX(-50%) scale(0.68);
-        transform-origin: center bottom;
+        transform: scale(0.52);
+        transform-origin: bottom right;
       }
-      .call-card, .wa-card { width: min(270px, 78vw); }
+      .call-card, .wa-card, .web-card { width: min(236px, 68vw); }
       .stage-accent,
       .hero-stage[data-align="left"] .stage-accent,
       .hero-stage[data-align="right"] .stage-accent {
-        top: 3%;
+        top: 4%;
         right: 4% !important;
         left: auto !important;
-        font-size: 0.64rem;
-        padding: 0.35rem 0.65rem;
+        font-size: 0.62rem;
+        padding: 0.32rem 0.58rem;
+        max-width: calc(100% - 1.2rem);
       }
+    }
+
+    html[lang="hi"] .hero-copy h1,
+    html[lang="ta"] .hero-copy h1 {
+      font-size: clamp(2.15rem, 3.8vw, 3.2rem);
+      max-width: 14em;
+      line-height: 1.26;
+    }
+
+    @media (max-width: 420px) {
+      .hero-copy h1 { font-size: clamp(1.95rem, 9vw, 2.3rem); }
+      html[lang="hi"] .hero-copy h1,
+      html[lang="ta"] .hero-copy h1 { font-size: clamp(1.7rem, 8vw, 2.05rem); }
+      .hero-copy p { font-size: 0.9rem; }
+      .hero-stage { height: min(360px, 96vw); min-height: 280px; }
+      .companion-wrap,
+      .hero-stage[data-align="left"] .companion-wrap,
+      .hero-stage[data-align="right"] .companion-wrap,
+      .hero-stage[data-current-mode="call"] .companion-wrap,
+      .hero-stage[data-current-mode="whatsapp"] .companion-wrap,
+      .hero-stage[data-current-mode="web"] .companion-wrap {
+        transform: scale(0.46);
+      }
+    }
+
+    @media (max-width: 900px) and (max-height: 520px) {
+      .hero-stage { height: min(240px, 56vh); min-height: 200px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -963,8 +1048,8 @@ export function renderHomePageHtml(): string {
         
         <!-- Column 1: Editorial Heading & CTA -->
         <div class="hero-copy">
-          <h1 id="heroTitle">Tell us what happened.<br><em>We handle the rest.</em></h1>
-          <p id="heroSub">Call, send a voice note, or upload a receipt. Raksha turns the details into a verified emergency report.</p>
+          <h1 id="heroTitle">You speak once.<br><em>We carry it through.</em></h1>
+          <p id="heroSub">Call, send a voice note, or upload a receipt. Raksha files the case through to 1930 and the bank.</p>
           <a class="hero-cta" href="/app">
             <span id="heroCta">Start a report</span>
             <span aria-hidden="true">→</span>
@@ -1044,13 +1129,13 @@ export function renderHomePageHtml(): string {
 
   const homeI18n = {
     en: {
-      heroTitle: "Tell us what happened.<br><em>We handle the rest.</em>",
-      heroSub: "Call, send a voice note, or upload a receipt. Raksha turns the details into a verified emergency report.",
+      heroTitle: "You speak once.<br><em>We carry it through.</em>",
+      heroSub: "Call, send a voice note, or upload a receipt. Raksha files the case through to 1930 and the bank.",
       heroCta: "Start a report",
       tabs: { call: "Call Raksha", whatsapp: "WhatsApp", web: "Use the web" },
       howKicker: "HOW RAKSHA WORKS",
-      howTitle: 'You bring <br>the story.<br>We handle <br>the <span class="hl-motion">rest.</span>',
-      howDesc: "Raksha turns what you share into a verified report and gets it to the right authorities. You stay in control at every step.",
+      howTitle: 'You speak <br>once.<br>We carry <br>it <span class="hl-motion">through.</span>',
+      howDesc: "You speak once. Raksha files a verified case through to 1930 and the bank. You stay in control at every step.",
       howWatch: "Watch the journey",
       howWatchSub: "See how a report moves through Raksha",
       modes: {
@@ -1084,13 +1169,13 @@ export function renderHomePageHtml(): string {
       web: { title: "Raksha Web", describe: "Describe", details: "Add Details", review: "Review", submit: "Submit", evidence: "Add Evidence", drop: "Upload receipt, screenshot, or file", browse: "Browse Files", preview: "Case Preview", category: "Category", catVal: "Financial Fraud", channel: "Channel", channelVal: "Web", status: "Status", statusVal: "Draft" },
     },
     hi: {
-      heroTitle: "बताइए क्या हुआ।<br><em>बाकी हम संभाल लेंगे।</em>",
-      heroSub: "कॉल करें, वॉइस नोट भेजें या रसीद अपलोड करें। रक्षा आपके लिए सत्यापित रिपोर्ट तैयार करती है।",
+      heroTitle: "एक बार बोलिए।<br><em>आगे हम ले चलते हैं।</em>",
+      heroSub: "कॉल करें, वॉइस नोट भेजें या रसीद अपलोड करें। रक्षा केस को 1930 और बैंक तक ले जाती है।",
       heroCta: "रिपोर्ट शुरू करें",
       tabs: { call: "रक्षा को कॉल करें", whatsapp: "व्हाट्सऐप", web: "वेब इस्तेमाल करें" },
       howKicker: "रक्षा कैसे काम करती है",
-      howTitle: 'आप कहानी<br>लाते हैं।<br>बाकी <span class="hl-motion">हम संभालते हैं।</span>',
-      howDesc: "रक्षा जो भी आप साझा कर सकते हैं उसे सत्यापित रिपोर्ट बनाती है और सही अधिकारियों तक पहुँचाती है। हर कदम पर नियंत्रण आपके पास रहता है।",
+      howTitle: 'एक बार<br>बोलिए।<br>आगे <span class="hl-motion">हम ले चलते हैं।</span>',
+      howDesc: "आप एक बार बोलें। रक्षा सत्यापित केस को 1930 और बैंक तक ले जाती है। हर कदम पर नियंत्रण आपके पास रहता है।",
       howWatch: "पूरा सफ़र देखें",
       howWatchSub: "देखें कि रिपोर्ट रक्षा में कैसे आगे बढ़ती है",
       modes: {
@@ -1124,13 +1209,13 @@ export function renderHomePageHtml(): string {
       web: { title: "रक्षा वेब", describe: "वर्णन", details: "विवरण जोड़ें", review: "समीक्षा", submit: "भेजें", evidence: "सबूत जोड़ें", drop: "रसीद, स्क्रीनशॉट या फ़ाइल अपलोड करें", browse: "फ़ाइल चुनें", preview: "केस पूर्वावलोकन", category: "श्रेणी", catVal: "वित्तीय धोखाधड़ी", channel: "माध्यम", channelVal: "वेब", status: "स्थिति", statusVal: "ड्राफ़्ट" },
     },
     ta: {
-      heroTitle: "என்ன நடந்தது என்று சொல்லுங்கள்.<br><em>மீதியை நாங்கள் பார்த்துக்கொள்கிறோம்.</em>",
-      heroSub: "அழைக்கவும், குரல் பதிவு அனுப்பவும் அல்லது ரசீதை பதிவேற்றவும். ரக்ஷா சரிபார்க்கப்பட்ட புகாரை உருவாக்குகிறது.",
+      heroTitle: "ஒருமுறை சொல்லுங்கள்.<br><em>நாங்கள் இறுதிவரை நடத்துவோம்.</em>",
+      heroSub: "அழைக்கவும், குரல் பதிவு அனுப்பவும் அல்லது ரசீதை பதிவேற்றவும். ரக்ஷா வழக்கை 1930 மற்றும் வங்கிவரை கொண்டு செல்கிறது.",
       heroCta: "புகாரைத் தொடங்கு",
       tabs: { call: "ரக்ஷாவை அழை", whatsapp: "வாட்ஸ்அப்", web: "இணையம்" },
       howKicker: "ரக்ஷா எப்படி வேலை செய்கிறது",
-      howTitle: 'நீங்கள் கதையைக்<br>கொண்டு வாருங்கள்.<br>மீதியை <span class="hl-motion">நாங்கள் கையாளுகிறோம்.</span>',
-      howDesc: "நீங்கள் பகிரக்கூடியதை ரக்ஷா சரிபார்க்கப்பட்ட புகாராக மாற்றி சரியான அதிகாரிகளிடம் கொண்டு செல்கிறது. ஒவ்வொரு அடியிலும் கட்டுப்பாடு உங்களிடமே.",
+      howTitle: 'ஒருமுறை<br>சொல்லுங்கள்.<br>நாங்கள் <span class="hl-motion">இறுதிவரை நடத்துவோம்.</span>',
+      howDesc: "ஒருமுறை சொல்லுங்கள். ரக்ஷா சரிபார்க்கப்பட்ட வழக்கை 1930 மற்றும் வங்கிவரை கொண்டு செல்கிறது. ஒவ்வொரு அடியிலும் கட்டுப்பாடு உங்களிடமே.",
       howWatch: "பயணத்தைப் பாருங்கள்",
       howWatchSub: "ஒரு புகார் ரக்ஷாவில் எப்படி நகர்கிறது என்று பாருங்கள்",
       modes: {

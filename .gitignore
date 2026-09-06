@@ -51,3 +51,6 @@ coverage/
 # Temp files
 tmp/
 temp/
+
+# Image-gen checkerboard previews (verification only — never ship)
+*.preview.png

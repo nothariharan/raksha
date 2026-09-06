@@ -73,9 +73,12 @@ export function renderPageLayout(options: {
     html[lang="hi"] .agents-rule h2,
     html[lang="ta"] .agents-rule h2,
     html[lang="hi"] .type-display,
-    html[lang="ta"] .type-display {
+    html[lang="ta"] .type-display,
+    html[lang="hi"] .cap-hero-title,
+    html[lang="ta"] .cap-hero-title {
       letter-spacing: 0;
       line-height: 1.28;
+      overflow-wrap: anywhere;
     }
 
     .has-side-rails {
@@ -114,14 +117,26 @@ export function renderPageLayout(options: {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html {
       scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
     html, body {
       background-color: var(--bg);
       color: var(--text);
       font-family: var(--font);
+      font-size: 16px;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      ${isSingleScreen ? "height: 100vh; overflow: hidden;" : "min-height: 100vh;"}
+      overflow-x: clip;
+      ${isSingleScreen ? "height: 100dvh; overflow: hidden;" : "min-height: 100dvh;"}
+    }
+    body {
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+    }
+    :focus-visible {
+      outline: 2px solid var(--orange);
+      outline-offset: 3px;
     }
 
     /* Simulation Bar */
@@ -226,34 +241,87 @@ export function renderPageLayout(options: {
     }
     .btn-nav-demo:hover { background: #292524; }
 
-    @media (max-width: 760px) {
+    .nav-toggle {
+      display: none;
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .nav-toggle span {
+      display: block;
+      width: 16px;
+      height: 1.5px;
+      background: var(--text);
+      border-radius: 99px;
+    }
+    nav.is-open .nav-toggle span:first-child { transform: translateY(3.25px) rotate(40deg); }
+    nav.is-open .nav-toggle span:last-child { transform: translateY(-3.25px) rotate(-40deg); }
+
+    @media (max-width: 860px) {
       .sim-bar {
         font-size: 0.62rem;
-        padding: 0.35rem 0.7rem;
+        padding: 0.35rem max(0.7rem, env(safe-area-inset-right, 0px)) 0.35rem max(0.7rem, env(safe-area-inset-left, 0px));
         line-height: 1.35;
       }
       nav {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr auto auto;
         align-items: center;
-        row-gap: 0.4rem;
-        padding: 0.6rem 1rem 0.5rem;
+        column-gap: 0.5rem;
+        row-gap: 0;
+        padding: 0.45rem max(1rem, env(safe-area-inset-right, 0px)) 0.45rem max(1rem, env(safe-area-inset-left, 0px));
+        min-height: 58px;
       }
-      .nav-links {
+      .nav-actions { display: contents; }
+      .brand-link { grid-column: 1; grid-row: 1; }
+      .btn-nav-demo {
+        grid-column: 2;
+        grid-row: 1;
+        padding: 0.42rem 0.8rem;
+        font-size: 0.76rem;
+        white-space: nowrap;
+        min-height: 38px;
+      }
+      .nav-toggle { display: inline-flex; grid-column: 3; grid-row: 1; }
+      .nav-links,
+      .lang-select { display: none; }
+      nav.is-open .nav-links {
         display: flex;
+        flex-direction: column;
+        align-items: stretch;
         grid-column: 1 / -1;
-        justify-content: flex-start;
-        gap: 1.05rem;
+        grid-row: 2;
+        gap: 0;
         width: 100%;
-        overflow-x: auto;
-        font-size: 0.8rem;
-        padding-bottom: 0.1rem;
-        -webkit-overflow-scrolling: touch;
+        padding: 0.35rem 0 0.15rem;
+        white-space: normal;
+        overflow: visible;
       }
-      .nav-link.active::after { bottom: -3px; height: 2px; }
-      .nav-actions { gap: 0.45rem; }
-      .lang-select { max-width: 108px; font-size: 0.76rem; }
-      .btn-nav-demo { padding: 0.42rem 0.75rem; font-size: 0.78rem; }
+      nav.is-open .lang-select {
+        display: block;
+        grid-column: 1 / -1;
+        grid-row: 3;
+        max-width: none;
+        width: 100%;
+        margin: 0.35rem 0 0.55rem;
+        font-size: 0.86rem;
+        padding: 0.55rem 0.7rem;
+      }
+      .nav-link {
+        padding: 0.72rem 0;
+        font-size: 0.95rem;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .nav-link.active::after { display: none; }
+      .nav-link.active { color: var(--orange); }
       .brand-wordmark { font-size: 1.7rem; }
     }
 
@@ -269,7 +337,9 @@ export function renderPageLayout(options: {
       font-weight: 400;
       font-style: normal;
       letter-spacing: -0.035em;
-      line-height: 0.92;
+      line-height: 1.08;
+      text-wrap: balance;
+      overflow-wrap: break-word;
     }
 
     ${extraStyles}
@@ -283,7 +353,7 @@ export function renderPageLayout(options: {
   <nav>
     <a href="/" class="brand-link" aria-label="Raksha home"><span class="brand-wordmark">Raksha</span></a>
 
-    <div class="nav-links">
+    <div class="nav-links" id="navLinks">
       <a href="/how" class="nav-link ${activeNav === "how" ? "active" : ""}" id="navHow">How it Works</a>
       <a href="/cap" class="nav-link ${activeNav === "cap" ? "active" : ""}" id="navCap">CAP Protocol</a>
       <a href="/agents" class="nav-link ${activeNav === "agents" ? "active" : ""}" id="navAgents">For AI Agents</a>
@@ -300,6 +370,10 @@ export function renderPageLayout(options: {
         <span id="navDemoLabel">Launch Demo</span>
         <span>→</span>
       </a>
+      <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Open menu">
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
 
@@ -350,6 +424,23 @@ export function renderPageLayout(options: {
       var sel = document.getElementById("langSelect");
       if (sel) sel.value = lang;
       window.switchLang(lang);
+
+      var nav = document.querySelector("nav");
+      var toggle = document.getElementById("navToggle");
+      if (nav && toggle) {
+        toggle.addEventListener("click", function () {
+          var open = nav.classList.toggle("is-open");
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+          toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        });
+        nav.querySelectorAll(".nav-link").forEach(function (link) {
+          link.addEventListener("click", function () {
+            nav.classList.remove("is-open");
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.setAttribute("aria-label", "Open menu");
+          });
+        });
+      }
     })();
   </script>
 </body>

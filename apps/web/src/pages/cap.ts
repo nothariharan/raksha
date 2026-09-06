@@ -98,20 +98,23 @@ export function renderCapPageHtml(): string {
       color: var(--orange);
     }
     .cap-hero-title {
-      font-size: clamp(3.5rem, 6vw, 5.5rem);
-      max-width: 650px;
+      font-size: clamp(2.8rem, 5.4vw, 5rem);
+      max-width: 14ch;
       color: #1c1917;
       margin: 0;
+      line-height: 1.08;
+      padding-bottom: 0.06em;
     }
     .cap-hero-tagline {
       font-family: var(--font);
-      font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+      font-size: clamp(1.1rem, 1.8vw, 1.4rem);
       font-weight: 400;
       font-style: italic;
-      line-height: 1.35;
+      line-height: 1.4;
       letter-spacing: -0.015em;
       color: #57534e;
       margin: 0.75rem 0 0.4rem;
+      padding-bottom: 0.08em;
     }
     .cap-hero-desc {
       font-size: 1.02rem;
@@ -832,6 +835,11 @@ export function renderCapPageHtml(): string {
     }
 
     @media (max-width: 760px) {
+      .cap-page { padding: 1.6rem 1rem 3.2rem; gap: 2.6rem; }
+      .cap-hero-title { font-size: clamp(2.2rem, 10vw, 2.85rem); max-width: none; }
+      .cap-hero-tagline { font-size: 1.05rem; }
+      .cap-hero-desc { font-size: 0.94rem; }
+      .cap-cta-row { gap: 0.7rem; }
       .arch-channels-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1.2rem;

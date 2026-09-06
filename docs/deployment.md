@@ -55,8 +55,10 @@ Website (from repo root):
 
 ```bash
 pnpm export:web
-vercel --prod --yes
+npx vercel --prod --yes
 ```
+
+Confirm production shows the current hero (*You speak once. We carry it through.*) after deploy. If Git auto-deploy is pinned to an older branch, prefer this manual export from `main`.
 
 Protocol: Render auto-deploys `main` for `raksha-protocol`. Pin Node `22.16.0` (`NODE_VERSION` + `.node-version`). WhatsApp pilot replies from the Twilio sandbox number (`TWILIO_FROM_NUMBER=+14155238886`). Keep `+16055999677` for voice only.
 

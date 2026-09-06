@@ -60,10 +60,12 @@ export function renderAgentsPageHtml(): string {
       text-transform: uppercase;
     }
     .agents h1 {
-      font-size: clamp(2.8rem, 5vw, 4.4rem);
-      max-width: 640px;
+      font-size: clamp(2.45rem, 4.6vw, 4rem);
+      max-width: 14ch;
       margin: 0.7rem 0 0;
       color: #1a1f2c;
+      line-height: 1.1;
+      padding-bottom: 0.06em;
     }
     .agents-accent {
       color: #c2410c;
@@ -263,7 +265,8 @@ export function renderAgentsPageHtml(): string {
       .agents-flow-right { display: none; }
     }
     @media (max-width: 860px) {
-      .agents { padding: 2.4rem 1.2rem 3.5rem; gap: 3.2rem; }
+      .agents { padding: 1.8rem 1rem 3.2rem; gap: 2.6rem; }
+      .agents h1 { font-size: clamp(2.05rem, 8.6vw, 2.7rem); max-width: none; line-height: 1.14; }
       .agents-hero { grid-template-columns: 1fr; gap: 2rem; }
       .agents-rule { grid-template-columns: 1fr; gap: 1.6rem; padding: 1.5rem 1.25rem; }
       .agents-rule-spine { display: none; }

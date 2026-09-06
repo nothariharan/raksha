@@ -14,22 +14,22 @@ export function renderHowPageHtml(): string {
         var copy = {
           en: {
             kicker: "HOW RAKSHA WORKS",
-            title: 'You bring <br>the story.<br>We handle <br>the <span class="hl-motion">rest.</span>',
-            desc: "Raksha turns what you share into a verified report and gets it to the right authorities. You stay in control at every step.",
+            title: 'You speak <br>once.<br>We carry <br>it <span class="hl-motion">through.</span>',
+            desc: "You speak once. Raksha files a verified case through to 1930 and the bank. You stay in control at every step.",
             watch: "Watch the journey",
             sub: "See how a report moves through Raksha"
           },
           hi: {
             kicker: "रक्षा कैसे काम करती है",
-            title: 'आप कहानी<br>लाते हैं।<br>बाकी <span class="hl-motion">हम संभालते हैं।</span>',
-            desc: "रक्षा जो भी आप साझा कर सकते हैं उसे सत्यापित रिपोर्ट बनाती है और सही अधिकारियों तक पहुँचाती है। हर कदम पर नियंत्रण आपके पास रहता है।",
+            title: 'एक बार<br>बोलिए।<br>आगे <span class="hl-motion">हम ले चलते हैं।</span>',
+            desc: "आप एक बार बोलें। रक्षा सत्यापित केस को 1930 और बैंक तक ले जाती है। हर कदम पर नियंत्रण आपके पास रहता है।",
             watch: "पूरा सफ़र देखें",
             sub: "देखें कि रिपोर्ट रक्षा में कैसे आगे बढ़ती है"
           },
           ta: {
             kicker: "ரக்ஷா எப்படி வேலை செய்கிறது",
-            title: 'நீங்கள் கதையைக்<br>கொண்டு வாருங்கள்.<br>மீதியை <span class="hl-motion">நாங்கள் கையாளுகிறோம்.</span>',
-            desc: "நீங்கள் பகிரக்கூடியதை ரக்ஷா சரிபார்க்கப்பட்ட புகாராக மாற்றி சரியான அதிகாரிகளிடம் கொண்டு செல்கிறது. ஒவ்வொரு அடியிலும் கட்டுப்பாடு உங்களிடமே.",
+            title: 'ஒருமுறை<br>சொல்லுங்கள்.<br>நாங்கள் <span class="hl-motion">இறுதிவரை நடத்துவோம்.</span>',
+            desc: "ஒருமுறை சொல்லுங்கள். ரக்ஷா சரிபார்க்கப்பட்ட வழக்கை 1930 மற்றும் வங்கிவரை கொண்டு செல்கிறது. ஒவ்வொரு அடியிலும் கட்டுப்பாடு உங்களிடமே.",
             watch: "பயணத்தைப் பாருங்கள்",
             sub: "ஒரு புகார் ரக்ஷாவில் எப்படி நகர்கிறது என்று பாருங்கள்"
           }
