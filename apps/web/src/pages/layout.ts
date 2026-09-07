@@ -384,11 +384,11 @@ export function renderPageLayout(options: {
   ${extraScripts}
   <script>
     (function () {
-      var protocolOrigin = "https://raksha-protocol.onrender.com";
+      // Wake protocol via same-origin /health (Vercel rewrite → Render).
+      // Direct *.onrender.com fetches are often blocked by ad blockers (ERR_BLOCKED_BY_CLIENT).
       var host = location.hostname;
       if (host === "localhost" || host === "127.0.0.1") return;
-      try { if (new URL(protocolOrigin).host === location.host) return; } catch (e) {}
-      fetch(protocolOrigin + "/health", { mode: "cors", cache: "no-store", keepalive: true }).catch(function () {});
+      fetch("/health", { mode: "cors", cache: "no-store", keepalive: true }).catch(function () {});
     })();
   </script>
   <script>

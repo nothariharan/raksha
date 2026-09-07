@@ -20,6 +20,19 @@ const protocolOrigin = (
   process.env.PROTOCOL_PUBLIC_ORIGIN || "https://raksha-protocol.onrender.com"
 ).replace(/\/$/, "");
 
+// Same-origin on Vercel so /v1 and /app/elevenlabs use vercel.json rewrites.
+// Avoids browsers/ad-blockers blocking direct *.onrender.com fetches (ERR_BLOCKED_BY_CLIENT).
+const sameOriginApi = process.env.VERCEL === "1" || process.env.RAKSHA_SAME_ORIGIN_API === "1";
+const apiOrigin = sameOriginApi ? "" : protocolOrigin;
+
+const elevenLabsAgentId =
+  process.env.ELEVENLABS_WEB_AGENT_ID ||
+  process.env.ELEVENLABS_INTAKE_AGENT_ID ||
+  process.env.ELEVENLABS_AGENT_ID ||
+  "";
+const liveAgentId =
+  elevenLabsAgentId && !elevenLabsAgentId.includes("synthetic") ? elevenLabsAgentId : "";
+
 function writePage(routePath: string, html: string): void {
   const file =
     routePath === "/" ? join(outDir, "index.html") : join(outDir, routePath.replace(/^\//, ""), "index.html");
@@ -41,15 +54,17 @@ const whatsappPilot = {
   whatsappJoin: process.env.WHATSAPP_SANDBOX_JOIN || "join milk-work",
 };
 writePage("/app", renderAppPageHtml({
-  coreUrl: protocolOrigin,
-  capUrl: protocolOrigin,
+  coreUrl: apiOrigin,
+  capUrl: apiOrigin,
+  elevenLabsAgentId: liveAgentId,
   portalAUrl: process.env.PORTAL_A_BASE_URL || `${protocolOrigin}/portal-a`,
   portalBUrl: process.env.PORTAL_B_BASE_URL || `${protocolOrigin}/portal-b`,
   ...whatsappPilot,
 }));
 writePage("/demo", renderAppPageHtml({
-  coreUrl: protocolOrigin,
-  capUrl: protocolOrigin,
+  coreUrl: apiOrigin,
+  capUrl: apiOrigin,
+  elevenLabsAgentId: liveAgentId,
   portalAUrl: process.env.PORTAL_A_BASE_URL || `${protocolOrigin}/portal-a`,
   portalBUrl: process.env.PORTAL_B_BASE_URL || `${protocolOrigin}/portal-b`,
   ...whatsappPilot,
@@ -69,4 +84,5 @@ writeFileSync(
 );
 
 console.log(`[export-web] Wrote static site to ${outDir}`);
-console.log(`[export-web] /app API origin: ${protocolOrigin}`);
+console.log(`[export-web] /app API origin: ${apiOrigin || "(same-origin / Vercel rewrites)"}`);
+console.log(`[export-web] ElevenLabs agent baked: ${liveAgentId ? liveAgentId.slice(0, 12) + "…" : "(none)"}`);

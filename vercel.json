@@ -16,6 +16,7 @@
     { "source": "/v1/:path*", "destination": "https://raksha-protocol.onrender.com/v1/:path*" },
     { "source": "/api/cap/:path*", "destination": "https://raksha-protocol.onrender.com/api/cap/:path*" },
     { "source": "/cap/:path*", "destination": "https://raksha-protocol.onrender.com/cap/:path*" },
+    { "source": "/app/elevenlabs/:path*", "destination": "https://raksha-protocol.onrender.com/app/elevenlabs/:path*" },
     { "source": "/system/health", "destination": "https://raksha-protocol.onrender.com/system/health" },
     { "source": "/health", "destination": "https://raksha-protocol.onrender.com/health" },
     { "source": "/ready", "destination": "https://raksha-protocol.onrender.com/ready" },

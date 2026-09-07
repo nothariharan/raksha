@@ -42,6 +42,12 @@ services:
         value: gemini-3.5-flash-lite
       - key: GEMINI_API_KEY
         sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_INTAKE_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_WEB_AGENT_ID
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: raksha-postgres
